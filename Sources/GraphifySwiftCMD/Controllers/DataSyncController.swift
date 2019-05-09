@@ -36,18 +36,18 @@ class DataSyncController {
             }
             newClass.id = id
             self.databaseController.runQuery(transaction: app.ownsClassQuery(newClass)) { relId in
-                print("Added AppOwnsClass \(String(describing: relId))")
+                //print("Added AppOwnsClass \(String(describing: relId))")
             }
             
             //self.addParent(newClass)
             
-            print("Added class: \(newClass.name), id: \(id)")
+            //print("Added class: \(newClass.name), id: \(id)")
             for method in newClass.instanceMethods {
                 self.databaseController.runQuery(transaction: method.createQuery) { methodId in
                     method.id = methodId
                     
                     self.databaseController.runQuery(transaction: newClass.ownsMethodQuery(method)) { relId in
-                        print("Added ClassownsMethodQuery \(String(describing: relId))")
+                        //print("Added ClassownsMethodQuery \(String(describing: relId))")
                     }
                 }
             }
@@ -57,7 +57,7 @@ class DataSyncController {
                     variable.id = variableId
                     
                     self.databaseController.runQuery(transaction: newClass.ownsVariableQuery(variable)) { relId in
-                        print("Added ClassOwnsVariableQuery \(String(describing: relId))")
+                        //print("Added ClassOwnsVariableQuery \(String(describing: relId))")
                     }
                 }
             }
@@ -70,7 +70,7 @@ class DataSyncController {
         if self.classes.count > 0 {
             let classInstance = self.classes.remove(at: 0)
             self.newClass(classInstance, to: app) { (newClass, success) in
-                print("\(newClass) added \(success)")
+                //print("\(newClass) added \(success)")
                 
                 var toAdd = 0
                 
@@ -80,7 +80,7 @@ class DataSyncController {
                         toAdd = toAdd + 1
                         self.addParent(classInstance)  {
                             toAdd = toAdd - 1
-                            print("toAdd classes: \(toAdd)")
+                            //print("toAdd classes: \(toAdd)")
                             if(toAdd == 0) {
                                 if let finished = self.finished {
                                    finished()
@@ -128,13 +128,13 @@ class DataSyncController {
     }
     
     func sync(app: App) {
-        print("Sync!")
+        //print("Sync!")
         self.classes.append(contentsOf: app.classes)
         self.classes.append(contentsOf: app.structures)
         self.classes.append(contentsOf: app.protocols)
         
         self.newApp(app) { app, success in
-            print("Adding app: \(app.name), success? \(success)")
+            //print("Adding app: \(app.name), success? \(success)")
             self.nextClassFor(app: app)
         }
     }
@@ -145,9 +145,9 @@ class DataSyncController {
         if let parent = classInstance.parent {
             toAdd = toAdd + 1
             self.databaseController.runQuery(transaction: classInstance.extendsQuery(parent)) { relId in
-                print("Added AppExtendsParent \(String(describing: relId))")
+                //print("Added AppExtendsParent \(String(describing: relId))")
                 toAdd = toAdd - 1
-                print("toAdd: \(toAdd)")
+                //print("toAdd: \(toAdd)")
                 if(toAdd == 0) {
                     completition()
                 }
@@ -157,10 +157,10 @@ class DataSyncController {
         for protocolInstance in classInstance.extendedInterfaces {
             toAdd = toAdd + 1
             self.databaseController.runQuery(transaction: classInstance.implementsQuery(protocolInstance)) { relId in
-                print("Added AppImplements \(String(describing: relId))")
+                //print("Added AppImplements \(String(describing: relId))")
                 toAdd = toAdd - 1
                 if(toAdd == 0) {
-                    print("toAdd: \(toAdd)")
+                  //  print("toAdd: \(toAdd)")
                     completition()
                 }
             }

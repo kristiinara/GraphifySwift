@@ -76,7 +76,7 @@ class SourceFileAnalysisController {
 //        self.category = categroy
 //    }
     
-    func analyseFolder(at url: URL, finished: @escaping () -> Void) {
+    func analyseFolder(at url: URL, appKey: String, finished: @escaping () -> Void) {
         self.finished = finished
         let appName = url.lastPathComponent
             
@@ -88,7 +88,7 @@ class SourceFileAnalysisController {
             package: appName,
             versionCode: 1,
             versionName: "1",
-            appKey: "Key2",
+            appKey: appKey,
             developer: "Me",
             sdk: "11",
             categroy: "PRODUCTIVITY"
@@ -283,7 +283,7 @@ class SourceFileAnalysisController {
     }
     
     func analyseFile(at url: URL, completitionHandler: @escaping () -> Void) {
-        print("analyseFile")
+        //print("analyseFile")
         
         if let file = File(path: url.path) {
             do {

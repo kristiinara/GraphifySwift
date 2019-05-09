@@ -6,88 +6,67 @@
 //
 
 import Foundation
+import Utility
 
 class Application {
     let dispatchGroup = DispatchGroup()
     
     func start() {
-        print("Argument: \(CommandLine.arguments)")
         
-        if CommandLine.arguments.count == 2 {
-            print("folder: \(CommandLine.arguments[1])")
-            let folder = CommandLine.arguments[1]
+        do {
+            let parser = ArgumentParser(commandName: "GraphifySwiftCMD", usage: "appKey [--appkey AppKey], folder", overview: "Analyse swift app and insert classes data into neo4j database.")
+            
+            let appKey: OptionArgument<String> = parser.add(option: "--appkey", shortName: "-a", kind: String.self, usage: "Appkey as unique identifier of the app.", completion: .none)
+            let folderPath = parser.add(positional: "foldername", kind: String.self)
+            
+            let args = Array(CommandLine.arguments.dropFirst())
+            let result = try parser.parse(args)
+            
+            //print("parsed arguments: \(result)")
+            
+            guard let path = result.get(folderPath) else {
+                throw ArgumentParserError.expectedArguments(parser, ["foldername"])
+            }
+            
+            guard let key = result.get(appKey) else {
+                throw ArgumentParserError.expectedArguments(parser, ["-appkey"])
+            }
             
             let fileManager = FileManager.default
-            var path = fileManager.currentDirectoryPath
+            let currentPath = fileManager.currentDirectoryPath
             
-            var url = URL(fileURLWithPath: path)
+            var url = URL(fileURLWithPath: currentPath)
             
-            if folder.hasPrefix("/") {
-                url = URL(fileURLWithPath: folder)
+            if path.hasPrefix("/") {
+                url = URL(fileURLWithPath: path)
             } else {
                 //relative path
-                url.appendPathComponent(folder)
-                path.append(contentsOf: folder)
+                url.appendPathComponent(path)
             }
             
-            print(url)
+            self.runAnalysis(url: url, appKey: key)
             
-            let analysisController = SourceFileAnalysisController()
-            dispatchGroup.enter()
+        } catch ArgumentParserError.expectedValue(let value) {
+            print("Missing value for argument \(value).")
+        } catch ArgumentParserError.expectedArguments( _, let stringArray) {
+            print("Missing arguments: \(stringArray.joined()).")
+        } catch ArgumentParserError.unexpectedArgument(let value){
+            print("Unexpected argument: \(value)")
+        } catch ArgumentParserError.unknownOption(let value) {
+            print("Unknown option: \(value)")
+        } catch {
+            print(error.localizedDescription)
+        }
+    }
+    
+    func runAnalysis(url: Foundation.URL, appKey: String) {
+        let analysisController = SourceFileAnalysisController()
+        dispatchGroup.enter()
+        
+        analysisController.analyseFolder(at: url, appKey: appKey) {
+            print("finished")
             
-            analysisController.analyseFolder(at: url) {
-                print("finished")
-
-                self.dispatchGroup.leave()
-            }
-            
-            //    let resourceKeys : [URLResourceKey] = [
-            //        .creationDateKey,
-            //        .isDirectoryKey,
-            //        .nameKey,
-            //        .fileSizeKey
-            //    ]
-            //
-            //    let enumerator = FileManager.default.enumerator(
-            //        at:                         url,
-            //        includingPropertiesForKeys: resourceKeys,
-            //        options:                    [.skipsHiddenFiles],
-            //        errorHandler:               { (url, error) -> Bool in
-            //            print("directoryEnumerator error at \(url): ", error)
-            //            return true
-            //    })!
-            //
-            //    //fileQueue
-            //    for case let fileURL as URL in enumerator {
-            //        do {
-            //            let resourceValues = try fileURL.resourceValues(forKeys: Set(resourceKeys))
-            //            print(fileURL.path, resourceValues.creationDate!, resourceValues.isDirectory!)
-            //
-            //            if let name = resourceValues.name {
-            //                print("File: \(name)")
-            //                if name.hasSuffix(".swift") {
-            //                    //                    let size = resourceValues.fileSize!
-            //                    //                    self.app.size = self.app.size + size
-            //                    //
-            //                    //                    fileQueue.append(fileURL)
-            //                    if let file = File(path: fileURL.path) {
-            //                        do {
-            //                            let structure = try Structure(file: file)
-            //                            let res = structure.dictionary as [String: AnyObject]
-            //                            print("\(fileURL) : \(res)")
-            //                        }  catch {
-            //
-            //                        }
-            //                    }
-            //                }
-            //            }
-            //        } catch {
-            //            //TODO: do something if an error is thrown!
-            //            print("Error")
-            //        }
-            //    }
-        } else {
-            print("Too many or too few arguments! ")
+            self.dispatchGroup.leave()
         }
         
         dispatchGroup.notify(queue: DispatchQueue.main) {

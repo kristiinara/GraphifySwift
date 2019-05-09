@@ -40,8 +40,8 @@ class DatabaseController {
         requestWithParameters(parameters) { json in
             let success = self.defaultErrorHandling(json: json)
             
-            print("----- JSON result (success? \(success)): -----")
-            print(json ?? "Empty response")
+            //print("----- JSON result (success? \(success)): -----")
+            //print(json ?? "Empty response")
             
             if success {
                 completition(self.getId(json))
@@ -107,18 +107,18 @@ class DatabaseController {
             return
         }
         
-        try! print("REQUEST: \(JSONSerialization.jsonObject(with: request.httpBody!, options: .mutableContainers))")
+        //try! print("REQUEST: \(JSONSerialization.jsonObject(with: request.httpBody!, options: .mutableContainers))")
         
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         request.addValue("application/json", forHTTPHeaderField: "Accept")
         
         request.addValue("Basic \(self.authorizationToken)", forHTTPHeaderField: "Authorization")
         
-        print("Starting request!")
+        //print("Starting request!")
         //create dataTask using the session object to send data to the server
         let task = session.dataTask(with: request as URLRequest, completionHandler: { data, response, error in
             
-            print("response: \(String(describing: response))")
+            //print("response: \(String(describing: response))")
             
             guard error == nil else {
                 completition(["NetworkError" : error!])
@@ -133,7 +133,7 @@ class DatabaseController {
             do {
                 //create json object from data
                 if let json = try JSONSerialization.jsonObject(with: data, options: .mutableContainers) as? [String: Any] {
-                    print(json)
+                    //print(json)
                     completition(json)
                 }
             } catch let error {
