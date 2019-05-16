@@ -6,7 +6,7 @@
 //  Copyright © 2019 Kristiina Rahkema. All rights reserved.
 //
 
-import Foundation
+//import Foundation
 
 protocol Node4jInsertable {
     var nodeName: String {get}

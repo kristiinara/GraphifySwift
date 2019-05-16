@@ -6,7 +6,7 @@
 //  Copyright © 2019 Kristiina Rahkema. All rights reserved.
 //
 
-import Foundation
+//import Foundation
 
 class DataSyncController {
     let databaseController = DatabaseController()
@@ -14,7 +14,7 @@ class DataSyncController {
     var finished : (() -> Void)?
     
     func newApp(_ app: App, completition: @escaping (App, Bool) -> Void) {
-        databaseController.runQuery(transaction: app.createQuery) { id in
+        databaseController.runQueryReturnId(transaction: app.createQuery) { id in
             if let id = id {
                 app.id = id
                 
@@ -28,14 +28,14 @@ class DataSyncController {
     func newClass(_ newClass: Class, to app: App, completition: @escaping (Class, Bool) -> Void) {
         print("addClass: \(newClass.description)")
         
-        self.databaseController.runQuery(transaction: newClass.createQuery) { id in
+        self.databaseController.runQueryReturnId(transaction: newClass.createQuery) { id in
             guard let id = id else {
                 print("Error: could not add class \(newClass.name)")
                 completition(newClass, false)
                 return
             }
             newClass.id = id
-            self.databaseController.runQuery(transaction: app.ownsClassQuery(newClass)) { relId in
+            self.databaseController.runQueryReturnId(transaction: app.ownsClassQuery(newClass)) { relId in
                 //print("Added AppOwnsClass \(String(describing: relId))")
             }
             
@@ -43,20 +43,20 @@ class DataSyncController {
             
             //print("Added class: \(newClass.name), id: \(id)")
             for method in newClass.instanceMethods {
-                self.databaseController.runQuery(transaction: method.createQuery) { methodId in
+                self.databaseController.runQueryReturnId(transaction: method.createQuery) { methodId in
                     method.id = methodId
                     
-                    self.databaseController.runQuery(transaction: newClass.ownsMethodQuery(method)) { relId in
+                    self.databaseController.runQueryReturnId(transaction: newClass.ownsMethodQuery(method)) { relId in
                         //print("Added ClassownsMethodQuery \(String(describing: relId))")
                     }
                 }
             }
             
             for variable in newClass.instanceVariables {
-                self.databaseController.runQuery(transaction: variable.createQuery) { variableId in
+                self.databaseController.runQueryReturnId(transaction: variable.createQuery) { variableId in
                     variable.id = variableId
                     
-                    self.databaseController.runQuery(transaction: newClass.ownsVariableQuery(variable)) { relId in
+                    self.databaseController.runQueryReturnId(transaction: newClass.ownsVariableQuery(variable)) { relId in
                         //print("Added ClassOwnsVariableQuery \(String(describing: relId))")
                     }
                 }
@@ -144,7 +144,7 @@ class DataSyncController {
         
         if let parent = classInstance.parent {
             toAdd = toAdd + 1
-            self.databaseController.runQuery(transaction: classInstance.extendsQuery(parent)) { relId in
+            self.databaseController.runQueryReturnId(transaction: classInstance.extendsQuery(parent)) { relId in
                 //print("Added AppExtendsParent \(String(describing: relId))")
                 toAdd = toAdd - 1
                 //print("toAdd: \(toAdd)")
@@ -156,7 +156,7 @@ class DataSyncController {
         
         for protocolInstance in classInstance.extendedInterfaces {
             toAdd = toAdd + 1
-            self.databaseController.runQuery(transaction: classInstance.implementsQuery(protocolInstance)) { relId in
+            self.databaseController.runQueryReturnId(transaction: classInstance.implementsQuery(protocolInstance)) { relId in
                 //print("Added AppImplements \(String(describing: relId))")
                 toAdd = toAdd - 1
                 if(toAdd == 0) {

@@ -6,7 +6,7 @@
 //  Copyright © 2019 Kristiina Rahkema. All rights reserved.
 //
 
-import Foundation
+//import Foundation
 
 protocol Kind {
     var description: String {get}

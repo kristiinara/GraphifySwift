@@ -6,7 +6,7 @@
 //  Copyright © 2019 Kristiina Rahkema. All rights reserved.
 //
 
-import Foundation
+//import Foundation
 
 //TODO:
 //  add to instruction class possibility to calculate method calls for a given method (maybe even a query for a given method name?) or get all method names and go from there to find where these mehods reside.

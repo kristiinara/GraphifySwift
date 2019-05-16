@@ -9,8 +9,8 @@
 import Foundation
 
 class DatabaseController {
-    let dataURL: URL
-    let authorizationToken: String
+    private let dataURL: URL
+    private let authorizationToken: String
     
     init(dbURL: URL, authorizationToken: String) {
         self.dataURL = dbURL
@@ -23,7 +23,7 @@ class DatabaseController {
     }
     
     //TODO: check if we need this method at all, currently added so we can easily change behaviour for all queries made
-    func runQuery(transaction: String?, completition: @escaping (Int?) -> Void) {
+    func runQueryReturnId(transaction: String?, completition: @escaping (Int?) -> Void) {
         if let transaction = transaction {
             requestWithDefaultCompletition(transaction: transaction, completition: completition)
         } else {
@@ -31,7 +31,7 @@ class DatabaseController {
         }
     }
     
-    func requestWithDefaultCompletition(transaction: String, completition: @escaping (Int?) -> Void) {
+    func runQueryReturnRows(transaction: String, completition: @escaping ([String]?) -> Void) {
         let parameters = [
             "statements": [[
                 "statement" : transaction
@@ -40,8 +40,28 @@ class DatabaseController {
         requestWithParameters(parameters) { json in
             let success = self.defaultErrorHandling(json: json)
             
-            //print("----- JSON result (success? \(success)): -----")
-            //print(json ?? "Empty response")
+            print("----- JSON result (success? \(success)): -----")
+            print(json ?? "Empty response")
+            
+            if success {
+                completition(self.getRows(json))
+            } else {
+                completition(nil)
+            }
+        }
+    }
+    
+    private func requestWithDefaultCompletition(transaction: String, completition: @escaping (Int?) -> Void) {
+        let parameters = [
+            "statements": [[
+                "statement" : transaction
+                ]]
+        ]
+        requestWithParameters(parameters) { json in
+            let success = self.defaultErrorHandling(json: json)
+            
+//            print("----- JSON result (success? \(success)): -----")
+//            print(json ?? "Empty response")
             
             if success {
                 completition(self.getId(json))
@@ -51,7 +71,42 @@ class DatabaseController {
         }
     }
     
-    func getId(_ json: [String: Any]?) -> Int? {
+    private func getRows(_ json: [String: Any]?) -> [String]? {
+        var rows : [String] = []
+        guard let json = json else { return nil }
+        
+        guard let results = json["results"] as? [[String:Any]] else {
+            print("no results: \(json)")
+            return nil
+        }
+        
+        guard results.count > 0 else {
+            print("Results length 0: \(json)")
+            return nil
+        }
+        guard results[0]["errors"] == nil else {
+            print("Resulted in errors: \(results[0]["errors"] as! [[String: Any]])")
+            return nil
+        }
+        
+        guard let data = results[0]["data"] as? [[String: Any]] else {
+            print("no data: \(results[0])")
+            return nil
+        }
+        
+        guard data.count > 0 else {
+            print("Data length 0")
+            return []
+        }
+        
+        for dataItem in data {
+            rows.append("\(dataItem)")
+        }
+        
+        return rows
+    }
+    
+    private func getId(_ json: [String: Any]?) -> Int? {
         guard let json = json else { return nil }
         
         guard let results = json["results"] as? [[String:Any]] else {
@@ -91,7 +146,7 @@ class DatabaseController {
         return id
     }
     
-    func requestWithParameters(_ parameters: [String: Any], completition: @escaping ([String: Any]?) -> Void) {
+    private func requestWithParameters(_ parameters: [String: Any], completition: @escaping ([String: Any]?) -> Void) {
         //create the session object
         let session = URLSession.shared
         
@@ -144,7 +199,7 @@ class DatabaseController {
         task.resume()
     }
     
-    func defaultErrorHandling(json: [String: Any]?) -> Bool {
+    private func defaultErrorHandling(json: [String: Any]?) -> Bool {
         guard let json = json else {
             print("No results!")
             return false
