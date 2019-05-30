@@ -78,7 +78,8 @@ class SourceFileAnalysisController {
     
     func analyseFolder(at url: URL, appKey: String, finished: @escaping () -> Void) {
         self.finished = finished
-        let appName = url.lastPathComponent
+        //let appName = url.lastPathComponent
+        let appName = "This is Appname"
             
         //TODO: get this data from user, currently using mock data
         self.app = App(
@@ -154,6 +155,7 @@ class SourceFileAnalysisController {
     
     
     func addFilesToQueue(at url: URL) {
+        /*
         let resourceKeys : [URLResourceKey] = [
             .creationDateKey,
             .isDirectoryKey,
@@ -169,7 +171,7 @@ class SourceFileAnalysisController {
                 print("directoryEnumerator error at \(url): ", error)
                 return true
         })!
-        
+ 
         //fileQueue
         for case let fileURL as URL in enumerator {
             do {
@@ -189,6 +191,9 @@ class SourceFileAnalysisController {
                 print("Error")
             }
         }
+ */
+        let url = URL(fileURLWithPath: "/home/k/graphifyswiftcmd/Sources/GraphifySwiftCMD/Application.swift")
+        fileQueue.append(url)
     }
     
     func analyseFiles(completition: @escaping () -> Void) {

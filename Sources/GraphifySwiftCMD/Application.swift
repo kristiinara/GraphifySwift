@@ -12,6 +12,7 @@ class Application {
     let dispatchGroup = DispatchGroup()
     
     func start() {
+        /*
         
         do {
             print("Starting application")
@@ -85,17 +86,10 @@ class Application {
             print("Unknown option: \(value)")
         } catch {
             print(error.localizedDescription)
-        }
+        }*/
+        let url = URL(fileURLWithPath: "/home/k/graphifyswiftcmd/Sources/GraphifySwiftCMD/Application.swift")
         
-        let analysisController = SourceFileAnalysisController()
-        analysisController.fileQueue.append(URL(fileURLWithPath: "/home/k/graphifyswiftcmd/Sources/GraphifySwiftCMD/Application.swift"))
-        analysisController.analyseFiles {
-            analysisController.analyseSpecialSuperClasses()
-            analysisController.analyseClassHierarchy()
-            analysisController.printApp()
-            analysisController.dataSyncController.sync(app: analysisController.app)
-        }
-        
+        runAnalysis(url: url, appKey: "nothing")
     }
     
     func runAnalysis(url: Foundation.URL, appKey: String) {
