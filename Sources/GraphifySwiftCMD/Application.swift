@@ -86,6 +86,16 @@ class Application {
         } catch {
             print(error.localizedDescription)
         }
+        
+        let analysisController = SourceFileAnalysisController()
+        analysisController.fileQueue.append(URL(fileURLWithPath: "/home/k/graphifyswiftcmd/Sources/GraphifySwiftCMD/Application.swift"))
+        analysisController.analyseFiles {
+            analysisController.analyseSpecialSuperClasses()
+            analysisController.analyseClassHierarchy()
+            analysisController.printApp()
+            analysisController.dataSyncController.sync(app: analysisController.app)
+        }
+        
     }
     
     func runAnalysis(url: Foundation.URL, appKey: String) {
