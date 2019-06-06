@@ -31,7 +31,7 @@ class DatabaseController {
         }
     }
     
-    func runQueryReturnRows(transaction: String, completition: @escaping ([String]?) -> Void) {
+    func runQueryReturnRows(transaction: String, completition: @escaping ([[String]]?) -> Void) {
         let parameters = [
             "statements": [[
                 "statement" : transaction
@@ -71,8 +71,8 @@ class DatabaseController {
         }
     }
     
-    private func getRows(_ json: [String: Any]?) -> [String]? {
-        var rows : [String] = []
+    private func getRows(_ json: [String: Any]?) -> [[String]]? {
+        var rows : [[String]] = []
         guard let json = json else { return nil }
         
         guard let results = json["results"] as? [[String:Any]] else {
@@ -100,7 +100,13 @@ class DatabaseController {
         }
         
         for dataItem in data {
-            rows.append("\(dataItem)")
+            if let row = dataItem["row"] as? [Any] {
+                var subList: [String] = []
+                for subItem in row {
+                    subList.append("\(subItem)")
+                }
+                rows.append(subList)
+            }
         }
         
         return rows

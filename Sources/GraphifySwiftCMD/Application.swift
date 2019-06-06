@@ -106,8 +106,24 @@ class Application {
     
     func runQuery(query: String) {
         let analysisController = AnalysisController()
+        dispatchGroup.enter()
+        
         analysisController.analyse(queryString: query) { rows in
-            print("rows: \(String(describing: rows))")
+            if let rows = rows {
+                for row in rows {
+                    if row.count == 2 {
+                        print("\(row[0]) - \(row[1])")
+                    } else {
+                        print("Wrong number of items: \(row)")
+                    }
+                }
+            }
+            self.dispatchGroup.leave()
         }
+        
+        dispatchGroup.notify(queue: DispatchQueue.main) {
+            exit(EXIT_SUCCESS)
+        }
+        dispatchMain()
     }
 }

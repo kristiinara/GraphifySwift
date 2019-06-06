@@ -8,7 +8,7 @@
 import Foundation
 
 class AnalysisController {
-    func analyse(queryString: String, completition: @escaping ([String]?) -> Void) {
+    func analyse(queryString: String, completition: @escaping ([[String]]?) -> Void) {
         var query: Query?
         
         switch queryString {
@@ -23,13 +23,8 @@ class AnalysisController {
             print("Running query: \(query.string)")
             dbController.runQueryReturnRows(transaction: query.string) { rows in
                 if let rows = rows {
-                    print("RESULTS:")
-                    for row in rows {
-                        print(row)
-                    }
+                    completition(rows)
                 }
-                
-                completition(rows)
             }
         } else {
             completition(nil)
