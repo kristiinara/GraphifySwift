@@ -7,7 +7,7 @@
 
 import Foundation
 
-class LM : Query {
+class LongMethodQuery : Query {
     var veryHigh = 26
     
     var string: String {

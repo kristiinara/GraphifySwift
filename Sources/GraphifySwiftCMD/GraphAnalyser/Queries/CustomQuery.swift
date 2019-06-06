@@ -7,7 +7,7 @@
 
 import Foundation
 
-class Custom: Query {
+class CustomQuery: Query {
     var string: String
     var result: String?
     

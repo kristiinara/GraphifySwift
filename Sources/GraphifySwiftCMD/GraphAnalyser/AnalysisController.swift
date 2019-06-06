@@ -13,9 +13,9 @@ class AnalysisController {
         
         switch queryString {
         case "LM":
-            query = LM()
+            query = LongMethodQuery()
         default:
-            query = Custom(queryString: queryString)
+            query = CustomQuery(queryString: queryString)
         }
         
         if let query = query {
