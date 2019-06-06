@@ -27,6 +27,8 @@ class SourceFileAnalysisController {
     //var instructionsCount = 0
     
     var finished : (() -> Void)?
+    var printOutput : Bool = false
+    var classSizes : [Int] = []
     
     var fileQueue: [URL] = []
     
@@ -76,8 +78,23 @@ class SourceFileAnalysisController {
 //        self.category = categroy
 //    }
     
-    func analyseFolder(at url: URL, appKey: String, finished: @escaping () -> Void) {
+    func clearOutput(at url: URL) {
+        self.addFilesToQueue(at: url)
+        
+        for fileURL in self.fileQueue {
+            let path = fileURL.path
+            let newPath = path.replacingOccurrences(of: ".swift", with: ".result")
+            do {
+                try FileManager.default.removeItem(at: URL(fileURLWithPath: newPath))
+            } catch {
+                print("Could not remove file \(newPath)!")
+            }
+        }
+    }
+    
+    func analyseFolder(at url: URL, appKey: String, printOutput: Bool, finished: @escaping () -> Void) {
         self.finished = finished
+        self.printOutput = printOutput
         let appName = url.lastPathComponent
             
         //TODO: get this data from user, currently using mock data
@@ -96,6 +113,10 @@ class SourceFileAnalysisController {
         
         
         self.addFilesToQueue(at: url)
+        self.app.size = self.classSizes.reduce(0) { (result, size) in
+            return result + size
+        }
+        
         if self.fileQueue.count > 0 {
             self.analyseFiles() {
                 self.analyseSpecialSuperClasses()
@@ -179,7 +200,8 @@ class SourceFileAnalysisController {
                 if let name = resourceValues.name {
                     if name.hasSuffix(self.fileSuffix) {
                         let size = resourceValues.fileSize!
-                        self.app.size = self.app.size + size
+                        //self.app.size = self.app.size + size
+                        self.classSizes.append(size)
                         
                         fileQueue.append(fileURL)
                     }
@@ -288,11 +310,14 @@ class SourceFileAnalysisController {
         if let file = File(path: url.path) {
             do {
                 let structure = try Structure(file: file)
-                let path = url.path
-                let newPath = path.replacingOccurrences(of: ".swift", with: ".result")
                 
-                let resultString = "\(structure)"
-                resultString.write(toFile: newPath, atomically: true, encoding: .utf8)
+                if self.printOutput {
+                    let path = url.path
+                    let newPath = path.replacingOccurrences(of: ".swift", with: ".result")
+                
+                    let resultString = "\(structure)"
+                    try resultString.write(toFile: newPath, atomically: true, encoding: .utf8)
+                }
                 
                 let res = structure.dictionary as [String: AnyObject]
                 self.extractClassStructureNew(from: res)

@@ -20,12 +20,17 @@ class Application {
             
             let analyseParser = parser.add(subparser: "analyse", overview: "Analyse swift app and insert data into neo4j database")
             let queryParser = parser.add(subparser: "query", overview: "Query existing database for code smells.")
+            let clearParser = parser.add(subparser: "clearOutput", overview: "Clears .result files from folder")
             
             let appKey: OptionArgument<String> = analyseParser.add(option: "--appkey", shortName: "-a", kind: String.self, usage: "Appkey as unique identifier of the app.", completion: .none)
             let folderPath = analyseParser.add(positional: "foldername", kind: String.self)
+            let outputArgument: OptionArgument<Bool> = analyseParser.add(option: "--resultOutput", shortName: "-o", kind: Bool.self, usage: "Determines if a result file is created for every swift file.", completion: .none)
+            
             parser.add
             
             let queryArgument: OptionArgument<String> = queryParser.add(option: "--query", shortName: "-q", kind: String.self, usage: "Query to run.", completion: .none)
+            
+            let clearFolder = clearParser.add(positional: "foldername", kind: String.self)
             
             let args = Array(CommandLine.arguments.dropFirst())
             let result = try parser.parse(args)
@@ -63,7 +68,12 @@ class Application {
                     url.appendPathComponent(path)
                 }
                 
-                self.runAnalysis(url: url, appKey: key)
+                var shouldPrintOutput = false
+                if result.get(outputArgument) != nil {
+                    shouldPrintOutput = true
+                }
+                
+                self.runAnalysis(url: url, appKey: key, printOutput: shouldPrintOutput)
             } else if subparser == "query" {
                 print("query")
                 guard let query = result.get(queryArgument) else {
@@ -71,6 +81,23 @@ class Application {
                 }
                 
                 self.runQuery(query: query)
+            } else if subparser == "clearOutput" {
+                guard let path = result.get(clearFolder) else {
+                    throw ArgumentParserError.expectedArguments(parser, ["Folder"])
+                }
+                let fileManager = FileManager.default
+                let currentPath = fileManager.currentDirectoryPath
+                
+                var url = URL(fileURLWithPath: currentPath)
+                
+                if path.hasPrefix("/") {
+                    url = URL(fileURLWithPath: path)
+                } else {
+                    //relative path
+                    url.appendPathComponent(path)
+                }
+                
+                self.clearOutput(url: url)
            } else {
                 print("Specify action as 'analyse' or 'query'")
                // throw ArgumentParserError.unknownOption(action)
@@ -88,11 +115,16 @@ class Application {
         }
     }
     
-    func runAnalysis(url: Foundation.URL, appKey: String) {
+    func clearOutput(url: Foundation.URL) {
+        let analysisController = SourceFileAnalysisController()
+        analysisController.clearOutput(at: url)
+    }
+    
+    func runAnalysis(url: Foundation.URL, appKey: String, printOutput: Bool) {
         let analysisController = SourceFileAnalysisController()
         dispatchGroup.enter()
         
-        analysisController.analyseFolder(at: url, appKey: appKey) {
+        analysisController.analyseFolder(at: url, appKey: appKey, printOutput: printOutput) {
             print("finished")
             
             self.dispatchGroup.leave()
