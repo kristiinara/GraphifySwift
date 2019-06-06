@@ -14,6 +14,8 @@ class AnalysisController {
         switch queryString {
         case "LM":
             query = LongMethodQuery()
+        case "BLOB":
+            query = BlobClassQuery()
         default:
             query = CustomQuery(queryString: queryString)
         }
