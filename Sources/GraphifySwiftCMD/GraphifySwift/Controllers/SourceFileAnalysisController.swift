@@ -288,6 +288,12 @@ class SourceFileAnalysisController {
         if let file = File(path: url.path) {
             do {
                 let structure = try Structure(file: file)
+                let path = url.path
+                let newPath = path.replacingOccurrences(of: ".swift", with: ".result")
+                
+                let resultString = "\(structure)"
+                resultString.write(toFile: newPath, atomically: true, encoding: .utf8)
+                
                 let res = structure.dictionary as [String: AnyObject]
                 self.extractClassStructureNew(from: res)
                 completitionHandler()

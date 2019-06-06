@@ -48,8 +48,32 @@ class Class : Kind {
     //TODO: implement couplingBetweenObjectClasses
     var couplingBetweenObjectClasses = 0 // Type : Integer Also know as CBO. Defined by Chidamber & Kemerer. CBO represents the number of other classes a class is coupled to. This metrics is calculated from the callgraph and it counts the reference to methods, variables or types once for each class.
     
-    //TODO: implement lackOfCohesionInMethods
-    var lackOfCohesionInMethods = 0 // Type : Integer Also know as LCOM2. Defined by Chidamber & Kemerer. Determined how the methods of a class are related to each others.
+    var lackOfCohesionInMethods: Int {
+        var methods = self.classMethods
+        methods.append(contentsOf: self.instanceMethods)
+        methods.append(contentsOf: self.staticMethods)
+        
+        var methodCount = methods.count
+        var haveVariableInCommon = 0
+        var noVariableInCommon = 0
+        
+        for i in 0...methodCount {
+            for j in (i+1)...methodCount {
+                let method = methods[i]
+                let otherMethod = methods[j]
+                
+                if method.hasVariablesInCommon(otherMethod) {
+                    haveVariableInCommon += 1
+                } else {
+                    noVariableInCommon += 1
+                }
+            }
+        }
+        
+        let lackOfCohesionInMethods = noVariableInCommon - haveVariableInCommon
+        return lackOfCohesionInMethods > 0 ? lackOfCohesionInMethods : 0
+    }
+    
     var isAbstract: Bool = false // Android specific, cannot be abstract
     var isActivity: Bool {
         return self.isViewController

@@ -89,6 +89,20 @@ class Function: Kind {
     var numberOfParameters: Int {
         return self.parameters.count
     }
+    
+    //TODO: implement + possibly change String to Variable
+    var usedVariables: [String] {
+        return []
+    }
+    
+    func variablesInCommon(_ otherMethod: Function) -> Set<String> {
+        let variableSet = Set(self.usedVariables)
+        return variableSet.intersection(otherMethod.usedVariables)
+    }
+    
+    func hasVariablesInCommon(_ otherMethod: Function) -> Bool {
+        return self.variablesInCommon(otherMethod).count > 0
+    }
 }
 
 extension Function: Node4jInsertable {
