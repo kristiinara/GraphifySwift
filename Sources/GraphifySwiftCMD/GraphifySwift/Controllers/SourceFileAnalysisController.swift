@@ -8,6 +8,7 @@
 
 import Foundation
 import SourceKittenFramework
+import SourceKit
 
 class SourceFileAnalysisController {
     let dataSyncController = DataSyncController()
@@ -83,7 +84,7 @@ class SourceFileAnalysisController {
         
         for fileURL in self.fileQueue {
             let path = fileURL.path
-            let newPath = path.replacingOccurrences(of: ".swift", with: ".result")
+            let newPath = path.replacingOccurrences(of: ".swift", with: "-result.json")
             do {
                 try FileManager.default.removeItem(at: URL(fileURLWithPath: newPath))
             } catch {
@@ -310,10 +311,17 @@ class SourceFileAnalysisController {
         if let file = File(path: url.path) {
             do {
                 let structure = try Structure(file: file)
+               // let request = SourceKittenFramework.Request.syntaxTree(file: file, byteTree: false)
+//                let request = SourceKittenFramework.Request.cursorInfo(file: url.path, offset: 1960, arguments: [url.path])
+//
+//                let response = try request.send()
+                //print("file: \(url)")
+                //print("\(response)")
                 
                 if self.printOutput {
                     let path = url.path
-                    let newPath = path.replacingOccurrences(of: ".swift", with: ".result")
+                    
+                    let newPath = path.replacingOccurrences(of: ".swift", with: "-result.json")
                 
                     let resultString = "\(structure)"
                     try resultString.write(toFile: newPath, atomically: true, encoding: .utf8)
