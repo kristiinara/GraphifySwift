@@ -10,6 +10,7 @@
 
 class Function: Kind {
     var id: Int?
+    var usr: String? = "?"
     var name: String
     var appKey: String = "Default"
     var instructions: [Instruction] = []
@@ -17,6 +18,9 @@ class Function: Kind {
     var modifier: String = ""
     var returnType: String = ""
     var fullName: String = "" // "name#class_name"
+    
+    var methodReferences: [Function] = []
+    var variableReferences: [Variable] = []
     
     //var numberOfDeclaredLocals = 0
     var numberOfDeclaredLocals : Int {

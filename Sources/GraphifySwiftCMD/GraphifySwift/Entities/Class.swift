@@ -10,6 +10,8 @@
 
 class Class : Kind {
     var id: Int?
+    var path: String = ""
+    var usr: String?
     var name: String
     var appKey: String = "Default"
     var modifier: String = "" // public, protected, private

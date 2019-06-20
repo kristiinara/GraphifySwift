@@ -12,6 +12,10 @@ import SourceKit
 
 class SourceFileAnalysisController {
     let dataSyncController = DataSyncController()
+    let updatedController = UpdatedSourceFileAnalysisController()
+    
+    var variableReferences : [String: Variable] = [:]
+    var methodReferences : [String: Function] = [:]
     
     let fileSuffix = ".swift"
     
@@ -109,6 +113,10 @@ class SourceFileAnalysisController {
             self.analyseFiles() {
                 self.analyseSpecialSuperClasses()
                 self.analyseClassHierarchy()
+                self.addUsrAndReferences()
+                self.analyseUses()
+                //print("\(self.methodReferences)")
+                //print("\(self.variableReferences)")
                 self.printApp()
                 self.dataSyncController.finished = finished
                 self.dataSyncController.sync(app: self.app)
@@ -126,7 +134,7 @@ class SourceFileAnalysisController {
         print("App: \(String(describing: self.app))")
         print("Classes:")
         for classInstance in self.app.classes {
-            print("     Class: \(classInstance.name)")
+            print("     Class: \(classInstance.name) - \(classInstance.usr)")
             print("     InstanceMethods: ")
             for method in classInstance.instanceMethods {
                 printMethod(method)
@@ -139,21 +147,49 @@ class SourceFileAnalysisController {
             for method in classInstance.staticMethods {
                 printMethod(method)
             }
+
+            print("     InstanceVariables: ")
+            for variable in classInstance.instanceVariables {
+                printVariable(variable)
+            }
+            print("     ClassVariables: ")
+            for variable in classInstance.classVariables {
+                printVariable(variable)
+            }
+            print("     InstanceVariables: ")
+            for variable in classInstance.staticVariables {
+                printVariable(variable)
+            }
         }
     }
     
     func printMethod(_ method: Function) {
-        print("               Method: \(method.name)")
-        print("                  Stats: inst: \(method.numberOfInstructions), compl: \(method.cyclomaticComplexity)")
+        print("               Method: \(method.name) - \(method.usr)")
+        print("                  Stats: inst: \(method.numberOfInstructions), compl: \(method.cyclomaticComplexity), directCalls: \(method.numberOfDirectCalls), refMethods: \(method.methodReferences.count), refVariables: \(method.variableReferences.count)")
         for argument in method.parameters {
             print("                      Argument: \(argument.name)")
         }
-        
+
+        print("                     referenced methods: ")
+        for refMethod in method.methodReferences {
+            print(refMethod.name)
+        }
+
+        print("                     referenced variables: ")
+        for refVariable in method.variableReferences {
+            print(refVariable.name)
+        }
+
         for instruction in method.instructions {
-            printInstruction(instruction)
+            //printInstruction(instruction)
         }
     }
-    
+
+    func printVariable(_ variable: Variable) {
+        print("               Variable: \(variable.name) - \(variable.usr)")
+        print("                  Stats: refMethods: \(variable.methodReferences.count), refVariables: \(variable.variableReferences.count)")
+    }
+
     func printInstruction(_ instruction: Instruction) {
         print("                      Instruction: \(instruction.stringValue), kind: \(instruction.kind)")
         for subInstruction in instruction.instructions {
@@ -161,45 +197,6 @@ class SourceFileAnalysisController {
         }
     }
     
-    
-//    func addFilesToQueue(at url: URL) {
-//        let resourceKeys : [URLResourceKey] = [
-//            .creationDateKey,
-//            .isDirectoryKey,
-//            .nameKey,
-//            .fileSizeKey
-//        ]
-//        
-//        let enumerator = FileManager.default.enumerator(
-//            at:                         url,
-//            includingPropertiesForKeys: resourceKeys,
-//            options:                    [.skipsHiddenFiles],
-//            errorHandler:               { (url, error) -> Bool in
-//                print("directoryEnumerator error at \(url): ", error)
-//                return true
-//        })!
-//        
-//        //fileQueue
-//        for case let fileURL as URL in enumerator {
-//            do {
-//                let resourceValues = try fileURL.resourceValues(forKeys: Set(resourceKeys))
-//                print(fileURL.path, resourceValues.creationDate!, resourceValues.isDirectory!)
-//                
-//                if let name = resourceValues.name {
-//                    if name.hasSuffix(self.fileSuffix) {
-//                        let size = resourceValues.fileSize!
-//                        //self.app.size = self.app.size + size
-//                        self.classSizes.append(size)
-//                        
-//                        fileQueue.append(fileURL)
-//                    }
-//                }
-//            } catch {
-//                //TODO: do something if an error is thrown!
-//                print("Error")
-//            }
-//        }
-//    }
     
     func analyseFiles(completition: @escaping () -> Void) {
         if fileQueue.count > 0 {
@@ -229,6 +226,131 @@ class SourceFileAnalysisController {
         }
     }
     
+    func addUsrAndReferences() {
+        for classInstance in self.app.classes {
+            classInstance.usr = self.updatedController.usrOf(objectName: classInstance.name, objectKind: ClassInstance.kittenKey, inFileAt: classInstance.path)
+            addUsrToMethodsAndVariablesOfClass(classInstance)
+        }
+        
+        for structInstance in self.app.structures {
+            structInstance.usr = self.updatedController.usrOf(objectName: structInstance.name, objectKind: Struct.kittenKey, inFileAt: structInstance.path)
+            addUsrToMethodsAndVariablesOfClass(structInstance)
+        }
+        
+        for protocolInstance in self.app.protocols {
+            protocolInstance.usr = self.updatedController.usrOf(objectName: protocolInstance.name, objectKind: Protocol.kittenKey, inFileAt: protocolInstance.path)
+            addUsrToMethodsAndVariablesOfClass(protocolInstance)
+        }
+    }
+    
+    func addUsrToMethodsAndVariablesOfClass(_ classInstance: Class) {
+        for classMethod in classInstance.classMethods {
+            let usr = self.updatedController.usrOf(objectName: classMethod.name, objectKind: ClassFunction.kittenKey, inFileAt: classInstance.path)
+            classMethod.usr = usr
+            if let usr = usr {
+                self.methodReferences[usr] = classMethod
+            }
+        }
+        
+        for instanceMethod in classInstance.instanceMethods {
+            let usr = self.updatedController.usrOf(objectName: instanceMethod.name, objectKind: InstanceFunction.kittenKey, inFileAt: classInstance.path)
+            instanceMethod.usr = usr
+            if let usr = usr {
+                self.methodReferences[usr] = instanceMethod
+            }
+        }
+        
+        for staticMethod in classInstance.staticMethods {
+            let usr = self.updatedController.usrOf(objectName: staticMethod.name, objectKind: StaticFunction.kittenKey, inFileAt: classInstance.path)
+            staticMethod.usr = usr
+            if let usr = usr {
+                self.methodReferences[usr] = staticMethod
+            }
+        }
+        
+        for classVariable in classInstance.classVariables {
+            let usr = self.updatedController.usrOf(objectName: classVariable.name, objectKind: ClassVariable.kittenKey, inFileAt: classInstance.path)
+            classVariable.usr = usr
+            if let usr = usr {
+                self.variableReferences[usr] = classVariable
+            }
+        }
+        
+        for instanceVariable in classInstance.instanceVariables {
+            let usr = self.updatedController.usrOf(objectName: instanceVariable.name, objectKind: InstanceVariable.kittenKey, inFileAt: classInstance.path)
+            instanceVariable.usr = usr
+            if let usr = usr {
+                self.variableReferences[usr] = instanceVariable
+            }
+        }
+        
+        for staticVariable in classInstance.staticVariables {
+            let usr = self.updatedController.usrOf(objectName: staticVariable.name, objectKind: StaticVariable.kittenKey, inFileAt: classInstance.path)
+            staticVariable.usr = usr
+            if let usr = usr {
+                self.variableReferences[usr] = staticVariable
+            }
+        }
+    }
+    
+    func analyseUses() {
+        var allClasses: [Class] = []
+        allClasses.append(contentsOf: self.app.classes)
+        allClasses.append(contentsOf: self.app.protocols)
+        allClasses.append(contentsOf: self.app.structures)
+        
+        for classInstance in allClasses {
+            for method in classInstance.classMethods {
+                findAndAddUses(method: method, kittenKind: ClassFunction.kittenKey, path: classInstance.path)
+            }
+            
+            for method in classInstance.instanceMethods {
+                findAndAddUses(method: method, kittenKind: InstanceFunction.kittenKey, path: classInstance.path)
+            }
+            
+            for method in classInstance.staticMethods {
+                findAndAddUses(method: method, kittenKind: StaticFunction.kittenKey, path: classInstance.path)
+            }
+            
+            for variable in classInstance.instanceVariables {
+                 findAndAddUsesForVariable(variable: variable, kittenKind: StaticFunction.kittenKey, path: classInstance.path)
+            }
+        }
+    }
+    
+    func findAndAddUses(method: Function, kittenKind: String, path: String) {
+        let usrs = updatedController.allUsrsForObject(objectName: method.name, objectKind: kittenKind, path: path)
+
+        print("usrs for \(method.name): \(usrs)")
+        for usr in usrs {
+            if usr == method.usr { continue }
+            
+            if let referencedMethod = self.methodReferences[usr] {
+                method.methodReferences.append(referencedMethod)
+            } else if let variable = self.variableReferences[usr] {
+                method.variableReferences.append(variable)
+            } else {
+                print("unknown usr: \(usr)")
+            }
+        }
+    }
+    
+    func findAndAddUsesForVariable(variable: Variable, kittenKind: String, path: String) {
+        let usrs = updatedController.allUsrsForObject(objectName: variable.name, objectKind: kittenKind, path: path)
+        
+        for usr in usrs {
+            if usr == variable.usr { continue }
+            
+            if let method = self.methodReferences[usr] {
+                variable.methodReferences.append(method)
+            } else if let variable = self.variableReferences[usr] {
+                variable.variableReferences.append(variable)
+            } else {
+                print("unknown usr: \(usr)")
+            }
+        }
+    }
+    
     func analyseClassHierarchy() {
         let classNames = self.app.classes.map() { classInstance in
             return classInstance.name
@@ -243,7 +365,8 @@ class SourceFileAnalysisController {
         }
         
         for classInstance in self.app.classes {
-            print("class: \(classInstance.name), inheritedTypes: \(classInstance.inheritedTypes)")
+            //print("class: \(classInstance.name), inheritedTypes: \(classInstance.inheritedTypes)")
+           // print("usr: \(classInstance.usr)")
             for type in classInstance.inheritedTypes {
                 if classNames.contains(type) {
                     for secondClass in self.app.classes {
@@ -311,7 +434,7 @@ class SourceFileAnalysisController {
                 }
                 
                 let res = structure.dictionary as [String: AnyObject]
-                self.extractClassStructureNew(from: res)
+                self.extractClassStructureNew(from: res, path: url.path)
                 completitionHandler()
             } catch {
                 print("Failed")
@@ -323,7 +446,7 @@ class SourceFileAnalysisController {
         }
     }
     
-    func extractClassStructureNew(from dictionary: [String : AnyObject]) {
+    func extractClassStructureNew(from dictionary: [String : AnyObject], path: String) {
         //print("All data:")
         //print(dictionary)
         
@@ -341,10 +464,13 @@ class SourceFileAnalysisController {
                 let classInstance = self.handleFirstLevelModel(model)
                 
                 if let classInstance = classInstance as? ClassInstance {
+                    classInstance.path = path
                     self.app.classes.append(classInstance)
                 } else if let structInstance = classInstance as? Struct {
+                    structInstance.path = path
                     self.app.structures.append(structInstance)
                 } else if let protocolInstance = classInstance as? Protocol {
+                    protocolInstance.path = path
                     self.app.protocols.append(protocolInstance)
                 }
             }

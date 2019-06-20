@@ -120,7 +120,7 @@ class Application {
     }
     
     func runAnalysis(url: Foundation.URL, appKey: String, printOutput: Bool) {
-        let analysisController = UpdatedSourceFileAnalysisController()
+        let analysisController = SourceFileAnalysisController()
         dispatchGroup.enter()
         
         analysisController.analyseFolder(at: url, appKey: appKey, printOutput: printOutput) {

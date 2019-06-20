@@ -10,12 +10,16 @@
 
 class Variable : Kind {
     var id: Int?
+    var usr: String? = "?"
     var name: String
     var appKey: String = "Default"
     var modifier: String = ""
     var type: String
     var isStatic: Bool = false
     var isFinal: Bool = false
+    
+    var methodReferences: [Function] = []
+    var variableReferences: [Variable] = []
     
     init(name: String, type: String) {
         self.name = name
