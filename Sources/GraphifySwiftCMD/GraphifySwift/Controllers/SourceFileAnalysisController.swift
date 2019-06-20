@@ -79,20 +79,6 @@ class SourceFileAnalysisController {
 //        self.category = categroy
 //    }
     
-    func clearOutput(at url: URL) {
-        self.addFilesToQueue(at: url)
-        
-        for fileURL in self.fileQueue {
-            let path = fileURL.path
-            let newPath = path.replacingOccurrences(of: ".swift", with: "-result.json")
-            do {
-                try FileManager.default.removeItem(at: URL(fileURLWithPath: newPath))
-            } catch {
-                print("Could not remove file \(newPath)!")
-            }
-        }
-    }
-    
     func analyseFolder(at url: URL, appKey: String, printOutput: Bool, finished: @escaping () -> Void) {
         self.finished = finished
         self.printOutput = printOutput
@@ -113,7 +99,8 @@ class SourceFileAnalysisController {
         )
         
         
-        self.addFilesToQueue(at: url)
+        self.fileQueue = FolderUtility.getFileQueue(for: url)
+        //self.addFilesToQueue(at: url)
         self.app.size = self.classSizes.reduce(0) { (result, size) in
             return result + size
         }
@@ -175,44 +162,44 @@ class SourceFileAnalysisController {
     }
     
     
-    func addFilesToQueue(at url: URL) {
-        let resourceKeys : [URLResourceKey] = [
-            .creationDateKey,
-            .isDirectoryKey,
-            .nameKey,
-            .fileSizeKey
-        ]
-        
-        let enumerator = FileManager.default.enumerator(
-            at:                         url,
-            includingPropertiesForKeys: resourceKeys,
-            options:                    [.skipsHiddenFiles],
-            errorHandler:               { (url, error) -> Bool in
-                print("directoryEnumerator error at \(url): ", error)
-                return true
-        })!
-        
-        //fileQueue
-        for case let fileURL as URL in enumerator {
-            do {
-                let resourceValues = try fileURL.resourceValues(forKeys: Set(resourceKeys))
-                print(fileURL.path, resourceValues.creationDate!, resourceValues.isDirectory!)
-                
-                if let name = resourceValues.name {
-                    if name.hasSuffix(self.fileSuffix) {
-                        let size = resourceValues.fileSize!
-                        //self.app.size = self.app.size + size
-                        self.classSizes.append(size)
-                        
-                        fileQueue.append(fileURL)
-                    }
-                }
-            } catch {
-                //TODO: do something if an error is thrown!
-                print("Error")
-            }
-        }
-    }
+//    func addFilesToQueue(at url: URL) {
+//        let resourceKeys : [URLResourceKey] = [
+//            .creationDateKey,
+//            .isDirectoryKey,
+//            .nameKey,
+//            .fileSizeKey
+//        ]
+//        
+//        let enumerator = FileManager.default.enumerator(
+//            at:                         url,
+//            includingPropertiesForKeys: resourceKeys,
+//            options:                    [.skipsHiddenFiles],
+//            errorHandler:               { (url, error) -> Bool in
+//                print("directoryEnumerator error at \(url): ", error)
+//                return true
+//        })!
+//        
+//        //fileQueue
+//        for case let fileURL as URL in enumerator {
+//            do {
+//                let resourceValues = try fileURL.resourceValues(forKeys: Set(resourceKeys))
+//                print(fileURL.path, resourceValues.creationDate!, resourceValues.isDirectory!)
+//                
+//                if let name = resourceValues.name {
+//                    if name.hasSuffix(self.fileSuffix) {
+//                        let size = resourceValues.fileSize!
+//                        //self.app.size = self.app.size + size
+//                        self.classSizes.append(size)
+//                        
+//                        fileQueue.append(fileURL)
+//                    }
+//                }
+//            } catch {
+//                //TODO: do something if an error is thrown!
+//                print("Error")
+//            }
+//        }
+//    }
     
     func analyseFiles(completition: @escaping () -> Void) {
         if fileQueue.count > 0 {
@@ -318,13 +305,9 @@ class SourceFileAnalysisController {
                 //print("file: \(url)")
                 //print("\(response)")
                 
+                let resultString = "\(structure)"
                 if self.printOutput {
-                    let path = url.path
-                    
-                    let newPath = path.replacingOccurrences(of: ".swift", with: "-result.json")
-                
-                    let resultString = "\(structure)"
-                    try resultString.write(toFile: newPath, atomically: true, encoding: .utf8)
+                    ResultToFileHandler.write(resultString: resultString, toFile: url.path)
                 }
                 
                 let res = structure.dictionary as [String: AnyObject]

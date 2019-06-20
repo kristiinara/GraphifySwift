@@ -116,12 +116,11 @@ class Application {
     }
     
     func clearOutput(url: Foundation.URL) {
-        let analysisController = SourceFileAnalysisController()
-        analysisController.clearOutput(at: url)
+        ResultToFileHandler.clearOutput(at: url)
     }
     
     func runAnalysis(url: Foundation.URL, appKey: String, printOutput: Bool) {
-        let analysisController = SourceFileAnalysisController()
+        let analysisController = UpdatedSourceFileAnalysisController()
         dispatchGroup.enter()
         
         analysisController.analyseFolder(at: url, appKey: appKey, printOutput: printOutput) {

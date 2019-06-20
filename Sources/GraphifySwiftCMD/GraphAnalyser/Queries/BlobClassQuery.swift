@@ -7,6 +7,7 @@
 
 import Foundation
 
+//TODO: not yet working, since .lackOfCohesionInMethods does not work yet
 class BlobClassQuery : Query {
     let veryHighLackOfCohesienInMethods = 40
     let veryHighNumberOfAttributes = 13
