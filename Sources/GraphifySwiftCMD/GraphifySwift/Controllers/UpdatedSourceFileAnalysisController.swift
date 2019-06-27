@@ -12,6 +12,8 @@ class UpdatedSourceFileAnalysisController {
     var fileQueue: [URL] = []
     var printOutput = false
     var analysedFiles: [String: [String: Any]] = [:]
+    
+    var mainStructure: [String: Any] = [:]
  
     func analyseFolder(at url: URL, appKey: String, printOutput: Bool, finished: @escaping () -> Void) {
         
@@ -205,6 +207,16 @@ class UpdatedSourceFileAnalysisController {
 //        }
 //    }
     
+    func usrOf(objectName: String, objectKind: String, structure: [String: Any]) -> String? {
+        if let objectStructure = objectWith(objectName: objectName, objectKind: objectKind, structure: structure) {
+            if let usr = objectStructure["usr"] as? String {
+                return usr
+            }
+        }
+        
+        return nil
+    }
+    
     func usrOf(objectName: String, objectKind: String, inFileAt path: String) -> String? {
         var structure = self.analysedFiles[path]
         
@@ -213,13 +225,7 @@ class UpdatedSourceFileAnalysisController {
             self.analysedFiles[path] = structure
         }
         
-        if let objectStructure = objectWith(objectName: objectName, objectKind: objectKind, structure: structure!) {
-            if let usr = objectStructure["usr"] as? String {
-                return usr
-            }
-        }
-        
-        return nil
+        return usrOf(objectName: objectName, objectKind: objectKind, structure: structure!)
     }
     
     func objectWith(objectName: String, objectKind: String, structure: [String: Any]) -> [String: Any]? {
