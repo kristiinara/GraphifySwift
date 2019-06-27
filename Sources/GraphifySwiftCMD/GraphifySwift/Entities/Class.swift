@@ -6,7 +6,7 @@
 //  Copyright © 2019 Kristiina Rahkema. All rights reserved.
 //
 
-//import Foundation
+import Foundation
 
 class Class : Kind {
     var id: Int?
@@ -17,6 +17,8 @@ class Class : Kind {
     var modifier: String = "" // public, protected, private
     var parentName: String = ""
     var parent: Class?
+    var fileContents = ""
+    
     var extendedInterfaces: [Protocol] = []
     
     var instanceVariables: [Variable] = []
@@ -144,6 +146,27 @@ class Class : Kind {
         instance methods: \(self.instanceMethods)
         class methods: \(self.classMethods)
         """
+    }
+    
+    func calculateLines() {
+        var allMethods: [Function] = []
+        allMethods.append(contentsOf: self.classMethods)
+        allMethods.append(contentsOf: self.staticMethods)
+        allMethods.append(contentsOf: self.instanceMethods)
+        
+        let nsContent = NSString(string: self.fileContents)
+        
+        for method in allMethods {
+            if let offset = method.characterOffset {
+                let res = nsContent.lineAndCharacter(forCharacterOffset: offset)
+                method.lineNumber = res?.line
+                
+                if let length = method.length {
+                    let res = nsContent.lineAndCharacter(forCharacterOffset: offset + length)
+                    method.endLineNumber = res?.line
+                }
+            }
+        }
     }
 }
 

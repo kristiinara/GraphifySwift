@@ -18,6 +18,10 @@ class Function: Kind {
     var modifier: String = ""
     var returnType: String = ""
     var fullName: String = "" // "name#class_name"
+    var characterOffset: Int?
+    var length: Int?
+    var lineNumber: Int?
+    var endLineNumber: Int?
     
     var methodReferences: [Function] = []
     var variableReferences: [Variable] = []

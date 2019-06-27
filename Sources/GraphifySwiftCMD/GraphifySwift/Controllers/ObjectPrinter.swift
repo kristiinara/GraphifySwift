@@ -43,7 +43,7 @@ class ObjectPrinter {
     }
     
     static func printMethod(_ method: Function) {
-        print("               Method: \(method.name) - \(method.usr)")
+        print("               Method: \(method.name) - \(method.characterOffset) - \(method.lineNumber) - \(method.endLineNumber) - \(method.usr)")
         print("                  Stats: inst: \(method.numberOfInstructions), compl: \(method.cyclomaticComplexity), directCalls: \(method.numberOfDirectCalls), refMethods: \(method.methodReferences.count), refVariables: \(method.variableReferences.count)")
         for argument in method.parameters {
             print("                      Argument: \(argument.name)")

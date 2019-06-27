@@ -394,15 +394,18 @@ class SourceFileAnalysisController {
                 continue
             } else {
                 let classInstance = self.handleFirstLevelModel(model)
+                classInstance.path = path
+                
+                if let file = File(path: classInstance.path) {
+                    classInstance.fileContents = file.contents
+                }
+                classInstance.calculateLines()
                 
                 if let classInstance = classInstance as? ClassInstance {
-                    classInstance.path = path
                     self.app.classes.append(classInstance)
                 } else if let structInstance = classInstance as? Struct {
-                    structInstance.path = path
                     self.app.structures.append(structInstance)
                 } else if let protocolInstance = classInstance as? Protocol {
-                    protocolInstance.path = path
                     self.app.protocols.append(protocolInstance)
                 }
             }
@@ -500,6 +503,8 @@ class SourceFileAnalysisController {
         let name = structure[self.nameKey] as! String
         let modifier = structure[self.modifierKey] as! String
         let returnType = structure[self.typeKey] as? String ?? ""
+        let characterOffset = structure["key.offset"] as? Int
+        let length = structure["key.length"] as? Int
         
         var arguments: [Argument] = []
         var instructions: [Instruction] = []
@@ -508,6 +513,9 @@ class SourceFileAnalysisController {
         //TODO!
         let fullName = "\(name)#\(className)"
         let function = Function(name: name, fullName: fullName, appKey: self.app.appKey, modifier: modifier, returnType: returnType)
+        
+        function.characterOffset = characterOffset
+        function.length = length
         
         if let models = structure[self.substructureKey] as? [[String: AnyObject]] {
             for model in models {
