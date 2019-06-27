@@ -232,54 +232,109 @@ class SourceFileAnalysisController {
         allClasses.append(contentsOf: self.app.structures)
         
         for classInstance in allClasses {
-            for method in classInstance.classMethods {
-                findAndAddUses(method: method, kittenKind: ClassFunction.kittenKey, path: classInstance.path)
+            var allMethods: [Function] = []
+            allMethods.append(contentsOf:classInstance.classMethods)
+            allMethods.append(contentsOf:classInstance.staticMethods)
+            allMethods.append(contentsOf:classInstance.instanceMethods)
+            
+            for method in allMethods {
+                self.findAllUsesOfMethod(method: method, path: classInstance.path)
+                if let uses = method.uses {
+                    print("method: \(method.name) - uses: \(uses)")
+                    for use in uses {
+                        print("use: \(use)")
+                        if let usedInMethod = classInstance.findMethodWithLineNumber(use) {
+                            print("usedIn: \(usedInMethod.name)")
+                            usedInMethod.methodReferences.append(method)
+                            method.numberOfCallers += 1
+                        }
+                    }
+                }
             }
             
-            for method in classInstance.instanceMethods {
-                findAndAddUses(method: method, kittenKind: InstanceFunction.kittenKey, path: classInstance.path)
-            }
+            var allVariables: [Variable] = []
+            allVariables.append(contentsOf:classInstance.classVariables)
+            allVariables.append(contentsOf:classInstance.staticVariables)
+            allVariables.append(contentsOf:classInstance.instanceVariables)
             
-            for method in classInstance.staticMethods {
-                findAndAddUses(method: method, kittenKind: StaticFunction.kittenKey, path: classInstance.path)
-            }
-            
-            for variable in classInstance.instanceVariables {
-                 findAndAddUsesForVariable(variable: variable, kittenKind: StaticFunction.kittenKey, path: classInstance.path)
+            for variable in allVariables {
+                self.findAllUsesOfVariable(variable: variable, path: classInstance.path)
+                if let uses = variable.uses {
+                    print("variable: \(variable.name) - uses: \(uses)")
+                    for use in uses {
+                        print("use: \(use)")
+                        if let usedInMethod = classInstance.findMethodWithLineNumber(use) {
+                            print("usedIn: \(usedInMethod.name)")
+                            usedInMethod.variableReferences.append(variable)
+                        }
+                    }
+                }
             }
         }
-    }
-    
-    func findAndAddUses(method: Function, kittenKind: String, path: String) {
-        let usrs = updatedController.allUsrsForObject(objectName: method.name, objectKind: kittenKind, path: path)
-
-        print("usrs for \(method.name): \(usrs)")
-        for usr in usrs {
-            if usr == method.usr { continue }
-            
-            if let referencedMethod = self.methodReferences[usr] {
-                method.methodReferences.append(referencedMethod)
-            } else if let variable = self.variableReferences[usr] {
-                method.variableReferences.append(variable)
-            } else {
-                print("unknown usr: \(usr)")
-            }
-        }
-    }
-    
-    func findAndAddUsesForVariable(variable: Variable, kittenKind: String, path: String) {
-        let usrs = updatedController.allUsrsForObject(objectName: variable.name, objectKind: kittenKind, path: path)
         
-        for usr in usrs {
-            if usr == variable.usr { continue }
-            
-            if let method = self.methodReferences[usr] {
-                variable.methodReferences.append(method)
-            } else if let variable = self.variableReferences[usr] {
-                variable.variableReferences.append(variable)
-            } else {
-                print("unknown usr: \(usr)")
-            }
+//        for classInstance in allClasses {
+//            for method in classInstance.classMethods {
+//                findAndAddUses(method: method, kittenKind: ClassFunction.kittenKey, path: classInstance.path)
+//            }
+//
+//            for method in classInstance.instanceMethods {
+//                findAndAddUses(method: method, kittenKind: InstanceFunction.kittenKey, path: classInstance.path)
+//            }
+//
+//            for method in classInstance.staticMethods {
+//                findAndAddUses(method: method, kittenKind: StaticFunction.kittenKey, path: classInstance.path)
+//            }
+//
+//            for variable in classInstance.instanceVariables {
+//                 findAndAddUsesForVariable(variable: variable, kittenKind: StaticFunction.kittenKey, path: classInstance.path)
+//            }
+//        }
+    }
+    
+//    func findAndAddUses(method: Function, kittenKind: String, path: String) {
+//        let usrs = updatedController.allUsrsForObject(objectName: method.name, objectKind: kittenKind, path: path)
+//
+//        print("usrs for \(method.name): \(usrs)")
+//        for usr in usrs {
+//            if usr == method.usr { continue }
+//
+//            if let referencedMethod = self.methodReferences[usr] {
+//                method.methodReferences.append(referencedMethod)
+//            } else if let variable = self.variableReferences[usr] {
+//                method.variableReferences.append(variable)
+//            } else {
+//                print("unknown usr: \(usr)")
+//            }
+//        }
+//    }
+    
+//    func findAndAddUsesForVariable(variable: Variable, kittenKind: String, path: String) {
+//        let usrs = updatedController.allUsrsForObject(objectName: variable.name, objectKind: kittenKind, path: path)
+//        
+//        for usr in usrs {
+//            if usr == variable.usr { continue }
+//            
+//            if let method = self.methodReferences[usr] {
+//                variable.methodReferences.append(method)
+//            } else if let variable = self.variableReferences[usr] {
+//                variable.variableReferences.append(variable)
+//            } else {
+//                print("unknown usr: \(usr)")
+//            }
+//        }
+//    }
+    
+    func findAllUsesOfMethod(method: Function, path: String) {
+        if let usr = method.usr {
+            let uses = updatedController.usesOfUSR(usr: usr, path: path)
+            method.uses = uses
+        }
+    }
+    
+    func findAllUsesOfVariable(variable: Variable, path: String) {
+        if let usr = variable.usr {
+            let uses = updatedController.usesOfUSR(usr: usr, path: path)
+            variable.uses = uses
         }
     }
     
@@ -436,6 +491,7 @@ class SourceFileAnalysisController {
         for substructure in substructures {
             let subKind = substructure[self.kindKey] as! String
             
+            //For inner classes:
             if !self.supportedSecondLevel.contains(subKind) {
                 if self.supportedFirstLevel.contains(subKind) {
                     //Handling inner classes

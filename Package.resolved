@@ -38,6 +38,15 @@
         }
       },
       {
+        "package": "SourceKit",
+        "repositoryURL": "https://github.com/jpsim/SourceKit.git",
+        "state": {
+          "branch": null,
+          "revision": "4959c41b601e998811ed810cdb65eb12080f6a0f",
+          "version": "1.0.0"
+        }
+      },
+      {
         "package": "SourceKitten",
         "repositoryURL": "https://github.com/jpsim/SourceKitten.git",
         "state": {

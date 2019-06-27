@@ -33,14 +33,22 @@ class Instruction {
     }
     
     var methodCalls : [MethodCall] {
-        return self.instructions.reduce([]) { (result, instruction) -> [MethodCall] in
+        var calls: [MethodCall] = []
+        if let currentMethodCall = self as? MethodCall {
+            calls.append(currentMethodCall)
+        }
+            
+        let additionalCalls = self.instructions.reduce([]) { (result, instruction) -> [MethodCall] in
             if let methodCall = instruction as? MethodCall {
-                let newResult = result + [methodCall] + instruction.methodCalls
+                let newResult = result + instruction.methodCalls
                 return newResult
             } else {
                 return result + instruction.methodCalls
             }
         }
+        calls.append(contentsOf: additionalCalls)
+        
+        return calls
     }
     
     var complexity: Int {
@@ -53,10 +61,10 @@ class Instruction {
         }
     }
     
-    //TODO: can we implement this here?
-    func callsMethod(_ method: Function) -> Bool {
-        return false
-    }
+//    //TODO: can we implement this here?
+//    func callsMethod(_ method: Function) -> Bool {
+//        return false
+//    }
     
     init(stringValue: String, kind: String) {
         self.stringValue = stringValue

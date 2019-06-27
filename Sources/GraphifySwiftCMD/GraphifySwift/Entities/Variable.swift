@@ -21,6 +21,8 @@ class Variable : Kind {
     var methodReferences: [Function] = []
     var variableReferences: [Variable] = []
     
+    var uses: [Int]?
+    
     init(name: String, type: String) {
         self.name = name
         self.type = type

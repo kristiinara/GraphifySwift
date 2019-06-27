@@ -168,6 +168,27 @@ class Class : Kind {
             }
         }
     }
+    
+    func findMethodWithLineNumber(_ line: Int) -> Function? {
+        var allMethods: [Function] = []
+        allMethods.append(contentsOf: self.classMethods)
+        allMethods.append(contentsOf: self.staticMethods)
+        allMethods.append(contentsOf: self.instanceMethods)
+        
+        for method in allMethods {
+            //print("\(line) ? \(method.name) \(method.lineNumber) - \(method.endLineNumber) --> \(method.lineInFunction(line))")
+            if let isInMethod = method.lineInFunction(line) {
+                if isInMethod == true {
+                    //print("match: \(method.name)")
+                    return method
+                }
+            } else {
+                print("\(method.name) without lineNumber")
+            }
+        }
+        
+        return nil
+    }
 }
 
 extension Class: Node4jInsertable {

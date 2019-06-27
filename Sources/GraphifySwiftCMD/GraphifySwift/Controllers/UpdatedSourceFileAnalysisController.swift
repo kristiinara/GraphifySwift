@@ -7,10 +7,11 @@
 
 import Foundation
 import SourceKittenFramework
+import SourceKit
 
 class UpdatedSourceFileAnalysisController {
     var fileQueue: [URL] = []
-    var printOutput = false
+    var printOutput = true
     var analysedFiles: [String: [String: Any]] = [:]
     
     var mainStructure: [String: Any] = [:]
@@ -69,12 +70,16 @@ class UpdatedSourceFileAnalysisController {
         if let usr = usr {
             let uses = usesOfUSR(usr: usr, dictionary: mainStructure)
             var usedLines : [String] = []
+            var lineNumbers : [Int] = []
+            
             for use in uses {
                 //print(lines[use.line])
-                usedLines.append(lines[use.line])
+                lineNumbers.append(use.line)
+                usedLines.append(lines[use.line - 1])
             }
             result["uses"] = uses
             result["lines"] = usedLines
+            result["line_numbers"] = lineNumbers
         }
         
         var resultEntities : [[String: Any]] = []
@@ -115,9 +120,24 @@ class UpdatedSourceFileAnalysisController {
                 let url = URL(string: path)
                 print("file: \(String(describing: url?.lastPathComponent))")
                 
-                let request = Request.index(file: path, arguments: [path])
+                let customRequest = ["key.request": UID("source.request.indexsource"),
+                                     "key.sourcefile": path,
+                                     "key.compilerargs": [path]] as SourceKitObject
+            
+                let request = Request.customRequest(request: customRequest)
+                
+                //let request = Request.index(file: path, arguments: [path])
+                //let request = Request.index(file: path, arguments: [path, "--", "-workspace", "/Users/kristiina/PhD/Graph-tool/GraphifySwiftCMD/GraphifySwiftCMD.xcodeproj/project.xcworkspace"])
                 let result = try request.send()
                 //let index = (result["key.entities"] as! [SourceKitRepresentable]).map({ $0 as! [String: SourceKitRepresentable] })
+                
+//                let response = sourcekitd_send_request_sync(customRequest.sourcekitdObject!)
+                
+                if self.printOutput {
+                    //let resultString = "\(response)"
+                    let resultString = "\(result)"
+                    ResultToFileHandler.write(resultString: resultString, toFile: path)
+                }
                 
                 let resIndex = result
                 
@@ -127,14 +147,9 @@ class UpdatedSourceFileAnalysisController {
                 
                 //prettyPrintSingle(object: analysisResult)
                 
-                if self.printOutput {
-                    let resultString = "\(resIndex) \n res: --- \n \(analysisResult)"
-                    ResultToFileHandler.write(resultString: resultString, toFile: path)
-                }
-                
                 return analysisResult
             } catch {
-                print("Failed")
+                print("Failed index request for file \(path)")
                 return nil
             }
         } else {
@@ -179,11 +194,32 @@ class UpdatedSourceFileAnalysisController {
         if dictionary["key.usr"] as? String == usr,
             let line = dictionary["key.line"] as? Int64,
             let column = dictionary["key.column"] as? Int64 {
-            return [(Int(line - 1), Int(column))]
+            return [(Int(line), Int(column))]
         }
         return (dictionary["key.entities"] as? [SourceKitRepresentable])?
             .map({ $0 as! [String: SourceKitRepresentable] })
             .flatMap { usesOfUSR(usr: usr, dictionary: $0) } ?? []
+    }
+    
+    func usesOfUSR(usr: String, structure: [String: Any]) -> [Int]? {
+        if let objectStructure = objectWith(objectUsr: usr, structure: structure) {
+            if let uses = objectStructure["line_numbers"] as? [Int] {
+                return uses
+            }
+        }
+        
+        return nil
+    }
+    
+    func usesOfUSR(usr: String, path: String) -> [Int]? {
+        var structure = self.analysedFiles[path]
+        
+        if structure == nil {
+            structure = self.structureFromFile(at: path)
+            self.analysedFiles[path] = structure
+        }
+        
+        return usesOfUSR(usr: usr, structure: structure!)
     }
     
 //    func prettyPrint(array: [[String: Any]]) {
@@ -226,6 +262,24 @@ class UpdatedSourceFileAnalysisController {
         }
         
         return usrOf(objectName: objectName, objectKind: objectKind, structure: structure!)
+    }
+    
+    func objectWith(objectUsr: String, structure: [String: Any]) -> [String: Any]? {
+        let usr = structure["usr"] as? String
+        
+        if usr == objectUsr {
+            return structure
+        }
+        
+        if let entities = structure["entities"] as? [[String: Any]]  {
+            for entity in entities {
+                if let foundStruct = objectWith(objectUsr: objectUsr, structure: entity) {
+                    return foundStruct
+                }
+            }
+        }
+        
+        return nil
     }
     
     func objectWith(objectName: String, objectKind: String, structure: [String: Any]) -> [String: Any]? {
@@ -285,7 +339,7 @@ class UpdatedSourceFileAnalysisController {
                 allUsrs.append(contentsOf: foundUsrs)
             }
         }
-        
+    
         return allUsrs
     }
 }

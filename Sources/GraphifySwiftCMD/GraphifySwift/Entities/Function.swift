@@ -23,6 +23,8 @@ class Function: Kind {
     var lineNumber: Int?
     var endLineNumber: Int?
     
+    var uses: [Int]?
+    
     var methodReferences: [Function] = []
     var variableReferences: [Variable] = []
     
@@ -46,6 +48,31 @@ class Function: Kind {
     var numberOfDirectCalls : Int {
         return self.instructions.reduce(0) { result, instruction in
             return result + instruction.methodCalls.count
+        }
+    }
+    
+    var directCalls : [String] {
+        let instructions = self.instructions.reduce([] as [MethodCall]) { result, instruction in
+            var list: [MethodCall] = []
+            list.append(contentsOf: result)
+            list.append(contentsOf: instruction.methodCalls)
+            return list
+        }
+        
+        return instructions.map() { instruction in
+            return instruction.stringValue
+        }
+    }
+    
+    var methodReferenceNames: [String] {
+        return self.methodReferences.map() { method in
+            return method.name
+        }
+    }
+    
+    var variableReferenceNames: [String] {
+        return self.variableReferences.map() { variable in
+            return variable.name
         }
     }
     
@@ -100,7 +127,7 @@ class Function: Kind {
     
     //TODO: implement + possibly change String to Variable
     var usedVariables: [String] {
-        return []
+        return self.variableReferenceNames
     }
     
     func variablesInCommon(_ otherMethod: Function) -> Set<String> {
@@ -110,6 +137,26 @@ class Function: Kind {
     
     func hasVariablesInCommon(_ otherMethod: Function) -> Bool {
         return self.variablesInCommon(otherMethod).count > 0
+    }
+    
+    func lineInFunction(_ line: Int) -> Bool? {
+        guard let startLine = self.lineNumber else {
+            return nil
+        }
+        
+        guard let endLine = self.endLineNumber else {
+            return nil
+        }
+        
+        if line < startLine {
+            return false
+        }
+        
+        if line > endLine {
+            return false
+        }
+        
+        return true
     }
 }
 
