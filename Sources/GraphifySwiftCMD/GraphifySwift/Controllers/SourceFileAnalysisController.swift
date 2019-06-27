@@ -117,7 +117,7 @@ class SourceFileAnalysisController {
                 self.analyseUses()
                 //print("\(self.methodReferences)")
                 //print("\(self.variableReferences)")
-                self.printApp()
+                ObjectPrinter.printApp(self.app)
                 self.dataSyncController.finished = finished
                 self.dataSyncController.sync(app: self.app)
             }
@@ -129,74 +129,6 @@ class SourceFileAnalysisController {
             }
         }
     }
-    
-    func printApp() {
-        print("App: \(String(describing: self.app))")
-        print("Classes:")
-        for classInstance in self.app.classes {
-            print("     Class: \(classInstance.name) - \(classInstance.usr)")
-            print("     InstanceMethods: ")
-            for method in classInstance.instanceMethods {
-                printMethod(method)
-            }
-            print("     ClassMethods: ")
-            for method in classInstance.classMethods {
-                printMethod(method)
-            }
-            print("     InstanceMethods: ")
-            for method in classInstance.staticMethods {
-                printMethod(method)
-            }
-
-            print("     InstanceVariables: ")
-            for variable in classInstance.instanceVariables {
-                printVariable(variable)
-            }
-            print("     ClassVariables: ")
-            for variable in classInstance.classVariables {
-                printVariable(variable)
-            }
-            print("     InstanceVariables: ")
-            for variable in classInstance.staticVariables {
-                printVariable(variable)
-            }
-        }
-    }
-    
-    func printMethod(_ method: Function) {
-        print("               Method: \(method.name) - \(method.usr)")
-        print("                  Stats: inst: \(method.numberOfInstructions), compl: \(method.cyclomaticComplexity), directCalls: \(method.numberOfDirectCalls), refMethods: \(method.methodReferences.count), refVariables: \(method.variableReferences.count)")
-        for argument in method.parameters {
-            print("                      Argument: \(argument.name)")
-        }
-
-        print("                     referenced methods: ")
-        for refMethod in method.methodReferences {
-            print(refMethod.name)
-        }
-
-        print("                     referenced variables: ")
-        for refVariable in method.variableReferences {
-            print(refVariable.name)
-        }
-
-        for instruction in method.instructions {
-            //printInstruction(instruction)
-        }
-    }
-
-    func printVariable(_ variable: Variable) {
-        print("               Variable: \(variable.name) - \(variable.usr)")
-        print("                  Stats: refMethods: \(variable.methodReferences.count), refVariables: \(variable.variableReferences.count)")
-    }
-
-    func printInstruction(_ instruction: Instruction) {
-        print("                      Instruction: \(instruction.stringValue), kind: \(instruction.kind)")
-        for subInstruction in instruction.instructions {
-            printInstruction(subInstruction)
-        }
-    }
-    
     
     func analyseFiles(completition: @escaping () -> Void) {
         if fileQueue.count > 0 {
