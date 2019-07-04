@@ -14,6 +14,8 @@
 class Instruction {
     let stringValue: String
     let kind: String
+    var offset: Int64?
+    
     var instructions: [Instruction] = []
     
     var numberOfInstructions : Int {
@@ -49,6 +51,25 @@ class Instruction {
         calls.append(contentsOf: additionalCalls)
         
         return calls
+    }
+    
+    var localVariables : [LocalVariable] {
+        var variables: [LocalVariable] = []
+        if let currentLocalVariable = self as? LocalVariable {
+            variables.append(currentLocalVariable)
+        }
+        
+        let additionalVariables = self.instructions.reduce([]) { (result, instruction) -> [LocalVariable] in
+            if let localVariable = instruction as? LocalVariable {
+                let newResult = result + instruction.localVariables
+                return newResult
+            } else {
+                return result + instruction.localVariables
+            }
+        }
+        variables.append(contentsOf: additionalVariables)
+        
+        return variables
     }
     
     var complexity: Int {

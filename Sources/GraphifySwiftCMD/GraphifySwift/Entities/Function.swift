@@ -130,6 +130,19 @@ class Function: Kind {
         return self.variableReferenceNames
     }
     
+    var localVariableNames: [String] {
+        let instructions = self.instructions.reduce([] as [LocalVariable]) { result, instruction in
+            var list: [LocalVariable] = []
+            list.append(contentsOf: result)
+            list.append(contentsOf: instruction.localVariables)
+            return list
+        }
+        
+        return instructions.map() { instruction in
+            return instruction.stringValue
+        }
+    }
+    
     func variablesInCommon(_ otherMethod: Function) -> Set<String> {
         let variableSet = Set(self.usedVariables)
         return variableSet.intersection(otherMethod.usedVariables)

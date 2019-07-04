@@ -47,7 +47,9 @@ class ObjectPrinter {
         print("                  Stats: inst: \(method.numberOfInstructions), compl: \(method.cyclomaticComplexity), directCalls: \(method.numberOfDirectCalls), refMethods: \(method.methodReferences.count), refVariables: \(method.variableReferences.count)")
         print("                           direct: \(method.directCalls)")
         print("                           ref: \(method.methodReferenceNames)")
-        print("                           ref: \(method.variableReferenceNames)")
+        print("                           refVar: \(method.variableReferenceNames)")
+        print("                           refLocalVar: \(method.localVariableNames)")
+        
         for argument in method.parameters {
             print("                      Argument: \(argument.name)")
         }
@@ -56,7 +58,7 @@ class ObjectPrinter {
 //        for refMethod in method.methodReferences {
 //            print(refMethod.name)
 //        }
-//        
+//
 //        print("                     referenced variables: ")
 //        for refVariable in method.variableReferences {
 //            print(refVariable.name)

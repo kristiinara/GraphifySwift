@@ -36,6 +36,7 @@ class SourceFileAnalysisController {
     var classSizes : [Int] = []
     
     var fileQueue: [URL] = []
+    var filePaths: [String] = []
     
     let supportedFirstLevel = [
         ClassInstance.kittenKey,
@@ -66,7 +67,7 @@ class SourceFileAnalysisController {
         Case.kittenKey
     ]
     
-    var handledClasses: Set<String> = []
+    var handledClasses: [String:Class] = [:]
     var classes: [Kind] = []
     var notHandledInstances: [String] = []
     var app : App!
@@ -104,6 +105,9 @@ class SourceFileAnalysisController {
         
         
         self.fileQueue = FolderUtility.getFileQueue(for: url)
+        self.filePaths = self.fileQueue.map() { url in return url.path }
+        self.updatedController.allPaths = self.filePaths
+        
         //self.addFilesToQueue(at: url)
         self.app.size = self.classSizes.reduce(0) { (result, size) in
             return result + size
@@ -113,11 +117,21 @@ class SourceFileAnalysisController {
             self.analyseFiles() {
                 self.analyseSpecialSuperClasses()
                 self.analyseClassHierarchy()
+                
+//                self.addCursorInfoTo(app: self.app)
+//
+//                let files = self.filePaths.reduce("") { res, path in
+//                    return res + " " + path
+//                }
+//                print(files)
+                
                 self.addUsrAndReferences()
                 self.analyseUses()
                 //print("\(self.methodReferences)")
                 //print("\(self.variableReferences)")
                 ObjectPrinter.printApp(self.app)
+                //print(self.updatedController.rawAnalysedData)
+                //print("\(self.filePaths)")
                 self.dataSyncController.finished = finished
                 self.dataSyncController.sync(app: self.app)
             }
@@ -160,24 +174,24 @@ class SourceFileAnalysisController {
     
     func addUsrAndReferences() {
         for classInstance in self.app.classes {
-            classInstance.usr = self.updatedController.usrOf(objectName: classInstance.name, objectKind: ClassInstance.kittenKey, inFileAt: classInstance.path)
+            classInstance.usr = self.updatedController.findUsrOf(name: classInstance.name, kind: ClassInstance.kittenKey, path: classInstance.path)
             addUsrToMethodsAndVariablesOfClass(classInstance)
         }
         
         for structInstance in self.app.structures {
-            structInstance.usr = self.updatedController.usrOf(objectName: structInstance.name, objectKind: Struct.kittenKey, inFileAt: structInstance.path)
+            structInstance.usr = self.updatedController.findUsrOf(name: structInstance.name, kind: Struct.kittenKey, path: structInstance.path)
             addUsrToMethodsAndVariablesOfClass(structInstance)
         }
         
         for protocolInstance in self.app.protocols {
-            protocolInstance.usr = self.updatedController.usrOf(objectName: protocolInstance.name, objectKind: Protocol.kittenKey, inFileAt: protocolInstance.path)
+            protocolInstance.usr = self.updatedController.findUsrOf(name: protocolInstance.name, kind: Protocol.kittenKey, path: protocolInstance.path)
             addUsrToMethodsAndVariablesOfClass(protocolInstance)
         }
     }
     
     func addUsrToMethodsAndVariablesOfClass(_ classInstance: Class) {
         for classMethod in classInstance.classMethods {
-            let usr = self.updatedController.usrOf(objectName: classMethod.name, objectKind: ClassFunction.kittenKey, inFileAt: classInstance.path)
+            let usr = self.updatedController.findUsrOf(name: classMethod.name, kind: ClassFunction.kittenKey, path: classInstance.path)
             classMethod.usr = usr
             if let usr = usr {
                 self.methodReferences[usr] = classMethod
@@ -185,7 +199,7 @@ class SourceFileAnalysisController {
         }
         
         for instanceMethod in classInstance.instanceMethods {
-            let usr = self.updatedController.usrOf(objectName: instanceMethod.name, objectKind: InstanceFunction.kittenKey, inFileAt: classInstance.path)
+            let usr = self.updatedController.findUsrOf(name: instanceMethod.name, kind: InstanceFunction.kittenKey, path: classInstance.path)
             instanceMethod.usr = usr
             if let usr = usr {
                 self.methodReferences[usr] = instanceMethod
@@ -193,7 +207,7 @@ class SourceFileAnalysisController {
         }
         
         for staticMethod in classInstance.staticMethods {
-            let usr = self.updatedController.usrOf(objectName: staticMethod.name, objectKind: StaticFunction.kittenKey, inFileAt: classInstance.path)
+            let usr = self.updatedController.findUsrOf(name: staticMethod.name, kind: StaticFunction.kittenKey, path: classInstance.path)
             staticMethod.usr = usr
             if let usr = usr {
                 self.methodReferences[usr] = staticMethod
@@ -201,7 +215,7 @@ class SourceFileAnalysisController {
         }
         
         for classVariable in classInstance.classVariables {
-            let usr = self.updatedController.usrOf(objectName: classVariable.name, objectKind: ClassVariable.kittenKey, inFileAt: classInstance.path)
+            let usr = self.updatedController.findUsrOf(name: classVariable.name, kind: ClassVariable.kittenKey, path: classInstance.path)
             classVariable.usr = usr
             if let usr = usr {
                 self.variableReferences[usr] = classVariable
@@ -209,7 +223,7 @@ class SourceFileAnalysisController {
         }
         
         for instanceVariable in classInstance.instanceVariables {
-            let usr = self.updatedController.usrOf(objectName: instanceVariable.name, objectKind: InstanceVariable.kittenKey, inFileAt: classInstance.path)
+            let usr = self.updatedController.findUsrOf(name: instanceVariable.name, kind: InstanceVariable.kittenKey, path: classInstance.path)
             instanceVariable.usr = usr
             if let usr = usr {
                 self.variableReferences[usr] = instanceVariable
@@ -217,7 +231,7 @@ class SourceFileAnalysisController {
         }
         
         for staticVariable in classInstance.staticVariables {
-            let usr = self.updatedController.usrOf(objectName: staticVariable.name, objectKind: StaticVariable.kittenKey, inFileAt: classInstance.path)
+            let usr = self.updatedController.findUsrOf(name: staticVariable.name, kind: StaticVariable.kittenKey, path: classInstance.path)
             staticVariable.usr = usr
             if let usr = usr {
                 self.variableReferences[usr] = staticVariable
@@ -238,18 +252,36 @@ class SourceFileAnalysisController {
             allMethods.append(contentsOf:classInstance.instanceMethods)
             
             for method in allMethods {
-                self.findAllUsesOfMethod(method: method, path: classInstance.path)
-                if let uses = method.uses {
-                    print("method: \(method.name) - uses: \(uses)")
-                    for use in uses {
-                        print("use: \(use)")
-                        if let usedInMethod = classInstance.findMethodWithLineNumber(use) {
-                            print("usedIn: \(usedInMethod.name)")
-                            usedInMethod.methodReferences.append(method)
-                            method.numberOfCallers += 1
+                if let usr = method.usr {
+                    let uses = self.updatedController.findUsesOfUsr(usr: usr)
+                    print("method: \(method.name)")
+                    print("uses: \(uses)")
+                    
+                    for key in uses.keys {
+                        if let classInstance = self.handledClasses[key], let lines = uses[key] {
+                            for line in lines {
+                                if let usedInMethod = classInstance.findMethodWithLineNumber(line.line) {
+                                    print("usedIn: \(usedInMethod.name)")
+                                    usedInMethod.methodReferences.append(method)
+                                    method.numberOfCallers += 1
+                                }
+                            }
                         }
                     }
                 }
+                
+//                self.findAllUsesOfMethod(method: method, path: classInstance.path)
+//                if let uses = method.uses {
+//                    print("method: \(method.name) - uses: \(uses)")
+//                    for use in uses {
+//                        print("use: \(use)")
+//                        if let usedInMethod = classInstance.findMethodWithLineNumber(use) {
+//                            print("usedIn: \(usedInMethod.name)")
+//                            usedInMethod.methodReferences.append(method)
+//                            method.numberOfCallers += 1
+//                        }
+//                    }
+//                }
             }
             
             var allVariables: [Variable] = []
@@ -258,14 +290,30 @@ class SourceFileAnalysisController {
             allVariables.append(contentsOf:classInstance.instanceVariables)
             
             for variable in allVariables {
-                self.findAllUsesOfVariable(variable: variable, path: classInstance.path)
-                if let uses = variable.uses {
-                    print("variable: \(variable.name) - uses: \(uses)")
-                    for use in uses {
-                        print("use: \(use)")
-                        if let usedInMethod = classInstance.findMethodWithLineNumber(use) {
-                            print("usedIn: \(usedInMethod.name)")
-                            usedInMethod.variableReferences.append(variable)
+//                self.findAllUsesOfVariable(variable: variable, path: classInstance.path)
+//                if let uses = variable.uses {
+//                    print("variable: \(variable.name) - uses: \(uses)")
+//                    for use in uses {
+//                        print("use: \(use)")
+//                        if let usedInMethod = classInstance.findMethodWithLineNumber(use) {
+//                            print("usedIn: \(usedInMethod.name)")
+//                            usedInMethod.variableReferences.append(variable)
+//                        }
+//                    }
+//                }
+                if let usr = variable.usr {
+                    let uses = self.updatedController.findUsesOfUsr(usr: usr)
+                    print("variable: \(variable.name)")
+                    print("uses: \(uses)")
+                    
+                    for key in uses.keys {
+                        if let classInstance = self.handledClasses[key], let lines = uses[key] {
+                            for line in lines {
+                                if let usedInMethod = classInstance.findMethodWithLineNumber(line.line) {
+                                    print("usedIn: \(usedInMethod.name)")
+                                    usedInMethod.variableReferences.append(variable)
+                                }
+                            }
                         }
                     }
                 }
@@ -324,19 +372,19 @@ class SourceFileAnalysisController {
 //        }
 //    }
     
-    func findAllUsesOfMethod(method: Function, path: String) {
-        if let usr = method.usr {
-            let uses = updatedController.usesOfUSR(usr: usr, path: path)
-            method.uses = uses
-        }
-    }
-    
-    func findAllUsesOfVariable(variable: Variable, path: String) {
-        if let usr = variable.usr {
-            let uses = updatedController.usesOfUSR(usr: usr, path: path)
-            variable.uses = uses
-        }
-    }
+//    func findAllUsesOfMethod(method: Function, path: String) {
+//        if let usr = method.usr {
+//            let uses = updatedController.usesOfUSR(usr: usr, path: path)
+//            method.uses = uses
+//        }
+//    }
+//
+//    func findAllUsesOfVariable(variable: Variable, path: String) {
+//        if let usr = variable.usr {
+//            let uses = updatedController.usesOfUSR(usr: usr, path: path)
+//            variable.uses = uses
+//        }
+//    }
     
     func analyseClassHierarchy() {
         let classNames = self.app.classes.map() { classInstance in
@@ -450,6 +498,7 @@ class SourceFileAnalysisController {
             } else {
                 let classInstance = self.handleFirstLevelModel(model)
                 classInstance.path = path
+                self.handledClasses[path] = classInstance
                 
                 if let file = File(path: classInstance.path) {
                     classInstance.fileContents = file.contents
@@ -615,6 +664,7 @@ class SourceFileAnalysisController {
     func handleInstruction(_ structure: [String: AnyObject]) -> Instruction {
         let kind = structure[self.kindKey] as! String
         let name = (structure[self.nameKey] as? String) ?? ""
+        let offset = structure["key.offset"] as? Int64
         var instruction = Instruction(stringValue: name, kind: kind)
         
         switch kind {
@@ -643,6 +693,8 @@ class SourceFileAnalysisController {
         default: self.notHandledInstances.append(kind)
         }
         
+        instruction.offset = offset
+        
         //let classType = type(of: instruction)
         
         //instructionsCount = instructionsCount + 1
@@ -670,5 +722,52 @@ class SourceFileAnalysisController {
         let variable = Variable(name: name, appKey: self.app.appKey, modifier: modifier, type: type, isStatic: false, isFinal: false)
         
         return variable
+    }
+    
+    func addCursorInfoTo(app: App) {
+        var allClasses: [Class] = []
+        allClasses.append(contentsOf: app.classes)
+        allClasses.append(contentsOf: app.structures)
+        allClasses.append(contentsOf: app.protocols)
+        
+        for classInstance in allClasses {
+            var allMethods: [Function] = []
+            allMethods.append(contentsOf: classInstance.instanceMethods)
+            allMethods.append(contentsOf: classInstance.classMethods)
+            allMethods.append(contentsOf: classInstance.staticMethods)
+            
+            for method in allMethods {
+                for instruction in method.instructions {
+                    addCursorInfoTo(instruction: instruction, path: classInstance.path)
+                }
+            }
+        }
+    }
+    
+    func addCursorInfoTo(instruction: Instruction, path: String) {
+        if let offset = instruction.offset {
+            /*
+             
+             
+             -sdk /Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk
+ 
+            */
+            //var arguments = ["-sdk /Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk", path]
+            //arguments.append(contentsOf: self.filePaths)
+            var arguments = [path, "-sdk", "/Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk"]
+            //arguments.append(contentsOf: self.filePaths)
+            
+            let request = Request.cursorInfo(file: path, offset: offset, arguments: arguments)
+            do {
+                let response = try request.send()
+                print("\(instruction.stringValue) - \(response)")
+            } catch {
+                print("Failed cursorInfo request for: \(instruction.stringValue)")
+            }
+        }
+        
+        for subInstruction in instruction.instructions {
+            addCursorInfoTo(instruction: subInstruction, path: path)
+        }
     }
 }
