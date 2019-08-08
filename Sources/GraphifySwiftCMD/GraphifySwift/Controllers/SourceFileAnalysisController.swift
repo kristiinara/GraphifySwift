@@ -12,7 +12,7 @@ import SourceKit
 
 class SourceFileAnalysisController {
     let dataSyncController = DataSyncController()
-    let updatedController = UpdatedSourceFileAnalysisController()
+    var updatedController: UpdatedSourceFileAnalysisController!
     
     var variableReferences : [String: Variable] = [:]
     var methodReferences : [String: Function] = [:]
@@ -88,6 +88,10 @@ class SourceFileAnalysisController {
         self.finished = finished
         self.printOutput = printOutput
         let appName = url.lastPathComponent
+        
+        let sdk = "/Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk"
+        var dependencyURL = url.appendingPathComponent("Carthage", isDirectory: true)
+        dependencyURL = dependencyURL.appendingPathComponent("Checkouts", isDirectory: true)
             
         //TODO: get this data from user, currently using mock data
         self.app = App(
@@ -106,6 +110,9 @@ class SourceFileAnalysisController {
         
         self.fileQueue = FolderUtility.getFileQueue(for: url)
         self.filePaths = self.fileQueue.map() { url in return url.path }
+        
+        self.updatedController = UpdatedSourceFileAnalysisController(homeURL: url, dependencyURL: dependencyURL, sdk: sdk)
+        
         self.updatedController.allPaths = self.filePaths
         
         //self.addFilesToQueue(at: url)

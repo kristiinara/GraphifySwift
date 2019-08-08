@@ -9,6 +9,11 @@ import Foundation
 import SourceKittenFramework
 
 class UpdatedSourceFileAnalysisController {
+    let homeURL: URL
+    let dependencyURL: URL
+    let sdk: String
+    let dependencyController: DependencyController
+    
     var fileQueue: [URL] = []
     var allPaths: [String] = []
     var printOutput = true
@@ -17,18 +22,52 @@ class UpdatedSourceFileAnalysisController {
     var rawAnalysedData: [String: [String: SourceKitRepresentable]] = [:]
     var fileContents: [String: [String]] = [:]
     
+    init(homeURL: URL, dependencyURL: URL, sdk: String) {
+        self.homeURL = homeURL
+        self.dependencyURL = dependencyURL
+        //self.sdk = sdk
+        self.sdk = "/Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk"
+        self.dependencyController = DependencyController(homeURL: dependencyURL)
+    }
+    
+    func resolveDependencies(with filePath: String) {
+        while dependencyController.resolved == false {
+            dependencyController.tryNextDependency() { dependencyPaths in
+                do {
+                    var paths = self.allPaths
+                    paths.append(contentsOf: dependencyPaths)
+                    
+                    let _ = try makeIndexRequest(at: filePath, sdk: self.sdk, filePaths: paths)
+                    print("Resolving dependency successful")
+                    return true
+                    
+                } catch {
+                    print("Resolving dependency failed")
+                    return false
+                }
+            }
+        }
+    }
+    
+    func makeIndexRequest(at path: String, sdk: String, filePaths: [String]) throws -> [String: SourceKitRepresentable] {
+        var arguments = ["-sdk", self.sdk ,"-j4"]
+        
+        arguments.append(contentsOf: self.allPaths)
+        
+        let request = Request.index(file: path, arguments: arguments)
+        let result = try request.send()
+        
+        return result
+    }
+    
     func indexFile(at path: String) -> [String: SourceKitRepresentable] {
+        if self.dependencyController.resolved == false {
+            self.resolveDependencies(with: path)
+        } 
+        
         if let file = File(path: path)  {
             do {
-                var arguments = ["-sdk", "/Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk","-j4"]
-                arguments.append(contentsOf: self.allPaths)
-                //arguments.append(path)
-                
-                let request = Request.index(file: path, arguments: arguments)
-                let result = try request.send()
-                //                let index = (result["key.entities"] as! [SourceKitRepresentable]).map({ $0 as! [String: SourceKitRepresentable] })
-                //
-                //                let resIndex = result
+                let result = try makeIndexRequest(at: path, sdk: self.sdk, filePaths: self.allPaths)
                 
                 if self.printOutput {
                     //let resultString = "\(response)"
