@@ -7,7 +7,7 @@
 
 import Foundation
 import SourceKittenFramework
-import SourceKit
+//import SourceKit
 
 class UpdatedSourceFileAnalysisController {
     var fileQueue: [URL] = []
