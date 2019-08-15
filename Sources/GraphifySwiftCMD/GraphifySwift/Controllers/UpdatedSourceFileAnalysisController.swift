@@ -52,9 +52,12 @@ class UpdatedSourceFileAnalysisController {
     func makeIndexRequest(at path: String, sdk: String, filePaths: [String]) throws -> [String: SourceKitRepresentable] {
         var arguments = ["-sdk", self.sdk ,"-j4"]
         
-        arguments.append(contentsOf: self.allPaths)
+        //arguments.append(contentsOf: self.allPaths)
+        arguments.append(contentsOf: filePaths)
+        //print("arguments: \(arguments)")
         
         let request = Request.index(file: path, arguments: arguments)
+        print("request: \(request)")
         let result = try request.send()
         
         return result
@@ -67,6 +70,7 @@ class UpdatedSourceFileAnalysisController {
         
         if let file = File(path: path)  {
             do {
+                //let result = try makeIndexRequest(at: path, sdk: self.sdk, filePaths: self.allPaths)
                 let result = try makeIndexRequest(at: path, sdk: self.sdk, filePaths: self.allPaths)
                 
                 if self.printOutput {

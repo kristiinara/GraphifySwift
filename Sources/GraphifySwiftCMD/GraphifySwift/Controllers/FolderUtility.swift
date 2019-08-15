@@ -33,7 +33,7 @@ class FolderUtility {
     
     static func getFileNames(for url: URL) -> [String] {
         let fileQueue = getFileQueue(for: url)
-        return fileQueue.map() { url in return url.absoluteString}
+        return fileQueue.map() { url in return url.path}
     }
     
     static func getFileQueue(for url: URL) -> [URL] {
@@ -63,7 +63,7 @@ class FolderUtility {
                 
                 if let name = resourceValues.name {
                     if name.hasSuffix(".swift") {
-                        let size = resourceValues.fileSize!
+                        //let size = resourceValues.fileSize!
                         print("\(fileURL.path)")
                         //self.app.size = self.app.size + size
                         //TODO: fix size stuff

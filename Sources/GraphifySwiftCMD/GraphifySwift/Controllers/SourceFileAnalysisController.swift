@@ -90,7 +90,13 @@ class SourceFileAnalysisController {
         let appName = url.lastPathComponent
         
         let sdk = "/Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk"
-        var dependencyURL = url.appendingPathComponent("Carthage", isDirectory: true)
+        //var dependencyURL = url.appendingPathComponent("Carthage", isDirectory: true)
+        
+        var dependencyURL = url
+        print("original url: \(dependencyURL)")
+        dependencyURL.deleteLastPathComponent()
+        print("removing last component: \(dependencyURL)")
+        dependencyURL = dependencyURL.appendingPathComponent("Carthage", isDirectory: true)
         dependencyURL = dependencyURL.appendingPathComponent("Checkouts", isDirectory: true)
             
         //TODO: get this data from user, currently using mock data

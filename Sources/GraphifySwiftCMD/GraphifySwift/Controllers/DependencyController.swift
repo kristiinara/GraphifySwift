@@ -44,8 +44,10 @@ class DependencyController {
     
     func tryNextDependency(with request:(([String]) -> Bool)) {
         if let dependency = self.nextDepencency {
-            let result = request(FolderUtility.getFileNames(for: dependency))
-            print("Resolving dependancy \(dependency.lastPathComponent) -- successful? \(result)")
+            let foldernames = FolderUtility.getFileNames(for: dependency)
+            let result = request(foldernames)
+            print("Resolving dependancy \(dependency) -- successful? \(result)")
+            print("Folder names: \(foldernames)")
             if result == true {
                 self.successfulDependencies.append(dependency.absoluteString)
             } else {
