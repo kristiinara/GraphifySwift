@@ -94,8 +94,8 @@ class SourceFileAnalysisController {
         
         var dependencyURL = url
         print("original url: \(dependencyURL)")
-        dependencyURL.deleteLastPathComponent()
-        print("removing last component: \(dependencyURL)")
+        //dependencyURL.deleteLastPathComponent()
+        //print("removing last component: \(dependencyURL)")
         dependencyURL = dependencyURL.appendingPathComponent("Carthage", isDirectory: true)
         dependencyURL = dependencyURL.appendingPathComponent("Checkouts", isDirectory: true)
             
@@ -114,7 +114,7 @@ class SourceFileAnalysisController {
         )
         
         
-        self.fileQueue = FolderUtility.getFileQueue(for: url)
+        self.fileQueue = FolderUtility.getFileQueue(for: url, ignore: "Carthage")
         self.filePaths = self.fileQueue.map() { url in return url.path }
         
         self.updatedController = UpdatedSourceFileAnalysisController(homeURL: url, dependencyURL: dependencyURL, sdk: sdk)
@@ -142,9 +142,11 @@ class SourceFileAnalysisController {
                 self.analyseUses()
                 //print("\(self.methodReferences)")
                 //print("\(self.variableReferences)")
+                print("Printing app")
                 ObjectPrinter.printApp(self.app)
                 //print(self.updatedController.rawAnalysedData)
                 //print("\(self.filePaths)")
+                print("Starting data sync")
                 self.dataSyncController.finished = finished
                 self.dataSyncController.sync(app: self.app)
             }
@@ -267,14 +269,14 @@ class SourceFileAnalysisController {
             for method in allMethods {
                 if let usr = method.usr {
                     let uses = self.updatedController.findUsesOfUsr(usr: usr)
-                    print("method: \(method.name)")
-                    print("uses: \(uses)")
+//                    print("method: \(method.name)")
+//                    print("uses: \(uses)")
                     
                     for key in uses.keys {
                         if let classInstance = self.handledClasses[key], let lines = uses[key] {
                             for line in lines {
                                 if let usedInMethod = classInstance.findMethodWithLineNumber(line.line) {
-                                    print("usedIn: \(usedInMethod.name)")
+                                    //print("usedIn: \(usedInMethod.name)")
                                     usedInMethod.methodReferences.append(method)
                                     method.numberOfCallers += 1
                                 }
@@ -316,14 +318,14 @@ class SourceFileAnalysisController {
 //                }
                 if let usr = variable.usr {
                     let uses = self.updatedController.findUsesOfUsr(usr: usr)
-                    print("variable: \(variable.name)")
-                    print("uses: \(uses)")
+//                    print("variable: \(variable.name)")
+//                    print("uses: \(uses)")
                     
                     for key in uses.keys {
                         if let classInstance = self.handledClasses[key], let lines = uses[key] {
                             for line in lines {
                                 if let usedInMethod = classInstance.findMethodWithLineNumber(line.line) {
-                                    print("usedIn: \(usedInMethod.name)")
+                                    //print("usedIn: \(usedInMethod.name)")
                                     usedInMethod.variableReferences.append(variable)
                                 }
                             }

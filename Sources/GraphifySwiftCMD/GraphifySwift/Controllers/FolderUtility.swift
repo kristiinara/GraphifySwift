@@ -35,8 +35,12 @@ class FolderUtility {
         let fileQueue = getFileQueue(for: url)
         return fileQueue.map() { url in return url.path}
     }
-    
+
     static func getFileQueue(for url: URL) -> [URL] {
+        return getFileQueue(for: url, ignore: nil)
+    }
+
+    static func getFileQueue(for url: URL, ignore: String?) -> [URL] {
         var files: [URL] = []
         
         let resourceKeys : [URLResourceKey] = [
@@ -57,6 +61,22 @@ class FolderUtility {
         
         //fileQueue
         for case let fileURL as URL in enumerator {
+            // ignoring files that contain the ignore string, but only looking at path relative to after the base url
+            if let ignore = ignore {
+                var path = fileURL.path
+//                print("path: \(path)")
+//                print("url.path: \(url.path)")
+                path = path.replacingOccurrences(of: url.path, with: "")
+//                print("after replace: \(path)")
+                
+                if path.contains(ignore) {
+//                    print("Ignore")
+                    continue
+                } else {
+//                    print("do not ignore")
+                }
+            }
+            
             do {
                 let resourceValues = try fileURL.resourceValues(forKeys: Set(resourceKeys))
                 //print(fileURL.path, resourceValues.creationDate!, resourceValues.isDirectory!)

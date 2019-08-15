@@ -57,7 +57,7 @@ class UpdatedSourceFileAnalysisController {
         //print("arguments: \(arguments)")
         
         let request = Request.index(file: path, arguments: arguments)
-        print("request: \(request)")
+        //print("request: \(request)")
         let result = try request.send()
         
         return result
@@ -105,11 +105,11 @@ class UpdatedSourceFileAnalysisController {
     func findUsrOf(name: String, kind: String, structure: [String: SourceKitRepresentable]) -> String? {
         let objectName = structure["key.name"] as? String
         let objectKind = structure["key.kind"] as? String
-        print("\(objectName) - \(objectKind)")
+        //print("\(objectName) - \(objectKind)")
         
         if objectName == name && objectKind == kind {
             if let usr = structure["key.usr"] as? String {
-                print("\(usr)")
+                //print("\(usr)")
                 return usr
             }
         }
@@ -134,8 +134,8 @@ class UpdatedSourceFileAnalysisController {
             var structure = self.rawAnalysedData[path]
             
             if structure == nil {
-                print("\(self.rawAnalysedData.keys)")
-                print("Structure NIL - indexing - \(path)")
+                //print("\(self.rawAnalysedData.keys)")
+                //print("Structure NIL - indexing - \(path)")
                 
                 structure = indexFile(at: path)
                 self.rawAnalysedData[path] = structure
@@ -143,7 +143,7 @@ class UpdatedSourceFileAnalysisController {
             uses[path] = findUsesOfUsr(usr: usr, structure: structure!)
             //uses[path] = usesOfUSR(usr: usr, dictionary: structure!)
             if uses[path]!.count > 0 {
-                print("\(path): \(uses[path])")
+                //print("\(path): \(uses[path])")
             }
         }
         return uses

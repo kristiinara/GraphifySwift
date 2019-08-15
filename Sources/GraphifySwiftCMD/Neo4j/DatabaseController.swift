@@ -24,6 +24,7 @@ class DatabaseController {
     
     //TODO: check if we need this method at all, currently added so we can easily change behaviour for all queries made
     func runQueryReturnId(transaction: String?, completition: @escaping (Int?) -> Void) {
+        print("runQueryReturnId")
         if let transaction = transaction {
             requestWithDefaultCompletition(transaction: transaction, completition: completition)
         } else {
@@ -52,12 +53,14 @@ class DatabaseController {
     }
     
     private func requestWithDefaultCompletition(transaction: String, completition: @escaping (Int?) -> Void) {
+        print("requestWithDefaultCompletition")
         let parameters = [
             "statements": [[
                 "statement" : transaction
                 ]]
         ]
         requestWithParameters(parameters) { json in
+            print("request finished")
             let success = self.defaultErrorHandling(json: json)
             
 //            print("----- JSON result (success? \(success)): -----")
@@ -144,6 +147,11 @@ class DatabaseController {
             return nil
         }
         
+        guard row.count > 0 else {
+            print("Row length 0")
+            return nil
+        }
+        
         guard let id = row[0] as? Int else {
             print("No id: \(row)")
             return nil
@@ -153,6 +161,7 @@ class DatabaseController {
     }
     
     private func requestWithParameters(_ parameters: [String: Any], completition: @escaping ([String: Any]?) -> Void) {
+        print("requestWithParameters")
         //create the session object
         let session = URLSession.shared
         

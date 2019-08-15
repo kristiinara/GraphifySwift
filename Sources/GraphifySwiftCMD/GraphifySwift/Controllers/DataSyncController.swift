@@ -15,6 +15,7 @@ class DataSyncController {
     
     func newApp(_ app: App, completition: @escaping (App, Bool) -> Void) {
         databaseController.runQueryReturnId(transaction: app.createQuery) { id in
+            print("Added new app")
             if let id = id {
                 app.id = id
                 
@@ -27,13 +28,14 @@ class DataSyncController {
 
     func newClass(_ newClass: Class, to app: App, completition: @escaping (Class, Bool) -> Void) {
         print("addClass: \(newClass.description)")
-        
+        print("+")
         self.databaseController.runQueryReturnId(transaction: newClass.createQuery) { id in
             guard let id = id else {
                 print("Error: could not add class \(newClass.name)")
                 completition(newClass, false)
                 return
             }
+            print("adding id to class")
             newClass.id = id
             self.databaseController.runQueryReturnId(transaction: app.ownsClassQuery(newClass)) { relId in
                 //print("Added AppOwnsClass \(String(describing: relId))")
@@ -67,8 +69,10 @@ class DataSyncController {
     }
     
     func nextClassFor(app: App) {
+        print("nextClassFor")
         if self.classes.count > 0 {
             let classInstance = self.classes.remove(at: 0)
+            print("Next class: \(classInstance.name)")
             self.newClass(classInstance, to: app) { (newClass, success) in
                 //print("\(newClass) added \(success)")
                 
@@ -128,7 +132,7 @@ class DataSyncController {
     }
     
     func sync(app: App) {
-        //print("Sync!")
+        print("Sync!")
         self.classes.append(contentsOf: app.classes)
         self.classes.append(contentsOf: app.structures)
         self.classes.append(contentsOf: app.protocols)

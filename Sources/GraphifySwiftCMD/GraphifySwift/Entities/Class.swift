@@ -53,29 +53,30 @@ class Class : Kind {
     var couplingBetweenObjectClasses = 0 // Type : Integer Also know as CBO. Defined by Chidamber & Kemerer. CBO represents the number of other classes a class is coupled to. This metrics is calculated from the callgraph and it counts the reference to methods, variables or types once for each class.
     
     var lackOfCohesionInMethods: Int {
-        var methods = self.classMethods
-        methods.append(contentsOf: self.instanceMethods)
-        methods.append(contentsOf: self.staticMethods)
-        
-        var methodCount = methods.count
-        var haveVariableInCommon = 0
-        var noVariableInCommon = 0
-        
-        for i in 0...methodCount {
-            for j in (i+1)...methodCount {
-                let method = methods[i]
-                let otherMethod = methods[j]
-                
-                if method.hasVariablesInCommon(otherMethod) {
-                    haveVariableInCommon += 1
-                } else {
-                    noVariableInCommon += 1
-                }
-            }
-        }
-        
-        let lackOfCohesionInMethods = noVariableInCommon - haveVariableInCommon
-        return lackOfCohesionInMethods > 0 ? lackOfCohesionInMethods : 0
+//        var methods = self.classMethods
+//        methods.append(contentsOf: self.instanceMethods)
+//        methods.append(contentsOf: self.staticMethods)
+//
+//        var methodCount = methods.count
+//        var haveVariableInCommon = 0
+//        var noVariableInCommon = 0
+//
+//        for i in 0...methodCount {
+//            for j in (i+1)...methodCount {
+//                let method = methods[i]
+//                let otherMethod = methods[j]
+//
+//                if method.hasVariablesInCommon(otherMethod) {
+//                    haveVariableInCommon += 1
+//                } else {
+//                    noVariableInCommon += 1
+//                }
+//            }
+//        }
+//
+//        let lackOfCohesionInMethods = noVariableInCommon - haveVariableInCommon
+//        return lackOfCohesionInMethods > 0 ? lackOfCohesionInMethods : 0
+        return 0
     }
     
     var isAbstract: Bool = false // Android specific, cannot be abstract
@@ -227,7 +228,38 @@ extension Class: Node4jInsertable {
     }
     
     var createQuery: String? {
-        return "create (n:\(self.nodeName) \(self.properties)) return id(n)"
+        print("createQuery getter")
+        print("nodename: \(self.nodeName)")
+        
+        print("name:'\(self.name)'")
+        print("app_key:'\(self.appKey)'")
+        print("modifier:'\(self.modifier)'")
+        print("parent_name:'\(self.parentName)'")
+        print("number_of_methods:\(self.numberOfMethods)")
+        print("number_of_implemented_interfaces:\(self.numberOfImplementedInterfaces)")
+        print("number_of_attributes:\(self.numberOfAttributes)")
+        print("number_of_children:\(self.numberOfChildren)")
+        print("class_complexity:\(self.classComplexity)")
+        print("coupling_between_object_classes:\(self.couplingBetweenObjectClasses)")
+        print("lack_of_cohesion_in_methods:\(self.lackOfCohesionInMethods)")
+        print("is_abstract:\(self.isAbstract)")
+        print("is_activity:\(self.isActivity)")
+        print("is_viewController:\(self.isViewController)")
+        print("is_application:\(self.isApplication)")
+        print("is_broadcast_receiver:\(self.isBroadcastReceiver)")
+        print("is_content_provider:\(self.isContentProvider)")
+        print("is_service:\(self.isService)")
+        print("is_final:\(self.isFinal)")
+        print("is_static:\(self.isStatic)")
+        print("is_inner_class:\(self.isInnerClass)")
+        print("is_interface:\(self.isInterface)")
+        print("is_view_controller:\(self.isViewController)")
+        
+        print("properties: \(self.properties)")
+        
+        let query = "create (n:\(self.nodeName) \(self.properties)) return id(n)"
+        print("query: \(query)")
+        return query
     }
     
     var deleteQuery: String? {
