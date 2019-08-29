@@ -12,6 +12,7 @@ class DependencyController {
     var successfulDependencies: [String] = []
     var failedDependencies: [String] = []
     var dependencyQueue: [URL] = []
+    var successfullPaths: [String] = []
     //TODO: get all folders, get depencency queue for each folder
     
     init(homeURL: URL) {
@@ -48,8 +49,11 @@ class DependencyController {
             let result = request(foldernames)
             print("Resolving dependancy \(dependency) -- successful? \(result)")
             print("Folder names: \(foldernames)")
+            
+            //TODO: shouldn't we add foldernames to successfulDependencies??
             if result == true {
                 self.successfulDependencies.append(dependency.absoluteString)
+                self.successfullPaths.append(contentsOf: foldernames)
             } else {
                 self.failedDependencies.append(dependency.absoluteString)
             }

@@ -120,19 +120,26 @@ class Application {
     }
     
     func runAnalysis(url: Foundation.URL, appKey: String, printOutput: Bool) {
-        let analysisController = SourceFileAnalysisController()
-        dispatchGroup.enter()
+//        let analysisController = SourceFileAnalysisController()
+//        dispatchGroup.enter()
+//
+//        analysisController.analyseFolder(at: url, appKey: appKey, printOutput: printOutput) {
+//            print("finished")
+//
+//            self.dispatchGroup.leave()
+//        }
+//
+//        dispatchGroup.notify(queue: DispatchQueue.main) {
+//            exit(EXIT_SUCCESS)
+//        }
+//        dispatchMain()
         
-        analysisController.analyseFolder(at: url, appKey: appKey, printOutput: printOutput) {
-            print("finished")
-            
-            self.dispatchGroup.leave()
-        }
+        var dependencyURL = url
+        dependencyURL = dependencyURL.appendingPathComponent("Carthage", isDirectory: true)
+        dependencyURL = dependencyURL.appendingPathComponent("Checkouts", isDirectory: true)
         
-        dispatchGroup.notify(queue: DispatchQueue.main) {
-            exit(EXIT_SUCCESS)
-        }
-        dispatchMain()
+        let analysisController = SourceFileIndexAnalysisController(homeURL: url, dependencyURL: dependencyURL)
+        analysisController.analyseAllFiles()
     }
     
     func runQuery(query: String) {

@@ -52,6 +52,7 @@ class Class : Kind {
     //TODO: implement couplingBetweenObjectClasses
     var couplingBetweenObjectClasses = 0 // Type : Integer Also know as CBO. Defined by Chidamber & Kemerer. CBO represents the number of other classes a class is coupled to. This metrics is calculated from the callgraph and it counts the reference to methods, variables or types once for each class.
     
+    //TODO: figure out new implementation after changing how references are registered
     var lackOfCohesionInMethods: Int {
 //        var methods = self.classMethods
 //        methods.append(contentsOf: self.instanceMethods)

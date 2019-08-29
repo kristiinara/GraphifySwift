@@ -88,8 +88,12 @@ class FolderUtility {
                         //self.app.size = self.app.size + size
                         //TODO: fix size stuff
                         //self.classSizes.append(size)
-                        if (fileURL.path.contains("passAutoFillExtension/Controllers/PasscodeExtensionDisplay.swift")) {
+                        
+                        if (fileURL.path.contains("/Controllers/PasscodeExtensionDisplay.swift")) {
                             print("Ignore bad file!!")
+                        
+                        } else if (fileURL.path.contains("Tests")) {
+                            print("Ignore test files")
                         } else {
                             files.append(fileURL)
                         }
