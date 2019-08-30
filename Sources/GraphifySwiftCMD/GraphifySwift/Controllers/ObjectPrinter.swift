@@ -14,6 +14,7 @@ class ObjectPrinter {
         print("Classes:")
         for classInstance in app.classes {
             print("     Class: \(classInstance.name) - \(classInstance.usr)")
+            print("     LackOfCohesion: \(classInstance.lackOfCohesionInMethods)")
             print("     InstanceMethods: ")
             for method in classInstance.instanceMethods {
                 printMethod(method)
@@ -44,7 +45,7 @@ class ObjectPrinter {
     
     static func printMethod(_ method: Function) {
         print("               Method: \(method.name) - \(method.characterOffset) - \(method.lineNumber) - \(method.endLineNumber) - \(method.usr)")
-        print("                  Stats: inst: \(method.numberOfInstructions), compl: \(method.cyclomaticComplexity), directCalls: \(method.numberOfDirectCalls), refMethods: \(method.methodReferences.count), refVariables: \(method.variableReferences.count)")
+        print("                  Stats: inst: \(method.numberOfInstructions), compl: \(method.cyclomaticComplexity), directCalls: \(method.numberOfDirectCalls), refMethods: \(method.referencedMethods.count), refVariables: \(method.referencedVariables.count)")
         print("                           direct: \(method.directCalls)")
         print("                           ref: \(method.methodReferenceNames)")
         print("                           refVar: \(method.variableReferenceNames)")

@@ -255,85 +255,85 @@ class SourceFileAnalysisController {
     }
     
     func analyseUses() {
-        var allClasses: [Class] = []
-        allClasses.append(contentsOf: self.app.classes)
-        allClasses.append(contentsOf: self.app.protocols)
-        allClasses.append(contentsOf: self.app.structures)
-        
-        for classInstance in allClasses {
-            var allMethods: [Function] = []
-            allMethods.append(contentsOf:classInstance.classMethods)
-            allMethods.append(contentsOf:classInstance.staticMethods)
-            allMethods.append(contentsOf:classInstance.instanceMethods)
-            
-            for method in allMethods {
-                if let usr = method.usr {
-                    let uses = self.updatedController.findUsesOfUsr(usr: usr)
-//                    print("method: \(method.name)")
-//                    print("uses: \(uses)")
-                    
-                    for key in uses.keys {
-                        if let classInstance = self.handledClasses[key], let lines = uses[key] {
-                            for line in lines {
-                                if let usedInMethod = classInstance.findMethodWithLineNumber(line.line) {
-                                    //print("usedIn: \(usedInMethod.name)")
-                                    usedInMethod.methodReferences.append(method)
-                                    method.numberOfCallers += 1
-                                }
-                            }
-                        }
-                    }
-                }
-                
-//                self.findAllUsesOfMethod(method: method, path: classInstance.path)
-//                if let uses = method.uses {
-//                    print("method: \(method.name) - uses: \(uses)")
-//                    for use in uses {
-//                        print("use: \(use)")
-//                        if let usedInMethod = classInstance.findMethodWithLineNumber(use) {
-//                            print("usedIn: \(usedInMethod.name)")
-//                            usedInMethod.methodReferences.append(method)
-//                            method.numberOfCallers += 1
+//        var allClasses: [Class] = []
+//        allClasses.append(contentsOf: self.app.classes)
+//        allClasses.append(contentsOf: self.app.protocols)
+//        allClasses.append(contentsOf: self.app.structures)
+//        
+//        for classInstance in allClasses {
+//            var allMethods: [Function] = []
+//            allMethods.append(contentsOf:classInstance.classMethods)
+//            allMethods.append(contentsOf:classInstance.staticMethods)
+//            allMethods.append(contentsOf:classInstance.instanceMethods)
+//            
+//            for method in allMethods {
+//                if let usr = method.usr {
+//                    let uses = self.updatedController.findUsesOfUsr(usr: usr)
+////                    print("method: \(method.name)")
+////                    print("uses: \(uses)")
+//                    
+//                    for key in uses.keys {
+//                        if let classInstance = self.handledClasses[key], let lines = uses[key] {
+//                            for line in lines {
+//                                if let usedInMethod = classInstance.findMethodWithLineNumber(line.line) {
+//                                    //print("usedIn: \(usedInMethod.name)")
+//                                    usedInMethod.methodReferences.append(method)
+//                                    method.numberOfCallers += 1
+//                                }
+//                            }
 //                        }
 //                    }
 //                }
-            }
-            
-            var allVariables: [Variable] = []
-            allVariables.append(contentsOf:classInstance.classVariables)
-            allVariables.append(contentsOf:classInstance.staticVariables)
-            allVariables.append(contentsOf:classInstance.instanceVariables)
-            
-            for variable in allVariables {
-//                self.findAllUsesOfVariable(variable: variable, path: classInstance.path)
-//                if let uses = variable.uses {
-//                    print("variable: \(variable.name) - uses: \(uses)")
-//                    for use in uses {
-//                        print("use: \(use)")
-//                        if let usedInMethod = classInstance.findMethodWithLineNumber(use) {
-//                            print("usedIn: \(usedInMethod.name)")
-//                            usedInMethod.variableReferences.append(variable)
+//                
+////                self.findAllUsesOfMethod(method: method, path: classInstance.path)
+////                if let uses = method.uses {
+////                    print("method: \(method.name) - uses: \(uses)")
+////                    for use in uses {
+////                        print("use: \(use)")
+////                        if let usedInMethod = classInstance.findMethodWithLineNumber(use) {
+////                            print("usedIn: \(usedInMethod.name)")
+////                            usedInMethod.methodReferences.append(method)
+////                            method.numberOfCallers += 1
+////                        }
+////                    }
+////                }
+//            }
+//            
+//            var allVariables: [Variable] = []
+//            allVariables.append(contentsOf:classInstance.classVariables)
+//            allVariables.append(contentsOf:classInstance.staticVariables)
+//            allVariables.append(contentsOf:classInstance.instanceVariables)
+//            
+//            for variable in allVariables {
+////                self.findAllUsesOfVariable(variable: variable, path: classInstance.path)
+////                if let uses = variable.uses {
+////                    print("variable: \(variable.name) - uses: \(uses)")
+////                    for use in uses {
+////                        print("use: \(use)")
+////                        if let usedInMethod = classInstance.findMethodWithLineNumber(use) {
+////                            print("usedIn: \(usedInMethod.name)")
+////                            usedInMethod.variableReferences.append(variable)
+////                        }
+////                    }
+////                }
+//                if let usr = variable.usr {
+//                    let uses = self.updatedController.findUsesOfUsr(usr: usr)
+////                    print("variable: \(variable.name)")
+////                    print("uses: \(uses)")
+//                    
+//                    for key in uses.keys {
+//                        if let classInstance = self.handledClasses[key], let lines = uses[key] {
+//                            for line in lines {
+//                                if let usedInMethod = classInstance.findMethodWithLineNumber(line.line) {
+//                                    //print("usedIn: \(usedInMethod.name)")
+//                                    usedInMethod.variableReferences.append(variable)
+//                                }
+//                            }
 //                        }
 //                    }
 //                }
-                if let usr = variable.usr {
-                    let uses = self.updatedController.findUsesOfUsr(usr: usr)
-//                    print("variable: \(variable.name)")
-//                    print("uses: \(uses)")
-                    
-                    for key in uses.keys {
-                        if let classInstance = self.handledClasses[key], let lines = uses[key] {
-                            for line in lines {
-                                if let usedInMethod = classInstance.findMethodWithLineNumber(line.line) {
-                                    //print("usedIn: \(usedInMethod.name)")
-                                    usedInMethod.variableReferences.append(variable)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+//            }
+//        }
         
 //        for classInstance in allClasses {
 //            for method in classInstance.classMethods {

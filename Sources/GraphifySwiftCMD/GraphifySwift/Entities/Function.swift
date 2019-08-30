@@ -25,8 +25,13 @@ class Function: Kind {
     
     var uses: [Int]?
     
-    var methodReferences: [Function] = []
+    var references: [String] = []
+    
+    var methodReferences: [Function] = [] // when called from other functions
     var variableReferences: [Variable] = []
+    
+    var referencedMethods: [Function] = [] // when other functions are called
+    var referencedVariables: [Variable] = []
     
     //var numberOfDeclaredLocals = 0
     var numberOfDeclaredLocals : Int {
@@ -43,24 +48,34 @@ class Function: Kind {
     var isSyncronized = false // android specific?
     
     //TODO: stuff that we cannot set at the beginning
-    var numberOfCallers = 0 // number of callers of this method
+    var numberOfCallers : Int {
+        return self.methodReferences.count + variableReferences.count
+    }
     //var numberOfDirectCalls = 0 // number of calls to other methods
     var numberOfDirectCalls : Int {
-        return self.instructions.reduce(0) { result, instruction in
-            return result + instruction.methodCalls.count
-        }
+//        return self.instructions.reduce(0) { result, instruction in
+//            return result + instruction.methodCalls.count
+//        }
+        return self.referencedMethods.count
     }
     
+    //TODO: figure out if it's ok that we only list methods in the scope of the project (we could also add method calls to foundation, UIKit etc
     var directCalls : [String] {
-        let instructions = self.instructions.reduce([] as [MethodCall]) { result, instruction in
-            var list: [MethodCall] = []
-            list.append(contentsOf: result)
-            list.append(contentsOf: instruction.methodCalls)
-            return list
-        }
-        
-        return instructions.map() { instruction in
-            return instruction.stringValue
+//        let instructions = self.instructions.reduce([] as [MethodCall]) { result, instruction in
+//            var list: [MethodCall] = []
+//            list.append(contentsOf: result)
+//            list.append(contentsOf: instruction.methodCalls)
+//            return list
+//        }
+//
+//        return instructions.map() { instruction in
+//            return instruction.stringValue
+//        }
+        return self.referencedMethods.reduce([] as [String]) { result, method in
+            var methods = result
+            methods.append(method.name)
+            
+            return methods
         }
     }
     
@@ -71,7 +86,7 @@ class Function: Kind {
     }
     
     var variableReferenceNames: [String] {
-        return self.variableReferences.map() { variable in
+        return self.referencedVariables.map() { variable in
             return variable.name
         }
     }
@@ -127,7 +142,8 @@ class Function: Kind {
     
     //TODO: implement + possibly change String to Variable
     var usedVariables: [String] {
-        return self.variableReferenceNames
+        //return self.variableReferenceNames
+        return self.referencedVariables.map() {variable in return variable.name}
     }
     
     var localVariableNames: [String] {

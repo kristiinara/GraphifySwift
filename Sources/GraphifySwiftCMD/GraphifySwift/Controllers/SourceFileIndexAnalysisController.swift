@@ -14,6 +14,7 @@ class SourceFileIndexAnalysisController {
     let sdk: String
     let target: String
     let dependencyController: DependencyController
+    let dataSyncController = DataSyncController()
     
     var fileQueue: [URL]
     var allPaths: [String]
@@ -62,7 +63,11 @@ class SourceFileIndexAnalysisController {
         }
         
         let app = translateEntitiesToApp(objects: allObjects)
-        self.addReferences(app: app)
+        self.findReferences(app: app)
+        app.calculateCouplingBetweenClasses()
+        
+        ObjectPrinter.printApp(app)
+        self.dataSyncController.sync(app: app)
     }
     
     func makeStructureRequest(at path: String) -> [String: SourceKitRepresentable] {
@@ -431,11 +436,13 @@ extension SourceFileIndexAnalysisController {
                 if entity.kind.contains("decl.function.method") {
                     let method = InstanceFunction(name: entity.name, fullName: entity.name, appKey: appKey, modifier: "", returnType: "")
                     method.instructions = entity.instructions
+                    method.references = entity.allReferences
                     
                     methods.append(method) //TODO: add stuff into constructor
                     
                     if let usr = object.usr {
                         self.allMethods[usr] = method
+                        method.usr = usr
                     }
                     
                 } else if entity.kind.contains("decl.var") {
@@ -444,6 +451,7 @@ extension SourceFileIndexAnalysisController {
                     
                     if let usr = object.usr {
                         self.allVariables[usr] = variable
+                        variable.usr = usr
                     }
                 }
             }
@@ -454,9 +462,22 @@ extension SourceFileIndexAnalysisController {
         return app
     }
     
-    func addReferences(app: App) {
+    func findReferences(app: App) {
+        //TODO: do this also for structs and class and static methods
         for classInstance in app.classes {
-            
+            for instanceMethod in classInstance.instanceMethods {
+                for reference in instanceMethod.references {
+                    if let method = self.allMethods[reference] {
+                        instanceMethod.referencedMethods.append(method)
+                        method.methodReferences.append(instanceMethod)
+                    }
+                    
+                    if let variable = self.allVariables[reference] {
+                        instanceMethod.referencedVariables.append(variable)
+                        variable.methodReferences.append(instanceMethod)
+                    }
+                }
+            }
         }
     }
 }
@@ -493,6 +514,19 @@ class Entity {
             return true
         }
         return false
+    }
+    
+    var allReferences: [String] {
+        var referenceList: [String] = []
+        
+        for entity in self.entities {
+            if let entityUsr = entity.usr {
+                referenceList.append(entityUsr)
+            }
+            referenceList.append(contentsOf: entity.allReferences)
+        }
+        
+        return referenceList
     }
     
     func printout(filler: String) {

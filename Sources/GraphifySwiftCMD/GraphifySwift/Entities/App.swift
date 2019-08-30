@@ -141,6 +141,37 @@ class App : Kind {
         Struct: \(name)
         """
     }
+    
+    func calculateCouplingBetweenClasses() {
+        var allClasses: [Class] = []
+        allClasses.append(contentsOf: self.classes)
+        allClasses.append(contentsOf: self.structures)
+        let classCount = allClasses.count
+        
+        if classCount >= 2 {
+            for i in 0...(classCount - 2) {
+                let classInstance = allClasses[i]
+                var numberOfCoupledClasses = 0
+                
+                for j in (i+1)...(classCount - 1) {
+                    let otherClassInstance = allClasses[j]
+                    
+                    let allMethods = classInstance.allMethods
+                    let allOtherClassMethodUsrs = otherClassInstance.allMethods.map() {method in return method.usr}
+                    
+                    outerloop: for method in allMethods {
+                        for referencedMethod in method.referencedMethods {
+                            if allOtherClassMethodUsrs.contains(referencedMethod.usr) {
+                                numberOfCoupledClasses += 1
+                                break outerloop
+                            }
+                        }
+                    }
+                }
+                classInstance.couplingBetweenObjectClasses = numberOfCoupledClasses
+            }
+        }
+    }
 }
 
 extension App: Node4jInsertable {

@@ -29,6 +29,24 @@ class Class : Kind {
     var staticMethods: [Function] = []
     var inheritedTypes: [String] = []
     
+    var allMethods: [Function] {
+        var methods: [Function] = []
+        methods.append(contentsOf: self.classMethods)
+        methods.append(contentsOf: self.staticMethods)
+        methods.append(contentsOf: self.classMethods)
+        
+        return methods
+    }
+    
+    var allVariables: [Variable] {
+        var variables: [Variable] = []
+        variables.append(contentsOf: self.classVariables)
+        variables.append(contentsOf: self.staticVariables)
+        variables.append(contentsOf: self.classVariables)
+        
+        return variables
+    }
+    
     var depthOfInheritance : Int { // Integer Depth of Inheritance, starting at 1 since classes are at least java.lang.Object.
         if let parent = self.parent {
             return 1 + parent.depthOfInheritance
@@ -49,35 +67,37 @@ class Class : Kind {
         }
     }
     
-    //TODO: implement couplingBetweenObjectClasses
+    //TODO: Set when calculateCouplingBetweenClasses is called in app
     var couplingBetweenObjectClasses = 0 // Type : Integer Also know as CBO. Defined by Chidamber & Kemerer. CBO represents the number of other classes a class is coupled to. This metrics is calculated from the callgraph and it counts the reference to methods, variables or types once for each class.
     
     //TODO: figure out new implementation after changing how references are registered
     var lackOfCohesionInMethods: Int {
-//        var methods = self.classMethods
-//        methods.append(contentsOf: self.instanceMethods)
-//        methods.append(contentsOf: self.staticMethods)
-//
-//        var methodCount = methods.count
-//        var haveVariableInCommon = 0
-//        var noVariableInCommon = 0
-//
-//        for i in 0...methodCount {
-//            for j in (i+1)...methodCount {
-//                let method = methods[i]
-//                let otherMethod = methods[j]
-//
-//                if method.hasVariablesInCommon(otherMethod) {
-//                    haveVariableInCommon += 1
-//                } else {
-//                    noVariableInCommon += 1
-//                }
-//            }
-//        }
-//
-//        let lackOfCohesionInMethods = noVariableInCommon - haveVariableInCommon
-//        return lackOfCohesionInMethods > 0 ? lackOfCohesionInMethods : 0
-        return 0
+        var methods = self.classMethods
+        methods.append(contentsOf: self.instanceMethods)
+        methods.append(contentsOf: self.staticMethods)
+
+        let methodCount = methods.count
+        var haveVariableInCommon = 0
+        var noVariableInCommon = 0
+
+        if methodCount >= 2 {
+            for i in 0...(methodCount - 2) {
+                for j in (i+1)...(methodCount - 1) {
+                    let method = methods[i]
+                    let otherMethod = methods[j]
+
+                    if method.hasVariablesInCommon(otherMethod) {
+                        haveVariableInCommon += 1
+                    } else {
+                        noVariableInCommon += 1
+                    }
+                }
+            }
+        }
+
+        let lackOfCohesionInMethods = noVariableInCommon - haveVariableInCommon
+        return lackOfCohesionInMethods > 0 ? lackOfCohesionInMethods : 0
+        //return 0
     }
     
     var isAbstract: Bool = false // Android specific, cannot be abstract
