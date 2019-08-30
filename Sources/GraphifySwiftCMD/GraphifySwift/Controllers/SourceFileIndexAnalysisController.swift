@@ -39,7 +39,7 @@ class SourceFileIndexAnalysisController {
         self.allPaths = self.fileQueue.map() { url in return url.path }
     }
     
-    func analyseAllFiles() {
+    func analyseAllFiles(finished: @escaping () -> Void) {
         var allObjects : [FirstLevel] = []
         
         while self.fileQueue.count > 0 {
@@ -67,6 +67,7 @@ class SourceFileIndexAnalysisController {
         app.calculateCouplingBetweenClasses()
         
         ObjectPrinter.printApp(app)
+        self.dataSyncController.finished = finished
         self.dataSyncController.sync(app: app)
     }
     
