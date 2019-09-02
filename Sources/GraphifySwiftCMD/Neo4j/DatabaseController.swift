@@ -28,6 +28,7 @@ class DatabaseController {
         if let transaction = transaction {
             requestWithDefaultCompletition(transaction: transaction, completition: completition)
         } else {
+            print("No transaction")
             completition(nil)
         }
     }
@@ -69,6 +70,7 @@ class DatabaseController {
             if success {
                 completition(self.getId(json))
             } else {
+                
                 completition(nil)
             }
         }

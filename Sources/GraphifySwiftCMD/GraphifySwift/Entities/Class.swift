@@ -33,7 +33,7 @@ class Class : Kind {
         var methods: [Function] = []
         methods.append(contentsOf: self.classMethods)
         methods.append(contentsOf: self.staticMethods)
-        methods.append(contentsOf: self.classMethods)
+        methods.append(contentsOf: self.instanceMethods)
         
         return methods
     }
@@ -42,7 +42,7 @@ class Class : Kind {
         var variables: [Variable] = []
         variables.append(contentsOf: self.classVariables)
         variables.append(contentsOf: self.staticVariables)
-        variables.append(contentsOf: self.classVariables)
+        variables.append(contentsOf: self.instanceVariables)
         
         return variables
     }

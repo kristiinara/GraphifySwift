@@ -12,6 +12,7 @@ class DataSyncController {
     let databaseController = DatabaseController()
     var classes : [Class] = []
     var finished : (() -> Void)?
+    var addingAdditionalStuff = false
     
     func newApp(_ app: App, completition: @escaping (App, Bool) -> Void) {
         databaseController.runQueryReturnId(transaction: app.createQuery) { id in
@@ -49,9 +50,9 @@ class DataSyncController {
                     method.id = methodId
                     
                     self.databaseController.runQueryReturnId(transaction: newClass.ownsMethodQuery(method)) { relId in
-                        //print("Added ClassownsMethodQuery \(String(describing: relId))")
+                        print("Added ClassownsMethodQuery \(String(describing: relId))")
                     }
-                }
+                 }
             }
             
             for variable in newClass.instanceVariables {
@@ -59,12 +60,89 @@ class DataSyncController {
                     variable.id = variableId
                     
                     self.databaseController.runQueryReturnId(transaction: newClass.ownsVariableQuery(variable)) { relId in
-                        //print("Added ClassOwnsVariableQuery \(String(describing: relId))")
+                        print("Added ClassOwnsVariableQuery \(String(describing: relId))")
+                    }
+                }
+            }
+            print("newClass completition")
+            completition(newClass, true)
+        }
+    }
+    
+    func doAdditionalStuffAfterAppAdded(app: App) {
+        print("doAdditionalStuffAfterAppAdded")
+        if addingAdditionalStuff == false {
+            addingAdditionalStuff = true
+            addMethodRelationships(app: app)
+        } else {
+            print("do nothing")
+        }
+    }
+    
+    func addMethodRelationships(app: App) {
+        print("addMethodRelationships")
+        var allClasses: [Class] = []
+        allClasses.append(contentsOf: app.classes)
+        allClasses.append(contentsOf: app.structures)
+        allClasses.append(contentsOf: app.protocols)
+        
+        var allMethods: [Function] = []
+        var queryCount = 0
+        
+        for classInstance in allClasses {
+            let methods = classInstance.allMethods
+            
+            print("classname: \(classInstance.name)")
+            print("static methods: \(classInstance.staticMethods)")
+            print("static methods: \(classInstance.classMethods)")
+            print("static methods: \(classInstance.instanceMethods)")
+            
+            allMethods.append(contentsOf: methods)
+            
+            for method in methods {
+                queryCount += method.referencedMethods.count
+                queryCount += method.referencedVariables.count
+            }
+        }
+        
+        print("allClasses: \(allClasses)")
+        print("allmethods: \(allMethods)")
+        print("Query count: \(queryCount)")
+        
+        for method in allMethods {
+            for referencedMethod in method.referencedMethods {
+                print("ReferencedMethod: \(method.callsQuery(referencedMethod))")
+                self.databaseController.runQueryReturnId(transaction: method.callsQuery(referencedMethod)) { relId in
+                    print("Added MethodCallsMethodQuery \(String(describing: relId))")
+                    queryCount -= 1
+                    if queryCount == 0 {
+                        if let finished = self.finished {
+                            finished()
+                            self.finished = nil
+                        }
                     }
                 }
             }
             
-            completition(newClass, true)
+            for referencedVariable in method.referencedVariables {
+                self.databaseController.runQueryReturnId(transaction: method.usesQuery(referencedVariable)) { relId in
+                    print("Added MethodUsesVariableQuery \(String(describing: relId))")
+                    queryCount -= 1
+                    if queryCount == 0 {
+                        if let finished = self.finished {
+                            finished()
+                            self.finished = nil
+                        }
+                    }
+                }
+            }
+        }
+        
+        if queryCount == 0 {
+            if let finished = self.finished {
+                finished()
+                self.finished = nil
+            }
         }
     }
     
@@ -74,7 +152,7 @@ class DataSyncController {
             let classInstance = self.classes.remove(at: 0)
             print("Next class: \(classInstance.name)")
             self.newClass(classInstance, to: app) { (newClass, success) in
-                //print("\(newClass) added \(success)")
+                print("\(newClass) added \(success)")
                 
                 var toAdd = 0
                 
@@ -84,12 +162,9 @@ class DataSyncController {
                         toAdd = toAdd + 1
                         self.addParent(classInstance)  {
                             toAdd = toAdd - 1
-                            //print("toAdd classes: \(toAdd)")
+                            print("toAdd classes: \(toAdd)")
                             if(toAdd == 0) {
-                                if let finished = self.finished {
-                                   finished()
-                                    self.finished = nil
-                                }
+                                self.doAdditionalStuffAfterAppAdded(app: app)
                             }
                         }
                     }
@@ -100,9 +175,7 @@ class DataSyncController {
                             toAdd = toAdd - 1
                             print("toAdd: struct \(toAdd)")
                             if(toAdd == 0) {
-                                if let finished = self.finished {
-                                    finished()
-                                }
+                                self.doAdditionalStuffAfterAppAdded(app: app)
                             }
                         }
                     }
@@ -113,9 +186,7 @@ class DataSyncController {
                             toAdd = toAdd - 1
                             print("toAdd: protocol \(toAdd)")
                             if(toAdd == 0) {
-                                if let finished = self.finished {
-                                    finished()
-                                }
+                                self.doAdditionalStuffAfterAppAdded(app: app)
                             }
                             
                         }
@@ -125,9 +196,7 @@ class DataSyncController {
                 }
             }
         } else {
-            if let finished = self.finished {
-                finished()
-            }
+            self.doAdditionalStuffAfterAppAdded(app: app)
         }
     }
     
