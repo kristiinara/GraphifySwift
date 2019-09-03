@@ -139,6 +139,13 @@ class Function: Kind {
         }
     }
     
+    // Added variables:
+    var numberOfSwitchStatements: Int {
+        return self.instructions.reduce(0) { res, statement in
+            return res + statement.numberOfSwitchStatements
+        }
+    }
+    
     func variablesInCommon(_ otherMethod: Function) -> Set<String> {
         let variableSet = Set(self.usedVariables)
         return variableSet.intersection(otherMethod.usedVariables)
@@ -193,7 +200,8 @@ extension Function: Node4jInsertable {
             is_static:\(self.isStatic),
             is_getter:\(self.isGetter),
             is_setter:\(self.isSetter),
-            is_synchronized:\(self.isSyncronized)
+            is_synchronized:\(self.isSyncronized),
+            number_of_switch_statements:\(self.numberOfSwitchStatements)
         }
         """
     }

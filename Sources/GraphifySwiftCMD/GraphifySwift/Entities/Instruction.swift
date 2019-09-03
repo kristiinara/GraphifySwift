@@ -13,6 +13,20 @@ class Instruction {
     
     var instructions: [Instruction] = []
     
+    var numberOfSwitchStatements: Int {
+        var switchStatements = 0
+        
+        if let _ = self as? Switch {
+            switchStatements += 1
+        }
+        
+        switchStatements += self.instructions.reduce(0) { res, statement in
+            return res + statement.numberOfSwitchStatements
+        }
+        
+        return switchStatements
+    }
+    
     var numberOfInstructions : Int {
         return self.instructions.reduce(1) { (result, instruction) -> Int in
             return result + instruction.numberOfInstructions

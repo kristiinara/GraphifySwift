@@ -334,64 +334,88 @@ private extension SourceFileIndexAnalysisController {
             return
         }
         
-        let instruction = FuncInstruction(stringValue: name ?? "No name", kind: kind ?? "No kind")
+        //TODO: change instructions to old instructions. Could we somehow add structure to each class and do the parsing there? Or add instructions to each method and do the parsing there?
+        //let instruction = FuncInstruction(stringValue: name ?? "No name", kind: kind ?? "No kind")
+        
+        let instruction = handleInstruction(structure)
         entity.instructions.append(instruction)
         
-        if let substructures = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
-            for substructure in substructures {
-                handleSubInstructions(structure: substructure, entity: instruction)
+//        if let substructures = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
+//            for substructure in substructures {
+//                handleSubInstructions(structure: substructure, entity: instruction)
+//            }
+//        }
+    }
+    
+    func handleInstruction(_ structure: [String: SourceKitRepresentable]) -> Instruction {
+        let kind = structure["key.kind"] as! String
+        let name = (structure["key.name"] as? String) ?? ""
+        let offset = structure["key.offset"] as? Int64
+        var instruction = Instruction(stringValue: name, kind: kind)
+        
+        switch kind {
+        case LocalVariable.kittenKey:
+            let localVariable = LocalVariable(stringValue: name, kind: kind)
+            localVariable.typeName = structure["key.type"] as? String
+            instruction = localVariable
+        case MethodCall.kittenKey:
+            instruction = MethodCall(stringValue: name, kind: kind)
+        case For.kittenKey:
+            instruction = For(stringValue: name, kind: kind)
+        case ForEach.kittenKey:
+            instruction = ForEach(stringValue: name, kind: kind)
+        case While.kittenKey:
+            instruction = While(stringValue: name, kind: kind)
+        case RepeatWhile.kittenKey:
+            instruction = RepeatWhile(stringValue: name, kind: kind)
+        case If.kittenKey:
+            instruction = If(stringValue: name, kind: kind)
+        case Guard.kittenKey:
+            instruction = Guard(stringValue: name, kind: kind)
+        case Switch.kittenKey:
+            instruction = Switch(stringValue: name, kind: kind)
+        case Case.kittenKey:
+            instruction = Case(stringValue: name, kind: kind)
+        default: print("Not handles: \(name)") //self.notHandledInstances.append(kind)
+        }
+        
+        instruction.offset = offset
+        
+        //let classType = type(of: instruction)
+        
+        //instructionsCount = instructionsCount + 1
+        //print("             \(instructionsCount) - \(name), \(classType)")
+        
+        if let models = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
+            for model in models {
+                
+                
+                let subInstruction = self.handleInstruction(model)
+                instruction.instructions.append(subInstruction)
             }
         }
+        
+        return instruction
     }
     
-    func handleSubInstructions(structure: [String: SourceKitRepresentable], entity: FuncInstruction) {
-        let kind = structure["key.kind"] as? String
-        let name = structure["key.name"] as? String
-        let type = structure["key.type"] as? String
-        
-        let instruction = FuncInstruction(stringValue: name ?? "No name", kind: kind ?? "No kind")
-        entity.instructions.append(instruction)
-        
-        if let substructures = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
-            for substructure in substructures {
-                handleSubInstructions(structure: substructure, entity: instruction)
-            }
-        }
-    }
+    
+//    func handleSubInstructions(structure: [String: SourceKitRepresentable], entity: FuncInstruction) {
+//        let kind = structure["key.kind"] as? String
+//        let name = structure["key.name"] as? String
+//        let type = structure["key.type"] as? String
+//
+//        let instruction = FuncInstruction(stringValue: name ?? "No name", kind: kind ?? "No kind")
+//        entity.instructions.append(instruction)
+//
+//        if let substructures = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
+//            for substructure in substructures {
+//                handleSubInstructions(structure: substructure, entity: instruction)
+//            }
+//        }
+//    }
 }
 
-
-class FirstLevel {
-    var path: String?
-    let name: String
-    let kind: String
-    let usr: String?
-    var parentsClasses: [(name: String, usr: String?)] = []
-    var parentStructs: [(name: String, usr: String?)] = []
-    
-    var entities: [Entity] = []
-    
-    init(name: String, kind: String, usr: String?) {
-        self.name = name
-        self.kind = kind
-        self.usr = usr
-    }
-    
-    func printout(filler: String) {
-        print("\(filler) name: \(name)")
-        print("\(filler) kind: \(kind)")
-        print("\(filler) user: \(usr ?? "----")")
-        
-        print("\(filler) parentClasses: \(parentsClasses)")
-        print("\(filler) parentStructs: \(parentStructs)")
-        
-        print("\(filler) entities:")
-        for entity in entities {
-            entity.printout(filler: "\(filler)\(filler)")
-        }
-    }
-}
-
+// Convert to app
 extension SourceFileIndexAnalysisController {
     func translateEntitiesToApp(objects: [FirstLevel]) -> App {
         let appName = homeURL.lastPathComponent
@@ -483,13 +507,45 @@ extension SourceFileIndexAnalysisController {
     }
 }
 
+
+class FirstLevel {
+    var path: String?
+    let name: String
+    let kind: String
+    let usr: String?
+    var parentsClasses: [(name: String, usr: String?)] = []
+    var parentStructs: [(name: String, usr: String?)] = []
+    
+    var entities: [Entity] = []
+    
+    init(name: String, kind: String, usr: String?) {
+        self.name = name
+        self.kind = kind
+        self.usr = usr
+    }
+    
+    func printout(filler: String) {
+        print("\(filler) name: \(name)")
+        print("\(filler) kind: \(kind)")
+        print("\(filler) user: \(usr ?? "----")")
+        
+        print("\(filler) parentClasses: \(parentsClasses)")
+        print("\(filler) parentStructs: \(parentStructs)")
+        
+        print("\(filler) entities:")
+        for entity in entities {
+            entity.printout(filler: "\(filler)\(filler)")
+        }
+    }
+}
+
 class Entity {
     let name: String
     let kind: String
     let usr: String?
     let structure: [String: SourceKitRepresentable]
     
-    var instructions: [FuncInstruction] = []
+    var instructions: [Instruction] = []
     var entities: [Entity] = []
     var attributes: [Attribute] = []
     var parameters: [FuncParameter] = []
@@ -553,9 +609,9 @@ class Entity {
         }
         
         print("\(filler) instructions: ")
-        for instruction in instructions {
-            instruction.printout(filler: "\(filler)\(filler)")
-        }
+//        for instruction in instructions {
+//            instruction.printout(filler: "\(filler)\(filler)")
+//        }
     }
 }
 
@@ -587,24 +643,24 @@ class FuncParameter {
     }
 }
 
-class FuncInstruction : Instruction {
-//    let stringValue: String
-//    let kind: String
-    
-    //var instructions: [FuncInstruction] = []
-    
-//    init(stringValue: String, kind: String) {
-//        self.stringValue = stringValue
-//        self.kind = kind
+//class FuncInstruction : Instruction {
+////    let stringValue: String
+////    let kind: String
+//
+//    //var instructions: [FuncInstruction] = []
+//
+////    init(stringValue: String, kind: String) {
+////        self.stringValue = stringValue
+////        self.kind = kind
+////    }
+//
+//    func printout(filler: String) {
+//        print("\(filler) name: \(kind) type: \(stringValue)")
+//        print("\(filler) instructions: ")
+//        for instruction in instructions {
+//            if let instruction = instruction as? FuncInstruction {
+//                instruction.printout(filler: "\(filler)\(filler)")
+//            }
+//        }
 //    }
-    
-    func printout(filler: String) {
-        print("\(filler) name: \(kind) type: \(stringValue)")
-        print("\(filler) instructions: ")
-        for instruction in instructions {
-            if let instruction = instruction as? FuncInstruction {
-                instruction.printout(filler: "\(filler)\(filler)")
-            }
-        }
-    }
-}
+//}
