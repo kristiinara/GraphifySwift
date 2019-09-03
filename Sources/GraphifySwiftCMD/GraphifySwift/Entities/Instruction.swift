@@ -91,6 +91,36 @@ class Instruction {
         }
     }
     
+    var chainedMessageCalls: [[MethodCall]] {
+        var calls: [[MethodCall]] = []
+        
+        for instruction in instructions {
+            var chainedCalls = instruction.chainedMessageCalls
+            
+            if let instruction = instruction as? MethodCall {
+                if chainedCalls.count > 0 {
+                    chainedCalls = chainedCalls.map() { subCalls in
+                        var res = [instruction]
+                        res.append(contentsOf: subCalls)
+                        return res
+                    }
+                } else {
+                    chainedCalls.append([instruction])
+                }
+            }
+            calls.append(contentsOf: chainedCalls)
+        }
+        return calls
+    }
+    
+    var maxNumberOfChanedMessageCalls: Int {
+        let lengthOfMessageCalls = self.chainedMessageCalls.map() { chain in
+            return chain.count
+        }
+        
+        return lengthOfMessageCalls.max() ?? 0
+    }
+    
     init(stringValue: String, kind: String) {
         self.stringValue = stringValue
         self.kind = kind

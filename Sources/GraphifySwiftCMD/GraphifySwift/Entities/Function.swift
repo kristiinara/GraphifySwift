@@ -146,6 +146,17 @@ class Function: Kind {
         }
     }
     
+    var maxNumberOfChanedMessageCalls: Int {
+        var biggestChangedMessageCall = 0
+        
+        for instruction in self.instructions {
+            if instruction.maxNumberOfChanedMessageCalls > biggestChangedMessageCall {
+                biggestChangedMessageCall = instruction.maxNumberOfChanedMessageCalls
+            }
+        }
+        return biggestChangedMessageCall
+    }
+    
     func variablesInCommon(_ otherMethod: Function) -> Set<String> {
         let variableSet = Set(self.usedVariables)
         return variableSet.intersection(otherMethod.usedVariables)
@@ -201,7 +212,8 @@ extension Function: Node4jInsertable {
             is_getter:\(self.isGetter),
             is_setter:\(self.isSetter),
             is_synchronized:\(self.isSyncronized),
-            number_of_switch_statements:\(self.numberOfSwitchStatements)
+            number_of_switch_statements:\(self.numberOfSwitchStatements),
+            max_number_of_chaned_message_calls:\(self.maxNumberOfChanedMessageCalls)
         }
         """
     }
