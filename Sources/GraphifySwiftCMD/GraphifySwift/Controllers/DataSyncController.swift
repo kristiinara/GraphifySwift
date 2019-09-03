@@ -215,7 +215,7 @@ class DataSyncController {
     func addParent(_ classInstance: Class, completition: @escaping () -> Void) {
         var toAdd = 0
         
-        if let parent = classInstance.parent {
+        for parent in classInstance.inheritedClasses {
             toAdd = toAdd + 1
             self.databaseController.runQueryReturnId(transaction: classInstance.extendsQuery(parent)) { relId in
                 //print("Added AppExtendsParent \(String(describing: relId))")
@@ -233,7 +233,7 @@ class DataSyncController {
                 //print("Added AppImplements \(String(describing: relId))")
                 toAdd = toAdd - 1
                 if(toAdd == 0) {
-                  //  print("toAdd: \(toAdd)")
+                    //  print("toAdd: \(toAdd)")
                     completition()
                 }
             }

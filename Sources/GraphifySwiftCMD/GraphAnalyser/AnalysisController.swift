@@ -15,7 +15,7 @@ class AnalysisController {
         
         switch queryString {
         case "all":
-            queries = [LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery()]
+            queries = [LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass()]
         case "LM":
             queries = [LongMethodQuery()]
         case "BLOB":
@@ -24,6 +24,8 @@ class AnalysisController {
             queries = [ShotgunSurgeryQuery()]
         case "SwitchStatements":
             queries = [SwitchStatementsQuery()]
+        case "LazyClass":
+            queries = [LazyClass()]
         default:
             queries = [CustomQuery(queryString: queryString)]
         }

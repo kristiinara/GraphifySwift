@@ -402,67 +402,67 @@ class SourceFileAnalysisController {
 //    }
     
     func analyseClassHierarchy() {
-        let classNames = self.app.classes.map() { classInstance in
-            return classInstance.name
-        }
-        
-        let structNames = self.app.structures.map() { structInstance in
-            return structInstance.name
-        }
-        
-        let protocolNames = self.app.protocols.map() { protocolInstance in
-            return protocolInstance.name
-        }
-        
-        for classInstance in self.app.classes {
-            //print("class: \(classInstance.name), inheritedTypes: \(classInstance.inheritedTypes)")
-           // print("usr: \(classInstance.usr)")
-            for type in classInstance.inheritedTypes {
-                if classNames.contains(type) {
-                    for secondClass in self.app.classes {
-                        if secondClass.name == type {
-                            classInstance.parent = secondClass
-                            classInstance.parentName = type
-                            
-                            classInstance.isViewController = secondClass.isViewController
-                            continue
-                        }
-                    }
-                }
-                
-                if protocolNames.contains(type) {
-                    for protocolInstance in self.app.protocols {
-                        if protocolInstance.name == type {
-                            classInstance.extendedInterfaces.append(protocolInstance)
-                            continue
-                        }
-                    }
-                }
-            }
-        }
-        
-        for structInstance in self.app.structures {
-            for type in structInstance.inheritedTypes {
-                if structNames.contains(type) {
-                    for secondStruct in self.app.structures {
-                        if secondStruct.name == type {
-                            structInstance.parent = secondStruct
-                            structInstance.parentName = type
-                            continue
-                        }
-                    }
-                }
-                
-                if protocolNames.contains(type) {
-                    for protocolInstance in self.app.protocols {
-                        if protocolInstance.name == type {
-                            structInstance.extendedInterfaces.append(protocolInstance)
-                            continue
-                        }
-                    }
-                }
-            }
-        }
+//        let classNames = self.app.classes.map() { classInstance in
+//            return classInstance.name
+//        }
+//        
+//        let structNames = self.app.structures.map() { structInstance in
+//            return structInstance.name
+//        }
+//        
+//        let protocolNames = self.app.protocols.map() { protocolInstance in
+//            return protocolInstance.name
+//        }
+//        
+//        for classInstance in self.app.classes {
+//            //print("class: \(classInstance.name), inheritedTypes: \(classInstance.inheritedTypes)")
+//           // print("usr: \(classInstance.usr)")
+//            for type in classInstance.inheritedTypes {
+//                if classNames.contains(type) {
+//                    for secondClass in self.app.classes {
+//                        if secondClass.name == type {
+//                            classInstance.parent = secondClass
+//                            classInstance.parentName = type
+//                            
+//                            classInstance.isViewController = secondClass.isViewController
+//                            continue
+//                        }
+//                    }
+//                }
+//                
+//                if protocolNames.contains(type) {
+//                    for protocolInstance in self.app.protocols {
+//                        if protocolInstance.name == type {
+//                            classInstance.extendedInterfaces.append(protocolInstance)
+//                            continue
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//        
+//        for structInstance in self.app.structures {
+//            for type in structInstance.inheritedTypes {
+//                if structNames.contains(type) {
+//                    for secondStruct in self.app.structures {
+//                        if secondStruct.name == type {
+//                            //structInstance.parent = secondStruct
+//                            structInstance.parentName = type
+//                            continue
+//                        }
+//                    }
+//                }
+//                
+//                if protocolNames.contains(type) {
+//                    for protocolInstance in self.app.protocols {
+//                        if protocolInstance.name == type {
+//                            structInstance.extendedInterfaces.append(protocolInstance)
+//                            continue
+//                        }
+//                    }
+//                }
+//            }
+//        }
     }
     
     func analyseFile(at url: URL, completitionHandler: @escaping () -> Void) {

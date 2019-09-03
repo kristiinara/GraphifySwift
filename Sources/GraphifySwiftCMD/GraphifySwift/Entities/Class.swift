@@ -16,7 +16,8 @@ class Class : Kind {
     var appKey: String = "Default"
     var modifier: String = "" // public, protected, private
     var parentName: String = ""
-    var parent: Class?
+    //var parent: Class?
+    var parentUsrs: [String] = []
     var fileContents = ""
     
     var extendedInterfaces: [Protocol] = []
@@ -28,6 +29,8 @@ class Class : Kind {
     var classMethods: [Function] = []
     var staticMethods: [Function] = []
     var inheritedTypes: [String] = []
+    
+    var inheritedClasses: [Class] = []
     
     var allMethods: [Function] {
         var methods: [Function] = []
@@ -47,12 +50,24 @@ class Class : Kind {
         return variables
     }
     
-    var depthOfInheritance : Int { // Integer Depth of Inheritance, starting at 1 since classes are at least java.lang.Object.
-        if let parent = self.parent {
-            return 1 + parent.depthOfInheritance
-        } else {
+    var depthOfInheritance : Int { // Integer Depth of Inheritance, starting at 1 since classes are at least java.lang.Object. --> which is not true for swift!
+        
+        var depth = 0
+        
+        for parent in self.inheritedClasses {
+            if let parent = parent as? ClassInstance { //TODO: should we only use classInstances, theoretically implemnting protocols is or is not ineritance?
+                depth += 1
+                depth += parent.depthOfInheritance
+                
+            }
+        }
+        
+        // In case superclass is outside of application domain, make depth 1
+        if depth == 0 && (self.parentUsrs.count - self.numberOfImplementedInterfaces) > 0 {
             return 1
         }
+        
+        return depth
     }
     
     var numberOfImplementedInterfaces : Int { // number of protocols implemented
@@ -67,7 +82,7 @@ class Class : Kind {
         }
     }
     
-    //TODO: Set when calculateCouplingBetweenClasses is called in app
+    //Set when calculateCouplingBetweenClasses is called in app
     var couplingBetweenObjectClasses = 0 // Type : Integer Also know as CBO. Defined by Chidamber & Kemerer. CBO represents the number of other classes a class is coupled to. This metrics is calculated from the callgraph and it counts the reference to methods, variables or types once for each class.
     
     var lackOfCohesionInMethods: Int {
@@ -128,11 +143,11 @@ class Class : Kind {
     }
     
     var numberOfMethods: Int {
-        return self.instanceMethods.count + self.classMethods.count
+        return self.instanceMethods.count + self.classMethods.count + self.staticMethods.count
     }
     
     var numberOfAttributes: Int {
-        return self.instanceVariables.count + self.classVariables.count
+        return self.instanceVariables.count + self.classVariables.count + self.staticVariables.count
     }
     
     var description: String {
@@ -142,6 +157,20 @@ class Class : Kind {
         instance methods: \(self.instanceMethods)
         class methods: \(self.classMethods)
         """
+    }
+    
+    // Added variables:
+    //TODO: add instrutions from variables as well
+    var numberOfInstructions: Int {
+        return self.allMethods.reduce(0) { res, method in
+            return res + method.numberOfInstructions
+        }
+    }
+    
+    var numberOfWeightedMethods: Int {
+        return self.allMethods.reduce(0) { res, method in
+            return res + method.cyclomaticComplexity
+        }
     }
     
     func calculateLines() {
@@ -215,41 +244,15 @@ extension Class: Node4jInsertable {
         is_static:\(self.isStatic),
         is_inner_class:\(self.isInnerClass),
         is_interface:\(self.isInterface),
-        is_view_controller:\(self.isViewController)
+        is_view_controller:\(self.isViewController),
+        number_of_instructions:\(self.numberOfInstructions),
+        number_of_weighted_methods:\(self.numberOfWeightedMethods),
+        depth_of_inheritance:\(self.depthOfInheritance)
         }
         """
     }
     
     var createQuery: String? {
-        print("createQuery getter")
-        print("nodename: \(self.nodeName)")
-        
-        print("name:'\(self.name)'")
-        print("app_key:'\(self.appKey)'")
-        print("modifier:'\(self.modifier)'")
-        print("parent_name:'\(self.parentName)'")
-        print("number_of_methods:\(self.numberOfMethods)")
-        print("number_of_implemented_interfaces:\(self.numberOfImplementedInterfaces)")
-        print("number_of_attributes:\(self.numberOfAttributes)")
-        print("number_of_children:\(self.numberOfChildren)")
-        print("class_complexity:\(self.classComplexity)")
-        print("coupling_between_object_classes:\(self.couplingBetweenObjectClasses)")
-        print("lack_of_cohesion_in_methods:\(self.lackOfCohesionInMethods)")
-        print("is_abstract:\(self.isAbstract)")
-        print("is_activity:\(self.isActivity)")
-        print("is_viewController:\(self.isViewController)")
-        print("is_application:\(self.isApplication)")
-        print("is_broadcast_receiver:\(self.isBroadcastReceiver)")
-        print("is_content_provider:\(self.isContentProvider)")
-        print("is_service:\(self.isService)")
-        print("is_final:\(self.isFinal)")
-        print("is_static:\(self.isStatic)")
-        print("is_inner_class:\(self.isInnerClass)")
-        print("is_interface:\(self.isInterface)")
-        print("is_view_controller:\(self.isViewController)")
-        
-        print("properties: \(self.properties)")
-        
         let query = "create (n:\(self.nodeName) \(self.properties)) return id(n)"
         print("query: \(query)")
         return query

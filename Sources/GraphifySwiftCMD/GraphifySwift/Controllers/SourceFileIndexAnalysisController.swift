@@ -453,6 +453,15 @@ extension SourceFileIndexAnalysisController {
                 classInstance?.usr = usr
             }
             
+            var parents = object.parentsClasses
+            parents.append(contentsOf: object.parentStructs)
+            
+            for parent in parents {
+                if let usr = parent.usr {
+                    classInstance?.parentUsrs.append(usr)
+                }
+            }
+            
             //TODO: make distinction between instance, class, static
             var methods: [Function] = []
             var variables: [Variable] = []
@@ -500,6 +509,19 @@ extension SourceFileIndexAnalysisController {
                     if let variable = self.allVariables[reference] {
                         instanceMethod.referencedVariables.append(variable)
                         variable.methodReferences.append(instanceMethod)
+                    }
+                }
+            }
+            
+            //Add parents and extendedInterfaces
+            for usr in classInstance.parentUsrs {
+                if let object = self.allClasses[usr] {
+                    if let parentClass = object as? ClassInstance {
+                        classInstance.inheritedClasses.append(parentClass)
+                    } else if let parentProtocol = object as? Protocol {
+                        classInstance.extendedInterfaces.append(parentProtocol)
+                    } else if let parentStruct = object as? Struct {
+                        classInstance.inheritedClasses.append(parentStruct)
                     }
                 }
             }
