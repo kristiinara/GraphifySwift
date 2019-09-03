@@ -33,6 +33,26 @@ class DatabaseController {
         }
     }
     
+    func runQueryReturnDataString(transaction: String, completition: @escaping ([String: Any]?) -> Void) {
+        let parameters = [
+            "statements": [[
+                "statement" : transaction
+                ]]
+        ]
+        requestWithParameters(parameters) { json in
+            let success = self.defaultErrorHandling(json: json)
+            
+            print("----- JSON result (success? \(success)): -----")
+            //print(json ?? "Empty response")
+            
+            if success {
+                completition(json)
+            } else {
+                completition(nil)
+            }
+        }
+    }
+    
     func runQueryReturnRows(transaction: String, completition: @escaping ([[String]]?) -> Void) {
         let parameters = [
             "statements": [[
@@ -43,7 +63,7 @@ class DatabaseController {
             let success = self.defaultErrorHandling(json: json)
             
             print("----- JSON result (success? \(success)): -----")
-            print(json ?? "Empty response")
+            //print(json ?? "Empty response")
             
             if success {
                 completition(self.getRows(json))

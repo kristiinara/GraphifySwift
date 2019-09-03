@@ -8,8 +8,10 @@
 import Foundation
 
 class CustomQuery: Query {
+    let name = "Custom"
     var string: String
     var result: String?
+    var json: [String : Any]?
     
     init(queryString: String) {
         self.string = queryString

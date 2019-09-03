@@ -7,8 +7,8 @@
 
 import Foundation
 
-//TODO: not yet working, since .lackOfCohesionInMethods does not work yet
 class BlobClassQuery : Query {
+    let name = "BlobClass"
     let veryHighLackOfCohesienInMethods = 40
     let veryHighNumberOfAttributes = 13
     let veryHighNumberOfMethods = 22
@@ -24,4 +24,5 @@ class BlobClassQuery : Query {
     }
     
     var result: String?
+    var json: [String : Any]?
 }

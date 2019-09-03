@@ -151,24 +151,21 @@ class Application {
     
     func runQuery(query: String) {
         let analysisController = AnalysisController()
-        dispatchGroup.enter()
         
         analysisController.analyse(queryString: query) { rows in
             if let rows = rows {
+                print("Query number of results: \(rows.count)")
                 for row in rows {
-                    if row.count == 2 {
-                        print("\(row[0]) - \(row[1])")
-                    } else {
-                        print("Wrong number of items: \(row)")
-                    }
+                    print(row.reduce("") { result, item in
+                        if result.count == 0 {
+                            return item
+                        }
+                        return "\(result), \(item)"
+                    })
                 }
+            } else {
+                print("Results: nil")
             }
-            self.dispatchGroup.leave()
         }
-        
-        dispatchGroup.notify(queue: DispatchQueue.main) {
-            exit(EXIT_SUCCESS)
-        }
-        dispatchMain()
     }
 }
