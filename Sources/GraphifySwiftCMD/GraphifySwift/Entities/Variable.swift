@@ -6,8 +6,6 @@
 //  Copyright © 2019 Kristiina Rahkema. All rights reserved.
 //
 
-//import Foundation
-
 class Variable : Kind {
     var id: Int?
     var usr: String? = "?"

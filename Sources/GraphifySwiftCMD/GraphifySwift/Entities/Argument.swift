@@ -5,9 +5,6 @@
 //  Created by Kristiina Rahkema on 11/04/2019.
 //  Copyright © 2019 Kristiina Rahkema. All rights reserved.
 //
-
-//import Foundation
-
 class Argument {
     var name: String // for Android it is type of argument
     var type: String

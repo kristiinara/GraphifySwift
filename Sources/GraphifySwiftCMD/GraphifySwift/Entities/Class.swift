@@ -56,10 +56,10 @@ class Class : Kind {
     }
     
     var numberOfImplementedInterfaces : Int { // number of protocols implemented
-        return self.inheritedTypes.count //TODO: make this more exact, currently it could include the parent class
+        return self.inheritedTypes.count
     }
     
-    var numberOfChildren = 0 // number of classes extending this class
+    var numberOfChildren = 0 // TODO: number of classes extending this class
     var classComplexity : Int { // sum of all methods complexity
         let allMethods = self.classMethods + self.instanceMethods
         return allMethods.reduce(0) { (result, method) in
@@ -70,7 +70,6 @@ class Class : Kind {
     //TODO: Set when calculateCouplingBetweenClasses is called in app
     var couplingBetweenObjectClasses = 0 // Type : Integer Also know as CBO. Defined by Chidamber & Kemerer. CBO represents the number of other classes a class is coupled to. This metrics is calculated from the callgraph and it counts the reference to methods, variables or types once for each class.
     
-    //TODO: figure out new implementation after changing how references are registered
     var lackOfCohesionInMethods: Int {
         var methods = self.classMethods
         methods.append(contentsOf: self.instanceMethods)
@@ -97,7 +96,6 @@ class Class : Kind {
 
         let lackOfCohesionInMethods = noVariableInCommon - haveVariableInCommon
         return lackOfCohesionInMethods > 0 ? lackOfCohesionInMethods : 0
-        //return 0
     }
     
     var isAbstract: Bool = false // Android specific, cannot be abstract
@@ -114,35 +112,11 @@ class Class : Kind {
     var isInnerClass: Bool = false
     var isInterface: Bool = false // Seems that we don't need additional class for Protocol, but can just say that class is interface
     var isStruct: Bool = false
-    
-//    init(name: String) {
-//        self.name = name
-//        self.instanceVariables = []
-//        self.instanceMethods = []
-//        self.classMethods = []
-//        self.classVariables = []
-//    }
-//
-//    init(name: String, instanceVariables: [Variable], instanceMethods: [Function]) {
-//        self.name = name
-//
-//        self.instanceVariables = instanceVariables
-//        self.instanceMethods = instanceMethods
-//        self.classMethods = []
-//        self.classVariables = []
-//    }
-    
+
     init(name: String, appKey: String, modifier: String) {
         self.name = name
         self.appKey = appKey
         self.modifier = modifier
-        //self.parentName = parentName // use inheritedTypes instead
-//        self.inheritedTypes = inheritedTypes
-//
-//        self.instanceVariables = instanceVariables
-//        self.instanceMethods = instanceMethods
-//        self.classMethods = []
-//        self.classVariables = []
     }
     
     var instructionsCount: Int {
@@ -198,10 +172,8 @@ class Class : Kind {
         allMethods.append(contentsOf: self.instanceMethods)
         
         for method in allMethods {
-            //print("\(line) ? \(method.name) \(method.lineNumber) - \(method.endLineNumber) --> \(method.lineInFunction(line))")
             if let isInMethod = method.lineInFunction(line) {
                 if isInMethod == true {
-                    //print("match: \(method.name)")
                     return method
                 }
             } else {

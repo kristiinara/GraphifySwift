@@ -6,11 +6,6 @@
 //  Copyright © 2019 Kristiina Rahkema. All rights reserved.
 //
 
-//import Foundation
-
-//TODO:
-//  add to instruction class possibility to calculate method calls for a given method (maybe even a query for a given method name?) or get all method names and go from there to find where these mehods reside.
-
 class Instruction {
     let stringValue: String
     let kind: String
@@ -42,7 +37,7 @@ class Instruction {
             
         let additionalCalls = self.instructions.reduce([]) { (result, instruction) -> [MethodCall] in
             if let methodCall = instruction as? MethodCall {
-                let newResult = result + instruction.methodCalls
+                let newResult = result + methodCall.methodCalls
                 return newResult
             } else {
                 return result + instruction.methodCalls
@@ -61,7 +56,7 @@ class Instruction {
         
         let additionalVariables = self.instructions.reduce([]) { (result, instruction) -> [LocalVariable] in
             if let localVariable = instruction as? LocalVariable {
-                let newResult = result + instruction.localVariables
+                let newResult = result + localVariable.localVariables
                 return newResult
             } else {
                 return result + instruction.localVariables
@@ -81,11 +76,6 @@ class Instruction {
             return result + instruction.complexity
         }
     }
-    
-//    //TODO: can we implement this here?
-//    func callsMethod(_ method: Function) -> Bool {
-//        return false
-//    }
     
     init(stringValue: String, kind: String) {
         self.stringValue = stringValue
