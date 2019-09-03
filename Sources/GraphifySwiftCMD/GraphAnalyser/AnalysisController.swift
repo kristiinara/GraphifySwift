@@ -15,7 +15,7 @@ class AnalysisController {
         
         switch queryString {
         case "all":
-            queries = [LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery()]
+            queries = [LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery()]
         case "LM":
             queries = [LongMethodQuery()]
         case "BLOB":
@@ -28,6 +28,8 @@ class AnalysisController {
             queries = [LazyClass()]
         case "MessageChain":
             queries = [MessageChainsQuery()]
+        case "DataClass":
+            queries = [DataClassQuery()]
         default:
             queries = [CustomQuery(queryString: queryString)]
         }

@@ -6,3 +6,14 @@
 //
 
 import Foundation
+
+class DataClassQuery: Query {
+    var name = "DataClass"
+    
+    var result: String?
+    var json: [String : Any]?
+    
+    var string: String {
+        return "match (c:Class) where c.number_of_methods = 0 return c.name as name, c.app_key as app_key, c.number_of_attributes as number_of_attributes"
+    }
+}
