@@ -25,4 +25,8 @@ class BlobClassQuery : Query {
     
     var result: String?
     var json: [String : Any]?
+    
+    var notes: String {
+        return "Blob class code smell uses lackOfCohesionInMethods, NumberOfMethods and NumberOfAttributes. Code smell is present if allthese values are high. What is high needs to be determined statistically."
+    }
 }

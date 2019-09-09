@@ -17,4 +17,8 @@ class LongMethodQuery : Query {
     
     var result: String?
     var json: [String : Any]?
+    
+    var notes: String {
+        return "Long Method code smell looks at methods where number of instructions is bigger than very high. Very high number of instructions has to be defined statistically."
+    }
 }

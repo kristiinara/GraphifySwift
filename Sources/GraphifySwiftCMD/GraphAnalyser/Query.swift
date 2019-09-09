@@ -12,6 +12,7 @@ protocol Query {
     var string: String {get}
     var result: String? {get set}
     var json: [String: Any]? {get set}
+    var notes: String {get}
 }
 
 extension Query {
