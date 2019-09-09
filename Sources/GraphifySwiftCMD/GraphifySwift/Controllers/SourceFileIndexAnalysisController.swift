@@ -66,6 +66,8 @@ class SourceFileIndexAnalysisController {
         self.findReferences(app: app)
         app.calculateCouplingBetweenClasses()
         
+        self.addCommentsToApp(app: app)
+        
         ObjectPrinter.printApp(app)
         self.dataSyncController.finished = finished
         self.dataSyncController.sync(app: app)
@@ -415,6 +417,123 @@ private extension SourceFileIndexAnalysisController {
 //    }
 }
 
+//
+extension SourceFileIndexAnalysisController {
+    func addCommentsToApp(app: App) {
+        for classInstance in app.allClasses {
+            if let file = File(path: classInstance.path) {
+                let comments = handleComments(file.contents)
+                classInstance.comments = comments
+            }
+        }
+    }
+    
+//    func makeCommentsQuery(at path: String) -> [String: SourceKitRepresentable] {
+//        if let file = File(path: path) {
+//           // let request = Request.syntaxTree(file: file, byteTree: false)
+//           // let toolchains = ["com.apple.dt.toolchain.XcodeDefault"]
+////            var skToolchains = toolchains.map { sourcekitd_request_string_create($0) }
+////
+////            let dict = [
+////                sourcekitd_uid_get_from_cstr("key.request"): sourcekitd_request_uid_create(sourcekitd_uid_get_from_cstr("source.request.editor.open.interface")),
+////                sourcekitd_uid_get_from_cstr("key.name"): sourcekitd_request_string_create(UUID().uuidString),
+////                sourcekitd_uid_get_from_cstr("key.compilerargs"): sourcekitd_request_array_create(&skCompilerArguments, skCompilerArguments.count),
+////                sourcekitd_uid_get_from_cstr("key.modulename"): sourcekitd_request_string_create("Foundation"),
+////                sourcekitd_uid_get_from_cstr("key.toolchains"): sourcekitd_request_array_create(&skToolchains, skToolchains.count),
+////                sourcekitd_uid_get_from_cstr("key.synthesizedextensions"): sourcekitd_request_int64_create(1)
+////            ]
+////
+////            var keys = Array(dict.keys.map({ $0 as sourcekitd_uid_t? }))
+////            var values = Array(dict.values)
+////            let skRequest = sourcekitd_request_dictionary_create(&keys, &values, dict.count)!
+////
+//
+//
+//
+//           // let request = Request.customRequest(request: skRequest)
+//            let request = Request.syntaxTree(file: file, byteTree: false)
+//            let editorRequest = Request.editorOpen(file: file)
+//
+//            var paths = self.allPaths
+//            paths.append(contentsOf: self.dependencyController.successfullPaths)
+//
+//            var arguments = ["-target", self.target, "-sdk", self.sdk ,"-j4"]
+//            arguments.append(contentsOf: paths)
+//
+//            let docInfo = Request.docInfo(text: file.contents, arguments: arguments)
+//
+//
+////            let syntax = Request.yamlRequest(yaml: """
+////                key.request: source.request.syntax
+////                key.sourcefile: \(path)
+////                """)
+//            do {
+//                let structure = try request.send()
+//                let editorStructure = try editorRequest.send()
+//               // let syntaxStructure = try syntax.send()
+//                let docStructure = try docInfo.send()
+//
+//                //print("editor: \(editorStructure)")
+//                print("docInfo: \(docInfo)")
+//                //print("syntax: \(syntaxStructure)")
+//
+//                return structure
+//            } catch {
+//                print("Could not get syntax tree of file \(path)")
+//            }
+//        }
+//
+//        return [:]
+//    }
+    
+    func handleComments(_ fileContents: String) -> [Comment] {
+        let lines = fileContents.components(separatedBy: "\n")
+        var comments : [Comment] = []
+        
+        var lineNumber = 0
+        var commentString = ""
+        
+        for line in lines {
+            lineNumber += 1
+            
+            var slashIndex: String.Index?
+            var longCommentIndex: String.Index?
+            
+            if line.contains("//") {
+                if let range = line.range(of: "//") {
+                    slashIndex = range.lowerBound
+                }
+            }
+            
+            if line.contains("/*") {
+                if let range = line.range(of: "/*") {
+                    longCommentIndex = range.lowerBound
+                }
+            }
+            
+            if let localSlashIndex = slashIndex, longCommentIndex == nil {
+                commentString = String(line[localSlashIndex..<line.endIndex])
+                comments.append(Comment(lineNumber: lineNumber, string: commentString))
+                commentString = ""
+                
+                slashIndex = nil
+                longCommentIndex = nil
+            }
+            
+            if let localLongCommentIndex = longCommentIndex {
+                commentString = String(line[localLongCommentIndex..<line.endIndex])
+                comments.append(Comment(lineNumber: lineNumber, string: commentString))
+                commentString = ""
+                
+                slashIndex = nil
+                longCommentIndex = nil
+            }
+        }
+        
+        return comments
+    }
+}
+
 // Convert to app
 extension SourceFileIndexAnalysisController {
     func translateEntitiesToApp(objects: [FirstLevel]) -> App {
@@ -446,6 +565,10 @@ extension SourceFileIndexAnalysisController {
                 let structInstance = Struct(name: object.name, appKey: appKey, modifier: "")
                 app.structures.append(structInstance)
                 classInstance = structInstance
+            }
+            
+            if let path = object.path {
+                classInstance?.path = path
             }
             
             if let usr = object.usr {
@@ -662,6 +785,16 @@ class FuncParameter {
     
     func printout(filler: String) {
         print("\(filler) name: \(name) type: \(type)")
+    }
+}
+
+class Comment {
+    var lineNumber: Int
+    var string: String
+    
+    init(lineNumber: Int, string: String) {
+        self.lineNumber = lineNumber
+        self.string = string
     }
 }
 

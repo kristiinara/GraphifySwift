@@ -172,6 +172,15 @@ class App : Kind {
             }
         }
     }
+    
+    var allClasses: [Class] {
+        var classes: [Class] = []
+        classes.append(contentsOf: self.classes)
+        classes.append(contentsOf: self.structures)
+        classes.append(contentsOf: self.protocols)
+        
+        return classes
+    }
 }
 
 extension App: Node4jInsertable {

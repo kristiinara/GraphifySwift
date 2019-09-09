@@ -16,4 +16,8 @@ class CustomQuery: Query {
     init(queryString: String) {
         self.string = queryString
     }
+    
+    var notes: String {
+        return "Running custom query defined by user."
+    }
 }

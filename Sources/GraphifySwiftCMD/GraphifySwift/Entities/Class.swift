@@ -31,6 +31,7 @@ class Class : Kind {
     var inheritedTypes: [String] = []
     
     var inheritedClasses: [Class] = []
+    var comments: [Comment] = []
     
     var allMethods: [Function] {
         var methods: [Function] = []
@@ -173,6 +174,10 @@ class Class : Kind {
         }
     }
     
+    var numberOfComments: Int {
+        return self.comments.count
+    }
+    
     func calculateLines() {
         var allMethods: [Function] = []
         allMethods.append(contentsOf: self.classMethods)
@@ -247,7 +252,8 @@ extension Class: Node4jInsertable {
         is_view_controller:\(self.isViewController),
         number_of_instructions:\(self.numberOfInstructions),
         number_of_weighted_methods:\(self.numberOfWeightedMethods),
-        depth_of_inheritance:\(self.depthOfInheritance)
+        depth_of_inheritance:\(self.depthOfInheritance),
+        number_of_comments:\(self.numberOfComments)
         }
         """
     }
