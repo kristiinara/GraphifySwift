@@ -53,9 +53,6 @@ class SourceFileIndexAnalysisController {
             }
             
             allObjects.append(contentsOf: objects)
-            
-            //let structureResult = makeStructureRequest(at: fileUrl.path)
-            
         }
         
         for object in allObjects {
@@ -77,13 +74,7 @@ class SourceFileIndexAnalysisController {
         if let file = File(path: path) {
             do {
                 let structure = try Structure(file: file)
-                if let structure = structure.dictionary as? [String: SourceKitRepresentable] {
-                    return structure
-                } else {
-                    return [:]
-                }
-                
-                
+                return structure.dictionary
             } catch {
                 print("Could not get structure of file \(path)")
             }
@@ -245,7 +236,7 @@ private extension SourceFileIndexAnalysisController {
         
         let usr = structure["key.usr"] as? String
         
-        var object = (name != nil) ? Entity(name: name!, kind: kind, usr: usr, structure: structure) : Entity(kind: kind, usr: usr, structure: structure)
+        let object = (name != nil) ? Entity(name: name!, kind: kind, usr: usr, structure: structure) : Entity(kind: kind, usr: usr, structure: structure)
         
         if let attributes = structure["key.attributes"] as? [[String: SourceKitRepresentable]]{
             for attribute in attributes {
@@ -337,16 +328,9 @@ private extension SourceFileIndexAnalysisController {
         }
         
         //TODO: change instructions to old instructions. Could we somehow add structure to each class and do the parsing there? Or add instructions to each method and do the parsing there?
-        //let instruction = FuncInstruction(stringValue: name ?? "No name", kind: kind ?? "No kind")
         
         let instruction = handleInstruction(structure)
         entity.instructions.append(instruction)
-        
-//        if let substructures = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
-//            for substructure in substructures {
-//                handleSubInstructions(structure: substructure, entity: instruction)
-//            }
-//        }
     }
     
     func handleInstruction(_ structure: [String: SourceKitRepresentable]) -> Instruction {
@@ -383,11 +367,6 @@ private extension SourceFileIndexAnalysisController {
         
         instruction.offset = offset
         
-        //let classType = type(of: instruction)
-        
-        //instructionsCount = instructionsCount + 1
-        //print("             \(instructionsCount) - \(name), \(classType)")
-        
         if let models = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
             for model in models {
                 
@@ -399,25 +378,8 @@ private extension SourceFileIndexAnalysisController {
         
         return instruction
     }
-    
-    
-//    func handleSubInstructions(structure: [String: SourceKitRepresentable], entity: FuncInstruction) {
-//        let kind = structure["key.kind"] as? String
-//        let name = structure["key.name"] as? String
-//        let type = structure["key.type"] as? String
-//
-//        let instruction = FuncInstruction(stringValue: name ?? "No name", kind: kind ?? "No kind")
-//        entity.instructions.append(instruction)
-//
-//        if let substructures = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
-//            for substructure in substructures {
-//                handleSubInstructions(structure: substructure, entity: instruction)
-//            }
-//        }
-//    }
 }
-
-//
+// add comments
 extension SourceFileIndexAnalysisController {
     func addCommentsToApp(app: App) {
         for classInstance in app.allClasses {
@@ -427,64 +389,6 @@ extension SourceFileIndexAnalysisController {
             }
         }
     }
-    
-//    func makeCommentsQuery(at path: String) -> [String: SourceKitRepresentable] {
-//        if let file = File(path: path) {
-//           // let request = Request.syntaxTree(file: file, byteTree: false)
-//           // let toolchains = ["com.apple.dt.toolchain.XcodeDefault"]
-////            var skToolchains = toolchains.map { sourcekitd_request_string_create($0) }
-////
-////            let dict = [
-////                sourcekitd_uid_get_from_cstr("key.request"): sourcekitd_request_uid_create(sourcekitd_uid_get_from_cstr("source.request.editor.open.interface")),
-////                sourcekitd_uid_get_from_cstr("key.name"): sourcekitd_request_string_create(UUID().uuidString),
-////                sourcekitd_uid_get_from_cstr("key.compilerargs"): sourcekitd_request_array_create(&skCompilerArguments, skCompilerArguments.count),
-////                sourcekitd_uid_get_from_cstr("key.modulename"): sourcekitd_request_string_create("Foundation"),
-////                sourcekitd_uid_get_from_cstr("key.toolchains"): sourcekitd_request_array_create(&skToolchains, skToolchains.count),
-////                sourcekitd_uid_get_from_cstr("key.synthesizedextensions"): sourcekitd_request_int64_create(1)
-////            ]
-////
-////            var keys = Array(dict.keys.map({ $0 as sourcekitd_uid_t? }))
-////            var values = Array(dict.values)
-////            let skRequest = sourcekitd_request_dictionary_create(&keys, &values, dict.count)!
-////
-//
-//
-//
-//           // let request = Request.customRequest(request: skRequest)
-//            let request = Request.syntaxTree(file: file, byteTree: false)
-//            let editorRequest = Request.editorOpen(file: file)
-//
-//            var paths = self.allPaths
-//            paths.append(contentsOf: self.dependencyController.successfullPaths)
-//
-//            var arguments = ["-target", self.target, "-sdk", self.sdk ,"-j4"]
-//            arguments.append(contentsOf: paths)
-//
-//            let docInfo = Request.docInfo(text: file.contents, arguments: arguments)
-//
-//
-////            let syntax = Request.yamlRequest(yaml: """
-////                key.request: source.request.syntax
-////                key.sourcefile: \(path)
-////                """)
-//            do {
-//                let structure = try request.send()
-//                let editorStructure = try editorRequest.send()
-//               // let syntaxStructure = try syntax.send()
-//                let docStructure = try docInfo.send()
-//
-//                //print("editor: \(editorStructure)")
-//                print("docInfo: \(docInfo)")
-//                //print("syntax: \(syntaxStructure)")
-//
-//                return structure
-//            } catch {
-//                print("Could not get syntax tree of file \(path)")
-//            }
-//        }
-//
-//        return [:]
-//    }
     
     func handleComments(_ fileContents: String) -> [Comment] {
         let lines = fileContents.components(separatedBy: "\n")
@@ -653,6 +557,7 @@ extension SourceFileIndexAnalysisController {
 }
 
 
+// Helper classes
 class FirstLevel {
     var path: String?
     let name: String
@@ -797,25 +702,3 @@ class Comment {
         self.string = string
     }
 }
-
-//class FuncInstruction : Instruction {
-////    let stringValue: String
-////    let kind: String
-//
-//    //var instructions: [FuncInstruction] = []
-//
-////    init(stringValue: String, kind: String) {
-////        self.stringValue = stringValue
-////        self.kind = kind
-////    }
-//
-//    func printout(filler: String) {
-//        print("\(filler) name: \(kind) type: \(stringValue)")
-//        print("\(filler) instructions: ")
-//        for instruction in instructions {
-//            if let instruction = instruction as? FuncInstruction {
-//                instruction.printout(filler: "\(filler)\(filler)")
-//            }
-//        }
-//    }
-//}
