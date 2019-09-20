@@ -64,16 +64,9 @@ class FolderUtility {
             // ignoring files that contain the ignore string, but only looking at path relative to after the base url
             if let ignore = ignore {
                 var path = fileURL.path
-//                print("path: \(path)")
-//                print("url.path: \(url.path)")
                 path = path.replacingOccurrences(of: url.path, with: "")
-//                print("after replace: \(path)")
-                
                 if path.contains(ignore) {
-//                    print("Ignore")
                     continue
-                } else {
-//                    print("do not ignore")
                 }
             }
             
