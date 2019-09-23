@@ -39,7 +39,7 @@ class SourceFileIndexAnalysisController {
         self.allPaths = self.fileQueue.map() { url in return url.path }
     }
     
-    func analyseAllFiles(finished: @escaping () -> Void) {
+    func analyseAllFiles() -> App {
         var allObjects : [FirstLevel] = []
         
         while self.fileQueue.count > 0 {
@@ -65,7 +65,13 @@ class SourceFileIndexAnalysisController {
         
         self.addCommentsToApp(app: app)
         
+        return app
+    }
+    
+    func analyseAllFilesAndAddToDatabase(finished: @escaping () -> Void) {
+        let app = analyseAllFiles()
         ObjectPrinter.printApp(app)
+        
         self.dataSyncController.finished = finished
         self.dataSyncController.sync(app: app)
     }
@@ -236,7 +242,12 @@ private extension SourceFileIndexAnalysisController {
         
         let usr = structure["key.usr"] as? String
         
-        let object = (name != nil) ? Entity(name: name!, kind: kind, usr: usr, structure: structure) : Entity(kind: kind, usr: usr, structure: structure)
+        //let object = (name != nil) ? Entity(name: name!, kind: kind, usr: usr, structure: structure) : Entity(kind: kind, usr: usr, structure: structure)
+        let object = Entity(name: name, kind: kind, usr: usr, structure: structure)
+        
+        if let type = structure["key.type"] as? String {
+            object.type = type
+        }
         
         if let attributes = structure["key.attributes"] as? [[String: SourceKitRepresentable]]{
             for attribute in attributes {
@@ -319,12 +330,19 @@ private extension SourceFileIndexAnalysisController {
     func handleSubstructure(structure: [String: SourceKitRepresentable], entity: Entity) {
         let kind = structure["key.kind"] as? String
         let name = structure["key.name"] as? String
-        let type = structure["key.type"] as? String
+        let type = structure["key.typename"] as? String
+        
+        print("handle substructure of kind: \(kind) type: \(type)")
+        print("structure: \(structure)")
         
         if kind == "source.lang.swift.decl.var.parameter" {
             let parameter = FuncParameter(kind: kind!, type: type ?? "No type", name: name ?? "No name")
             entity.parameters.append(parameter)
             return
+        }
+        
+        if let type = type {
+            entity.type = type
         }
         
         //TODO: change instructions to old instructions. Could we somehow add structure to each class and do the parsing there? Or add instructions to each method and do the parsing there?
@@ -494,26 +512,34 @@ extension SourceFileIndexAnalysisController {
             var variables: [Variable] = []
             
             for entity in object.entities {
-                if entity.kind.contains("decl.function.method") {
-                    let method = InstanceFunction(name: entity.name, fullName: entity.name, appKey: appKey, modifier: "", returnType: "")
-                    method.instructions = entity.instructions
-                    method.references = entity.allReferences
-                    
-                    methods.append(method) //TODO: add stuff into constructor
-                    
-                    if let usr = object.usr {
-                        self.allMethods[usr] = method
-                        method.usr = usr
+                if let name = entity.name {
+                    if entity.kind.contains("decl.function.method") {
+                        let method = InstanceFunction(name: name, fullName: name, appKey: appKey, modifier: "", returnType: "")
+                        method.instructions = entity.instructions
+                        method.references = entity.allReferences
+                        
+                        methods.append(method) //TODO: add stuff into constructor
+                        
+                        if let usr = object.usr {
+                            self.allMethods[usr] = method
+                            method.usr = usr
+                        }
+                        
+                    } else if entity.kind.contains("decl.var") {
+                        let variable = InstanceVariable(name: name, appKey: appKey, modifier: "", type: "", isStatic: false, isFinal: false)
+                        
+                        if let type = entity.type {
+                            variable.type = type
+                        }
+                        variables.append(variable) //TODO: add stuff into constructor
+                        
+                        if let usr = object.usr {
+                            self.allVariables[usr] = variable
+                            variable.usr = usr
+                        }
                     }
-                    
-                } else if entity.kind.contains("decl.var") {
-                    let variable = InstanceVariable(name: entity.name, appKey: appKey, modifier: "", type: "", isStatic: false, isFinal: false)
-                    variables.append(variable) //TODO: add stuff into constructor
-                    
-                    if let usr = object.usr {
-                        self.allVariables[usr] = variable
-                        variable.usr = usr
-                    }
+                } else {
+                    print("entity with no name: \(entity.structure) path: \(object.path)")
                 }
             }
             
@@ -590,10 +616,12 @@ class FirstLevel {
 }
 
 class Entity {
-    let name: String
+    let name: String?
     let kind: String
     let usr: String?
     let structure: [String: SourceKitRepresentable]
+    
+    var type: String?
     
     var instructions: [Instruction] = []
     var entities: [Entity] = []
@@ -602,23 +630,25 @@ class Entity {
     
     var relatedObjects:[(name: String, kind: String, usr: String?)] = []
     
-    init(name: String, kind: String, usr: String?, structure: [String:SourceKitRepresentable]) {
+    init(name: String?, kind: String, usr: String?, structure: [String:SourceKitRepresentable]) {
         self.name = name
         self.kind = kind
         self.usr = usr
         self.structure = structure
     }
     
-    init(kind: String, usr: String?, structure: [String:SourceKitRepresentable]) {
-        self.name = "-- Undefined"
-        self.kind = kind
-        self.usr = usr
-        self.structure = structure
-    }
+//    init(kind: String, usr: String?, structure: [String:SourceKitRepresentable]) {
+//        self.name = "-- Undefined"
+//        self.kind = kind
+//        self.usr = usr
+//        self.structure = structure
+//    }
     
     var isReference : Bool {
-        if self.name.contains(".ref.") {
-            return true
+        if let name = self.name {
+            if name.contains(".ref.") {
+                return true
+            }
         }
         return false
     }

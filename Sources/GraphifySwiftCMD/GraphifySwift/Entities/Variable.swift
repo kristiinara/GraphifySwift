@@ -15,6 +15,7 @@ class Variable : Kind {
     var type: String
     var isStatic: Bool = false
     var isFinal: Bool = false
+    weak var classInstance: Class?
     
     var methodReferences: [Function] = []
     var variableReferences: [Variable] = []

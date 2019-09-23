@@ -217,6 +217,16 @@ class Class : Kind {
         
         return nil
     }
+    
+    func setReverseRelationshipsToVariablesAndMethods() {
+        for variable in self.allVariables {
+            variable.classInstance = self
+        }
+        
+        for method in self.allMethods {
+            method.classInstance = self
+        }
+    }
 }
 
 extension Class: Node4jInsertable {

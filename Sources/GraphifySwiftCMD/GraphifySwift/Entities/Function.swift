@@ -20,6 +20,7 @@ class Function: Kind {
     var length: Int?
     var lineNumber: Int?
     var endLineNumber: Int?
+    weak var classInstance: Class?
     
     var uses: [Int]?
     
