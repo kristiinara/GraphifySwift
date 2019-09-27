@@ -487,6 +487,10 @@ extension SourceFileIndexAnalysisController {
                 let structInstance = Struct(name: object.name, appKey: appKey, modifier: "")
                 app.structures.append(structInstance)
                 classInstance = structInstance
+            } else if object.kind == Protocol.kittenKey {
+                let protocolInstance = Protocol(name: object.name, appKey: appKey, modifier: "")
+                app.protocols.append(protocolInstance)
+                classInstance = protocolInstance
             }
             
             if let path = object.path {
@@ -576,6 +580,8 @@ extension SourceFileIndexAnalysisController {
                     } else if let parentStruct = object as? Struct {
                         classInstance.inheritedClasses.append(parentStruct)
                     }
+                } else if usr.contains("c:objc(cs)") {
+                    classInstance.parentName = usr.replacingOccurrences(of: "c:objc(cs)", with: "")
                 }
             }
         }

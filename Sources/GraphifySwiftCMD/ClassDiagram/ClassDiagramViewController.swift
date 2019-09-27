@@ -35,6 +35,7 @@ class ClassDiagramViewController: NSViewController {
         let drawing = Drawing(frame: frame)
         
         drawing.classes = convertClassesIntoDrawable(app: self.app)
+        self.checkPatternMatchFor(classes: drawing.classes)
         
         self.view.addSubview(drawing)
         
@@ -49,9 +50,22 @@ class ClassDiagramViewController: NSViewController {
         }
     }
     
+    func checkPatternMatchFor(classes: [DrawableClassInstance]) {
+        let checker = MVPChecker()
+        for classInstance in classes {
+            for connection in classInstance.connections {
+                checker.checkAndUpdate(connection: connection)
+            }
+        }
+    }
+    
     func convertClassesIntoDrawable(app: App) -> [DrawableClassInstance] {
         var classes: [DrawableClassInstance] = []
         var classDictionary: [String: DrawableClassInstance] = [:]
+        
+        var allAppClasses = app.allClasses
+        allAppClasses.append(contentsOf: app.protocols)
+        allAppClasses.append(contentsOf: app.structures)
         
         for classInstance in app.allClasses {
             classInstance.setReverseRelationshipsToVariablesAndMethods()
@@ -63,17 +77,40 @@ class ClassDiagramViewController: NSViewController {
             classes.append(drawableClass)
             classDictionary[classInstance.name] = drawableClass
             
+            drawableClass.parentNames = classInstance.inheritedTypes
+            if drawableClass.parentNames.count == 0 {
+                drawableClass.parentNames = [classInstance.parentName]
+            }
+            
+            print("inheritedTypes: \(classInstance.inheritedTypes)")
+            print("parentName: \(classInstance.parentName)")
+            print("inheritedClasses: \(classInstance.inheritedClasses)")
+            print("parentUsrs: \(classInstance.parentUsrs)")
+            
             //TODO: make this better. Current implementation VERY simplistic.
-            if classInstance.name.contains("ViewModel") {
-                drawableClass.type = .controller
-            } else if classInstance.name.contains("View") ||  classInstance.name.contains("Cell") {
+            //TODO: implement checking if parent of class belongs to UIKit
+            //TODO: add parent of class to drawing
+            
+            if ClassDetectionUtility.isViewClass(classInstance: drawableClass) {
                 drawableClass.type = .view
+            } else if classInstance.name.contains("ViewModel") {
+                drawableClass.type = .controller
             } else if classInstance.name.contains("Controller") || classInstance.name.contains("Presenter") {
                 drawableClass.type = .controller
+            } else if classInstance.name.contains("View") {
+                drawableClass.type = .view
             } else if classInstance.name.contains("AppDelegate") {
                 drawableClass.type = .undefined
             } else {
                 drawableClass.type = .model
+            }
+            
+            if let _ = classInstance as? ClassInstance {
+                drawableClass.classType = .classType
+            } else if let _ = classInstance as? Struct {
+                drawableClass.classType = .structType
+            } else if let _ = classInstance as? Protocol {
+                drawableClass.classType = .protocolType
             }
         }
         
@@ -92,10 +129,12 @@ class ClassDiagramViewController: NSViewController {
                     
                     var typeFound = false
                     if let connectedClass = classDictionary[type] {
-                        drawableClass.singleConnections.append(connectedClass)
+                        //drawableClass.singleConnections.append(connectedClass)
+                        let connection = DrawableConnection(fromClass: drawableClass, toClass: connectedClass)
+                        drawableClass.connections.append(connection)
                         
                         typeFound = true
-                        print("\(drawableClass.name) connections: \(drawableClass.singleConnections)")
+                        //print("\(drawableClass.name) connections: \(drawableClass.singleConnections)")
                     }
                     
                     if typeFound == false {
@@ -104,10 +143,12 @@ class ClassDiagramViewController: NSViewController {
                         type = type.replacingOccurrences(of: "]", with: "")
                         
                         if let connectedClass = classDictionary[type] {
-                            drawableClass.multiConnections.append(connectedClass)
+                            //drawableClass.multiConnections.append(connectedClass)
+                            let connection = DrawableConnection(fromClass: drawableClass, toClass: connectedClass)
+                            drawableClass.connections.append(connection)
                             
                             typeFound = true
-                            print("\(drawableClass.name) connections: \(drawableClass.multiConnections)")
+                            //print("\(drawableClass.name) connections: \(drawableClass.multiConnections)")
                         }
                     }
                     
@@ -122,7 +163,9 @@ class ClassDiagramViewController: NSViewController {
                         if let parentClass = calledMethod.classInstance {
                             if let calledClass = classDictionary[parentClass.name] {
                                 print("called class: \(parentClass.name)")
-                                drawableClass.calls.append(calledClass)
+                                //drawableClass.calls.append(calledClass)
+                                let connection = DrawableConnection(fromClass: drawableClass, toClass: calledClass)
+                                drawableClass.connections.append(connection)
                             } else {
                                 print("called class \(parentClass.name) not found")
                             }
@@ -134,7 +177,9 @@ class ClassDiagramViewController: NSViewController {
                     for usedVariable in method.referencedVariables {
                         if let parentClass = usedVariable.classInstance {
                             if let calledClass = classDictionary[parentClass.name] {
-                                drawableClass.uses.append(calledClass)
+                                //drawableClass.uses.append(calledClass)
+                                let connection = DrawableConnection(fromClass: drawableClass, toClass: calledClass)
+                                drawableClass.connections.append(connection)
                             }
                         } else {
                             print("No parent for: \(usedVariable.name)")
@@ -157,10 +202,16 @@ class DrawableClassInstance {
     var variables: [NSString] = []
     var methods: [NSString] = []
     var type: DrawableType = .undefined
-    var singleConnections: [DrawableClassInstance] = []
-    var multiConnections: [DrawableClassInstance] = []
-    var calls: [DrawableClassInstance] = []
-    var uses: [DrawableClassInstance] = []
+    var classType: ClassType = .undefined
+    var parentNames: [String] = []
+    var parents: [DrawableClassInstance] = []
+    
+//    var singleConnections: [DrawableClassInstance] = []
+//    var multiConnections: [DrawableClassInstance] = []
+//    var calls: [DrawableClassInstance] = []
+//    var uses: [DrawableClassInstance] = []
+    
+    var connections: [DrawableConnection] = []
     
     var x: CGFloat = 10
     var y: CGFloat = 10
@@ -171,6 +222,10 @@ class DrawableClassInstance {
 
 enum DrawableType {
     case view, model, controller, undefined
+}
+
+enum ClassType {
+    case classType, structType, protocolType, undefined
 }
 
 
@@ -257,24 +312,31 @@ class Drawing: NSView {
     
     func drawConnections(context: CGContext) {
         for classInstance in classes {
-            for connectedClass in classInstance.singleConnections {
-                context.setStrokeColor(.black)
-                self.drawConnection(context: context, startClass: classInstance, endClass: connectedClass, offset: 0)
-            }
+//            for connectedClass in classInstance.singleConnections {
+//                context.setStrokeColor(.black)
+//                self.drawConnection(context: context, startClass: classInstance, endClass: connectedClass, offset: 0)
+//            }
+//
+//            for connectedClass in classInstance.multiConnections {
+//                context.setStrokeColor(NSColor.blue.cgColor)
+//                self.drawConnection(context: context, startClass: classInstance, endClass: connectedClass, offset: 2)
+//            }
+//
+//            for calledClass in classInstance.calls {
+//                context.setStrokeColor(NSColor.red.cgColor)
+//                self.drawConnection(context: context, startClass: classInstance, endClass: calledClass, offset: 4)
+//            }
+//
+//            for usedVariable in classInstance.uses {
+//                context.setStrokeColor(NSColor.orange.cgColor)
+//                self.drawConnection(context: context, startClass: classInstance, endClass: usedVariable, offset: 6)
+//            }
             
-            for connectedClass in classInstance.multiConnections {
-                context.setStrokeColor(NSColor.blue.cgColor)
-                self.drawConnection(context: context, startClass: classInstance, endClass: connectedClass, offset: 2)
-            }
-            
-            for calledClass in classInstance.calls {
-                context.setStrokeColor(NSColor.red.cgColor)
-                self.drawConnection(context: context, startClass: classInstance, endClass: calledClass, offset: 4)
-            }
-            
-            for usedVariable in classInstance.uses {
-                context.setStrokeColor(NSColor.orange.cgColor)
-                self.drawConnection(context: context, startClass: classInstance, endClass: usedVariable, offset: 6)
+            var offset: CGFloat = 0
+            for connection in classInstance.connections {
+                context.setStrokeColor(connection.color)
+                self.drawConnection(context: context, startClass: connection.fromClass, endClass: connection.toClass, offset: offset)
+                offset += 1
             }
         }
     }
@@ -304,7 +366,11 @@ class Drawing: NSView {
                 color = viewColor
             }
             
-            context.setFillColor(.white)
+            if classInstance.classType == .classType || classInstance.classType == .structType {
+                context.setFillColor(.white)
+            } else {
+                context.setFillColor(NSColor.yellow.cgColor)
+            }
             context.fill(classInstance.rect!)
             
             context.beginPath()
@@ -376,5 +442,66 @@ class Drawing: NSView {
             self.drawConnections(context: context)
             self.drawClasses(context: context)
         }
+    }
+}
+
+class ClassDetectionUtility {
+    static func isViewClass(classInstance: DrawableClassInstance) -> Bool {
+        for parentName in classInstance.parentNames {
+            if viewClasses.contains(parentName) {
+                return true
+            }
+        }
+        return false
+    }
+    
+    // went to /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/UIKit.framework/Headers
+    // got list of files, removed file endings, added quotes
+    //TODO: make this automatic, when we specify a framework
+    static let viewClasses = ["DocumentManager", "NSAttributedString", "NSDataAsset", "NSFileProviderExtension", "NSIndexPath+UIKitAdditions", "NSItemProvider+UIKitAdditions", "NSLayoutAnchor", "NSLayoutConstraint", "NSLayoutManager", "NSParagraphStyle", "NSShadow", "NSStringDrawing", "NSText", "NSTextAttachment", "NSTextContainer", "NSTextStorage", "UIAccelerometer", "UIAccessibility", "UIAccessibilityAdditions", "UIAccessibilityConstants", "UIAccessibilityContainer", "UIAccessibilityContentSizeCategoryImageAdjusting", "UIAccessibilityCustomAction", "UIAccessibilityCustomRotor", "UIAccessibilityElement", "UIAccessibilityIdentification", "UIAccessibilityLocationDescriptor", "UIAccessibilityZoom", "UIActionSheet", "UIActivity", "UIActivityIndicatorView", "UIActivityItemProvider", "UIActivityViewController", "UIAlert", "UIAlertController", "UIAlertView", "UIAppearance", "UIApplication", "UIApplicationShortcutItem", "UIAttachmentBehavior", "UIBarButtonItem", "UIBarButtonItemGroup", "UIBarCommon", "UIBarItem", "UIBezierPath", "UIBlurEffect", "UIButton", "UICloudSharingController", "UICollectionView", "UICollectionViewCell", "UICollectionViewController", "UICollectionViewFlowLayout", "UICollectionViewLayout", "UICollectionViewTransitionLayout", "UICollisionBehavior", "UIColor", "UIContentSizeCategory", "UIContentSizeCategoryAdjusting", "UIContextualAction", "UIControl", "UIDataDetectors", "UIDataSourceTranslating", "UIDatePicker", "UIDevice", "UIDocument", "UIDocumentBrowserAction", "UIDocumentBrowserViewController", "UIDocumentInteractionController", "UIDocumentMenuViewController", "UIDocumentPickerExtensionViewController", "UIDocumentPickerViewController", "UIDragInteraction", "UIDragItem", "UIDragPreview", "UIDragPreviewParameters", "UIDragSession", "UIDropInteraction", "UIDynamicAnimator", "UIDynamicBehavior", "UIDynamicItemBehavior", "UIEvent", "UIFeedbackGenerator", "UIFieldBehavior", "UIFocus", "UIFocusAnimationCoordinator", "UIFocusDebugger", "UIFocusGuide", "UIFocusMovementHint", "UIFocusSystem", "UIFont", "UIFontDescriptor", "UIFontMetrics", "UIGeometry", "UIGestureRecognizer", "UIGestureRecognizerSubclass", "UIGraphics", "UIGraphicsImageRenderer", "UIGraphicsPDFRenderer", "UIGraphicsRenderer", "UIGraphicsRendererSubclass", "UIGravityBehavior", "UIGuidedAccess", "UIGuidedAccessRestrictions", "UIImage", "UIImageAsset", "UIImagePickerController", "UIImageView", "UIImpactFeedbackGenerator", "UIInputView", "UIInputViewController", "UIInteraction", "UIInterface", "UIKit.apinotes", "UIKit", "UIKitCore", "UIKitDefines", "UILabel", "UILayoutGuide", "UILexicon", "UILocalNotification", "UILocalizedIndexedCollation", "UILongPressGestureRecognizer", "UIManagedDocument", "UIMenuController", "UIMotionEffect", "UINavigationBar", "UINavigationController", "UINavigationItem", "UINib", "UINibDeclarations", "UINibLoading", "UINotificationFeedbackGenerator", "UIPageControl", "UIPageViewController", "UIPanGestureRecognizer", "UIPasteConfiguration", "UIPasteConfigurationSupporting", "UIPasteboard", "UIPencilInteraction", "UIPickerView", "UIPinchGestureRecognizer", "UIPopoverBackgroundView", "UIPopoverController", "UIPopoverPresentationController", "UIPopoverSupport", "UIPresentationController", "UIPress", "UIPressesEvent", "UIPreviewInteraction", "UIPrintError", "UIPrintFormatter", "UIPrintInfo", "UIPrintInteractionController", "UIPrintPageRenderer", "UIPrintPaper", "UIPrinter", "UIPrinterPickerController", "UIProgressView", "UIPushBehavior", "UIReferenceLibraryViewController", "UIRefreshControl", "UIRegion", "UIResponder", "UIRotationGestureRecognizer", "UIScreen", "UIScreenEdgePanGestureRecognizer", "UIScreenMode", "UIScrollView", "UISearchBar", "UISearchContainerViewController", "UISearchController", "UISearchDisplayController", "UISegmentedControl", "UISelectionFeedbackGenerator", "UISlider", "UISnapBehavior", "UISplitViewController", "UISpringLoadedInteraction", "UISpringLoadedInteractionSupporting", "UIStackView", "UIStateRestoration", "UIStepper", "UIStoryboard", "UIStoryboardPopoverSegue", "UIStoryboardSegue", "UIStringDrawing", "UISwipeActionsConfiguration", "UISwipeGestureRecognizer", "UISwitch", "UITabBar", "UITabBarController", "UITabBarItem", "UITableView", "UITableViewCell", "UITableViewController", "UITableViewHeaderFooterView", "UITapGestureRecognizer", "UITargetedDragPreview", "UITextChecker", "UITextDragPreviewRenderer", "UITextDragURLPreviews", "UITextDragging", "UITextDropProposal", "UITextDropping", "UITextField", "UITextInput", "UITextInputTraits", "UITextItemInteraction", "UITextPasteConfigurationSupporting", "UITextPasteDelegate", "UITextView", "UITimingCurveProvider", "UITimingParameters", "UIToolbar", "UITouch", "UITraitCollection", "UIUserActivity", "UIUserNotificationSettings", "UIVibrancyEffect", "UIVideoEditorController", "UIView", "UIViewAnimating", "UIViewController", "UIViewControllerTransitionCoordinator", "UIViewControllerTransitioning", "UIViewPropertyAnimator", "UIVisualEffect", "UIVisualEffectView", "UIWebView", "UIWindow"]
+}
+
+protocol PatternChecker {
+    func checkAndUpdate(connection: DrawableConnection)
+    var allowedConnections: [DrawableType: [DrawableType]] { get }
+    
+}
+
+extension PatternChecker {
+    func checkAndUpdate(connection: DrawableConnection) {
+        let fromClassType = connection.fromClass.type
+        let toClassType = connection.toClass.type
+        
+        if let allowedTypes = self.allowedConnections[fromClassType] {
+            print("fromType: \(fromClassType), toType: \(toClassType)")
+            if allowedTypes.contains(toClassType) {
+                connection.color = NSColor.green.cgColor
+            } else {
+                connection.color = NSColor.red.cgColor
+            }
+        }
+    }
+}
+
+class MVPChecker: PatternChecker {
+    //First simplistic definition
+    //TODO: add possibility to check different types of connections.
+    // types of connestions: owns, modifies, updates, notifies maybe?
+    var allowedConnections: [DrawableType : [DrawableType]] = [
+        .view: [.view, .controller],
+        .model: [.controller, .model],
+        .controller: []
+    ]
+}
+
+class DrawableConnection {
+    let fromClass: DrawableClassInstance
+    let toClass: DrawableClassInstance
+    
+    var color: CGColor = .black
+    
+    init(fromClass: DrawableClassInstance, toClass: DrawableClassInstance) {
+        self.fromClass = fromClass
+        self.toClass = toClass
     }
 }
