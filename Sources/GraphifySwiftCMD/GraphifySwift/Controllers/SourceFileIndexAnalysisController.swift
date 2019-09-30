@@ -19,19 +19,25 @@ class SourceFileIndexAnalysisController {
     var fileQueue: [URL]
     var allPaths: [String]
     var printOutput = true
+    var useModules = false
+    
     
     var allFirstLevel: [String:FirstLevel] = [:]
     var allEntities: [String:Entity] = [:]
     
-    var allClasses: [String: Class] = [:]
+    var allClasses: [String: Class] = [:] // class.usr --> Class
+    var classDictionary: [String: Class] = [:] // class.name --> Class
+    
     var allMethods: [String: Function] = [:]
     var allVariables: [String: Variable] = [:]
     
     init(homeURL: URL, dependencyURL: URL) {
         self.homeURL = homeURL
         self.dependencyURL = dependencyURL
-        self.sdk = "/Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk"
-        self.target = "arm64-apple-ios12.1"
+        //self.sdk = "/Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk"
+        self.sdk = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.0.sdk"
+        //self.target = "arm64-apple-ios12.1"
+        self.target = "arm64-apple-ios13.0"
         
         self.dependencyController = DependencyController(homeURL: dependencyURL)
         
@@ -479,18 +485,24 @@ extension SourceFileIndexAnalysisController {
         for object in objects {
             var classInstance: Class?
             
+            let module = Module(name: "test")
+            
             if object.kind == ClassInstance.kittenKey {
-                let classInstanceInstance = ClassInstance(name: object.name, appKey: appKey, modifier: "")
+                let classInstanceInstance = ClassInstance(name: object.name, appKey: appKey, modifier: "", module: module)
                 app.classes.append(classInstanceInstance)
                 classInstance = classInstanceInstance
             } else if object.kind == Struct.kittenKey {
-                let structInstance = Struct(name: object.name, appKey: appKey, modifier: "")
+                let structInstance = Struct(name: object.name, appKey: appKey, modifier: "", module: module)
                 app.structures.append(structInstance)
                 classInstance = structInstance
             } else if object.kind == Protocol.kittenKey {
-                let protocolInstance = Protocol(name: object.name, appKey: appKey, modifier: "")
+                let protocolInstance = Protocol(name: object.name, appKey: appKey, modifier: "", module: module)
                 app.protocols.append(protocolInstance)
                 classInstance = protocolInstance
+            }
+            
+            if let classInstance = classInstance {
+                self.classDictionary[classInstance.name] = classInstance
             }
             
             if let path = object.path {
@@ -550,6 +562,15 @@ extension SourceFileIndexAnalysisController {
             classInstance?.instanceMethods = methods
             classInstance?.instanceVariables = variables
         }
+        
+        for classInstance in app.allClasses {
+            for variable in classInstance.allVariables {
+                if let classType = self.classDictionary[variable.cleanedType] {
+                    variable.typeClass = classType
+                }
+            }
+        }
+        
         return app
     }
     

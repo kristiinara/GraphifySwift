@@ -9,6 +9,8 @@
 import Foundation
 
 class Class : Kind {
+    let module: Module
+    
     var id: Int?
     var path: String = ""
     var usr: String?
@@ -129,10 +131,11 @@ class Class : Kind {
     var isInterface: Bool = false // Seems that we don't need additional class for Protocol, but can just say that class is interface
     var isStruct: Bool = false
 
-    init(name: String, appKey: String, modifier: String) {
+    init(name: String, appKey: String, modifier: String, module: Module) {
         self.name = name
         self.appKey = appKey
         self.modifier = modifier
+        self.module = module
     }
     
     var instructionsCount: Int {
@@ -327,8 +330,8 @@ class ClassInstance: Class, SourceKittenMappable {
 }
 
 class Protocol: Class, SourceKittenMappable {
-    override init(name: String, appKey: String, modifier: String) {
-        super.init(name: name, appKey: appKey, modifier: modifier)
+    override init(name: String, appKey: String, modifier: String, module: Module) {
+        super.init(name: name, appKey: appKey, modifier: modifier, module: module)
         self.isInterface = true
     }
     

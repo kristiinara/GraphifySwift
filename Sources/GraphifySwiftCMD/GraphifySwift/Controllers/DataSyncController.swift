@@ -30,12 +30,19 @@ class DataSyncController {
     func newClass(_ newClass: Class, to app: App, completition: @escaping (Class, Bool) -> Void) {
         print("addClass: \(newClass.description)")
         print("+")
+        var toAdd = 1
+        
         self.databaseController.runQueryReturnId(transaction: newClass.createQuery) { id in
             guard let id = id else {
                 print("Error: could not add class \(newClass.name)")
                 completition(newClass, false)
                 return
             }
+            
+            toAdd -= 1
+            toAdd += newClass.allMethods.count
+            toAdd += newClass.allVariables.count
+            
             print("adding id to class")
             newClass.id = id
             self.databaseController.runQueryReturnId(transaction: app.ownsClassQuery(newClass)) { relId in
@@ -45,27 +52,38 @@ class DataSyncController {
             //self.addParent(newClass)
             
             //print("Added class: \(newClass.name), id: \(id)")
-            for method in newClass.instanceMethods {
+            for method in newClass.allMethods {
                 self.databaseController.runQueryReturnId(transaction: method.createQuery) { methodId in
                     method.id = methodId
                     
                     self.databaseController.runQueryReturnId(transaction: newClass.ownsMethodQuery(method)) { relId in
                         print("Added ClassownsMethodQuery \(String(describing: relId))")
                     }
+                    
+                    toAdd -= 1
+                    if toAdd == 0 {
+                        print("newClass \(newClass.name) completition")
+                        completition(newClass, true)
+                    }
                  }
             }
             
-            for variable in newClass.instanceVariables {
+            for variable in newClass.allVariables {
                 self.databaseController.runQueryReturnId(transaction: variable.createQuery) { variableId in
                     variable.id = variableId
                     
                     self.databaseController.runQueryReturnId(transaction: newClass.ownsVariableQuery(variable)) { relId in
                         print("Added ClassOwnsVariableQuery \(String(describing: relId))")
                     }
+                    
+                    toAdd -= 1
+                    if toAdd == 0 {
+                        print("newClass \(newClass.name) completition")
+                        completition(newClass, true)
+                    }
                 }
             }
-            print("newClass completition")
-            completition(newClass, true)
+           // completition(newClass, true)
         }
     }
     
@@ -87,6 +105,7 @@ class DataSyncController {
         allClasses.append(contentsOf: app.protocols)
         
         var allMethods: [Function] = []
+        var allVariables: [Variable] = []
         var queryCount = 0
         
         for classInstance in allClasses {
@@ -103,6 +122,11 @@ class DataSyncController {
                 queryCount += method.referencedMethods.count
                 queryCount += method.referencedVariables.count
             }
+            
+            let variables = classInstance.allVariables
+            allVariables.append(contentsOf: variables)
+            
+            queryCount += variables.count
         }
         
         print("allClasses: \(allClasses)")
@@ -133,6 +157,20 @@ class DataSyncController {
                             finished()
                             self.finished = nil
                         }
+                    }
+                }
+            }
+        }
+        
+        for variable in allVariables {
+            print("Run query variable is of type \(variable.cleanedType) - \(variable.typeClass?.name)")
+            self.databaseController.runQueryReturnId(transaction: variable.isTypeQuery) { relId in
+                print("Added VariableIsOfTypeQuery \(String(describing: relId))")
+                queryCount -= 1
+                if queryCount == 0 {
+                    if let finished = self.finished {
+                        finished()
+                        self.finished = nil
                     }
                 }
             }

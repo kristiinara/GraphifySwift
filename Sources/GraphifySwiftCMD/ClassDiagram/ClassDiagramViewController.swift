@@ -485,12 +485,10 @@ extension PatternChecker {
 
 class MVPChecker: PatternChecker {
     //First simplistic definition
-    //TODO: add possibility to check different types of connections.
-    // types of connestions: owns, modifies, updates, notifies maybe?
     var allowedConnections: [DrawableType : [DrawableType]] = [
         .view: [.view, .controller],
         .model: [.controller, .model],
-        .controller: []
+        .controller: [.view, .model, .controller]
     ]
 }
 

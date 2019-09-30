@@ -16,6 +16,14 @@ class Variable : Kind {
     var isStatic: Bool = false
     var isFinal: Bool = false
     weak var classInstance: Class?
+    var typeClass: Class?
+    
+    var cleanedType: String {
+        var typeString = self.type
+        typeString = typeString.replacingOccurrences(of: "?", with: "")
+        typeString = typeString.replacingOccurrences(of: "!", with: "")
+        return typeString
+    }
     
     var methodReferences: [Function] = []
     var variableReferences: [Variable] = []
@@ -76,6 +84,17 @@ extension Variable: Node4jInsertable {
             match (n:\(self.nodeName)
             where id(n)=\(id) set n += \(self.properties)
             """
+        }
+        return nil
+    }
+    
+    var isTypeQuery: String? {
+        if let typeClass = self.typeClass {
+            print("isTypeQuery: match (v:Variable), (c:Class) where id(v) = \(self.id) and id(c) = \(typeClass.id) create (v)-[r:IS_OF_TYPE]->(c) return id(r)")
+            
+            if let selfid = self.id, let  classId = typeClass.id {
+                return "match (v:Variable), (c:Class) where id(v) = \(selfid) and id(c) = \(classId) create (v)-[r:IS_OF_TYPE]->(c) return id(r)"
+            }
         }
         return nil
     }

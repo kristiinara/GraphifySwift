@@ -26,10 +26,11 @@ class Application {
             let appKey: OptionArgument<String> = analyseParser.add(option: "--appkey", shortName: "-a", kind: String.self, usage: "Appkey as unique identifier of the app.", completion: .none)
             let folderPath = analyseParser.add(positional: "foldername", kind: String.self)
             let outputArgument: OptionArgument<Bool> = analyseParser.add(option: "--resultOutput", shortName: "-o", kind: Bool.self, usage: "Determines if a result file is created for every swift file.", completion: .none)
+            let moduleArgument: OptionArgument<Bool> = analyseParser.add(option: "--includModules", shortName: "-m", kind: Bool.self, usage: "Determines if modules should be included.", completion: .none)
             
             let diagramFolderPath = diagramParser.add(positional: "foldername", kind: String.self)
           
-            parser.add
+            //parser.add
             
             let queryArgument: OptionArgument<String> = queryParser.add(option: "--query", shortName: "-q", kind: String.self, usage: "Query to run.", completion: .none)
             
@@ -76,7 +77,12 @@ class Application {
                     shouldPrintOutput = true
                 }
                 
-                self.runAnalysis(url: url, appKey: key, printOutput: shouldPrintOutput)
+                var shouldIncludeModules = false
+                if result.get(moduleArgument) != nil {
+                    shouldIncludeModules = true
+                }
+                
+                self.runAnalysis(url: url, appKey: key, printOutput: shouldPrintOutput, useModules: shouldIncludeModules)
             } else if subparser == "query" {
                 print("query")
                 guard let query = result.get(queryArgument) else {
@@ -140,7 +146,7 @@ class Application {
         ResultToFileHandler.clearOutput(at: url)
     }
     
-    func runAnalysis(url: Foundation.URL, appKey: String, printOutput: Bool) {
+    func runAnalysis(url: Foundation.URL, appKey: String, printOutput: Bool, useModules: Bool) {
         dispatchGroup.enter()
         
         var dependencyURL = url
@@ -148,6 +154,8 @@ class Application {
         dependencyURL = dependencyURL.appendingPathComponent("Checkouts", isDirectory: true)
         
         let analysisController = SourceFileIndexAnalysisController(homeURL: url, dependencyURL: dependencyURL)
+        analysisController.useModules = useModules
+        
         analysisController.analyseAllFilesAndAddToDatabase() {
             print("finished")
             
