@@ -84,6 +84,11 @@ class Function: Kind {
         }
     }
     
+    var maxNestingDepth: Int {
+        let nestingDepths = self.instructions.map() {instruction in instruction.maxNestingDepth}
+        return nestingDepths.max() ?? 0
+    }
+    
     init(name: String, fullName: String, appKey: String, modifier: String, returnType: String) {
         self.name = name
         self.fullName = fullName
@@ -214,7 +219,8 @@ extension Function: Node4jInsertable {
             is_setter:\(self.isSetter),
             is_synchronized:\(self.isSyncronized),
             number_of_switch_statements:\(self.numberOfSwitchStatements),
-            max_number_of_chaned_message_calls:\(self.maxNumberOfChanedMessageCalls)
+            max_number_of_chaned_message_calls:\(self.maxNumberOfChanedMessageCalls),
+            max_nesting_depth:\(self.maxNestingDepth)
         }
         """
     }

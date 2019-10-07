@@ -91,6 +91,17 @@ class Instruction {
         }
     }
     
+    var maxNestingDepth: Int {
+        let nestingDepths = self.instructions.map() {instruction in instruction.maxNestingDepth}
+        var maxDepth = nestingDepths.max() ?? 0
+        
+        if let _ = self as? Branch {
+            maxDepth += 1
+        }
+        
+        return maxDepth
+    }
+    
     var chainedMessageCalls: [[MethodCall]] {
         var calls: [[MethodCall]] = []
         
