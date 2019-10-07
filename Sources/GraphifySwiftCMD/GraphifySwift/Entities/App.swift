@@ -11,9 +11,41 @@
 class App : Kind {
     var id: Int?
     var name: String
-    var classes: [ClassInstance] = []
-    var structures: [Struct] = []
-    var protocols: [Protocol] = []
+//    var classes: [ClassInstance] = []
+//    var structures: [Struct] = []
+//    var protocols: [Protocol] = []
+    
+    var modules: [Module] = []
+    
+    var classes: [ClassInstance] {
+        var allClasses: [ClassInstance] = []
+        
+        for module in self.modules {
+            allClasses.append(contentsOf: module.classes)
+        }
+        
+        return allClasses
+    }
+    
+    var structures: [Struct] {
+        var allStructs: [Struct] = []
+        
+        for module in self.modules {
+            allStructs.append(contentsOf: module.structures)
+        }
+        
+        return allStructs
+    }
+    
+    var protocols: [Protocol] {
+        var allProtocols: [Protocol] = []
+        
+        for module in self.modules {
+            allProtocols.append(contentsOf: module.protocols)
+        }
+        
+        return allProtocols
+    }
     
     //Variables that are automatically incremented
     //Can calculate when initiating new app:
@@ -96,9 +128,6 @@ class App : Kind {
         self.developer = developer
         self.sdk = sdk
         self.category = categroy
-        
-        self.classes = []
-        self.structures = []
     }
     
     var numberOfClasses: Int {
@@ -234,17 +263,24 @@ extension App: Node4jInsertable {
         return nil
     }
     
-    func ownsClassQuery(_ someClass: Class) -> String? {
-        if let appId = self.id, let classId = someClass.id {
-            return "match (a:App), (c:Class) where id(a) = \(appId) and id(c) = \(classId) create (a)-[r:APP_OWNS_CLASS]->(c) return id(r)"
+    func ownsModuleQuery(_ someModule: Module) -> String? {
+        if let appId = self.id, let moduleId = someModule.id {
+            return "match (a:App), (c:Module) where id(a) = \(appId) and id(c) = \(moduleId) create (a)-[r:APP_OWNS_MODULE]->(c) return id(r)"
         }
         return nil
     }
     
-    func ownsStructQuery(_ someStruct: Struct) -> String? {
-        if let appId = self.id, let structId = someStruct.id {
-            return "match (a:App), (c:Struct) where id(a) = \(appId) and id(c) = \(structId) create (a)-[r:APP_OWNS_CLASS]->(c) return id(r)"
-        }
-        return nil
-    }
+//    func ownsClassQuery(_ someClass: Class) -> String? {
+//        if let appId = self.id, let classId = someClass.id {
+//            return "match (a:App), (c:Class) where id(a) = \(appId) and id(c) = \(classId) create (a)-[r:APP_OWNS_CLASS]->(c) return id(r)"
+//        }
+//        return nil
+//    }
+//
+//    func ownsStructQuery(_ someStruct: Struct) -> String? {
+//        if let appId = self.id, let structId = someStruct.id {
+//            return "match (a:App), (c:Struct) where id(a) = \(appId) and id(c) = \(structId) create (a)-[r:APP_OWNS_CLASS]->(c) return id(r)"
+//        }
+//        return nil
+//    }
 }

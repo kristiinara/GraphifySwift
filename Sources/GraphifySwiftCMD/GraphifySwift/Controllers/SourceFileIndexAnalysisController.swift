@@ -21,7 +21,6 @@ class SourceFileIndexAnalysisController {
     var printOutput = true
     var useModules = false
     
-    
     var allFirstLevel: [String:FirstLevel] = [:]
     var allEntities: [String:Entity] = [:]
     
@@ -30,6 +29,8 @@ class SourceFileIndexAnalysisController {
     
     var allMethods: [String: Function] = [:]
     var allVariables: [String: Variable] = [:]
+    
+    var allModules: [String: Module] = [:]
     
     init(homeURL: URL, dependencyURL: URL) {
         self.homeURL = homeURL
@@ -41,7 +42,7 @@ class SourceFileIndexAnalysisController {
         
         self.dependencyController = DependencyController(homeURL: dependencyURL)
         
-        self.fileQueue = FolderUtility.getFileQueue(for: homeURL, ignore: "Carthage")
+        self.fileQueue = FolderUtility.getFileQueue(for: homeURL, ignore: ["Carthage", "Pods"])
         self.allPaths = self.fileQueue.map() { url in return url.path }
     }
     
@@ -70,6 +71,8 @@ class SourceFileIndexAnalysisController {
         app.calculateCouplingBetweenClasses()
         
         self.addCommentsToApp(app: app)
+        
+        print("modules: \(self.allModules.keys)")
         
         return app
     }
@@ -464,6 +467,20 @@ extension SourceFileIndexAnalysisController {
 
 // Convert to app
 extension SourceFileIndexAnalysisController {
+    func getModuleName(path: String) -> String {
+        let localPath = path.replacingOccurrences(of: self.homeURL.path, with: "")
+        let name = localPath.split(separator: "/")[0]
+        
+        return String(name)
+    }
+    
+//    func getModuleName(path: String, homePath: String) -> String {
+//        let localPath = path.replacingOccurrences(of: homePath, with: "")
+//        let name = localPath.split(separator: "/")[0]
+//
+//        return String(name)
+//    }
+    
     func translateEntitiesToApp(objects: [FirstLevel]) -> App {
         let appName = homeURL.lastPathComponent
         let appKey = appName
@@ -485,19 +502,52 @@ extension SourceFileIndexAnalysisController {
         for object in objects {
             var classInstance: Class?
             
-            let module = Module(name: "test")
+            var module: Module?
+            
+            if self.useModules {
+                if let path = object.path {
+                    let name = self.getModuleName(path: path)
+                    
+                    if let existingModule = self.allModules[name] {
+                        module = existingModule
+                    } else {
+                        let newModule = Module(name: name, appKey: appKey)
+                        
+                        app.modules.append(newModule)
+                        newModule.belongsToApp = app
+                        
+                        self.allModules[name] = newModule
+                        module = newModule
+                    }
+                }
+            }
+            
+            if module == nil {
+                if let existingModule = self.allModules[appKey] {
+                    module = existingModule
+                } else {
+                    let newModule = Module(name: appKey, appKey: appKey)
+                    
+                    app.modules.append(newModule)
+                    newModule.belongsToApp = app
+                    
+                    self.allModules[appKey] = newModule
+                    module = newModule
+                }
+            }
             
             if object.kind == ClassInstance.kittenKey {
-                let classInstanceInstance = ClassInstance(name: object.name, appKey: appKey, modifier: "", module: module)
-                app.classes.append(classInstanceInstance)
+                let classInstanceInstance = ClassInstance(name: object.name, appKey: appKey, modifier: "", module: module!)
+                module?.classes.append(classInstanceInstance)
+                
                 classInstance = classInstanceInstance
             } else if object.kind == Struct.kittenKey {
-                let structInstance = Struct(name: object.name, appKey: appKey, modifier: "", module: module)
-                app.structures.append(structInstance)
+                let structInstance = Struct(name: object.name, appKey: appKey, modifier: "", module: module!)
+                module?.structures.append(structInstance)
                 classInstance = structInstance
             } else if object.kind == Protocol.kittenKey {
-                let protocolInstance = Protocol(name: object.name, appKey: appKey, modifier: "", module: module)
-                app.protocols.append(protocolInstance)
+                let protocolInstance = Protocol(name: object.name, appKey: appKey, modifier: "", module: module!)
+                module?.protocols.append(protocolInstance)
                 classInstance = protocolInstance
             }
             

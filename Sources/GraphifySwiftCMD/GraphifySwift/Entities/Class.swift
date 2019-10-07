@@ -9,7 +9,7 @@
 import Foundation
 
 class Class : Kind {
-    let module: Module
+    weak var module: Module?
     
     var id: Int?
     var path: String = ""

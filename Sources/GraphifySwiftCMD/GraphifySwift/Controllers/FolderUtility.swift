@@ -37,10 +37,10 @@ class FolderUtility {
     }
 
     static func getFileQueue(for url: URL) -> [URL] {
-        return getFileQueue(for: url, ignore: nil)
+        return getFileQueue(for: url, ignore: [])
     }
 
-    static func getFileQueue(for url: URL, ignore: String?) -> [URL] {
+    static func getFileQueue(for url: URL, ignore: [String]) -> [URL] {
         var files: [URL] = []
         
         let resourceKeys : [URLResourceKey] = [
@@ -60,13 +60,13 @@ class FolderUtility {
         })!
         
         //fileQueue
-        for case let fileURL as URL in enumerator {
+        fileLoop: for case let fileURL as URL in enumerator {
             // ignoring files that contain the ignore string, but only looking at path relative to after the base url
-            if let ignore = ignore {
+            for ignorePath in ignore {
                 var path = fileURL.path
                 path = path.replacingOccurrences(of: url.path, with: "")
-                if path.contains(ignore) {
-                    continue
+                if path.contains(ignorePath) {
+                    continue fileLoop
                 }
             }
             

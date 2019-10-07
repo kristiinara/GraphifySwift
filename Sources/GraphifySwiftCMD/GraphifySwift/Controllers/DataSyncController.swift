@@ -26,8 +26,48 @@ class DataSyncController {
             }
         }
     }
+    
+    func newModule(_ newModule: Module, to app: App, completition: @escaping (Module, Bool) -> Void) {
+        var toAdd = 1
+        
+        self.databaseController.runQueryReturnId(transaction: newModule.createQuery) { id in
+            guard let id = id else {
+                print("Error: could not add module \(newModule.name)")
+                completition(newModule, false)
+                return
+            }
+            
+            newModule.id = id
+            
+            self.databaseController.runQueryReturnId(transaction: app.ownsModuleQuery(newModule)) { relId in
+                print("AppOwnsModule relationship added")
+            }
+            
+            toAdd -= 1
+            toAdd += newModule.allClasses.count
+            print("classes to be added \(newModule.allClasses.map() {module in module.name})")
+            
+            for classInstance in newModule.allClasses {
+                self.newClass(classInstance, to: newModule) { (newClass, success) in
+                    print("NewClass finished \(classInstance.name)")
+                    toAdd -= 1
+                    print("toAdd \(toAdd)")
+                    
+                    if toAdd == 0 {
+                        completition(newModule, true)
+                        return
+                    }
+                }
+            }
+            
+            if toAdd == 0 {
+                completition(newModule, true)
+                return
+            }
+        }
+    }
 
-    func newClass(_ newClass: Class, to app: App, completition: @escaping (Class, Bool) -> Void) {
+    func newClass(_ newClass: Class, to module: Module, completition: @escaping (Class, Bool) -> Void) {
         print("addClass: \(newClass.description)")
         print("+")
         var toAdd = 1
@@ -45,9 +85,11 @@ class DataSyncController {
             
             print("adding id to class")
             newClass.id = id
-            self.databaseController.runQueryReturnId(transaction: app.ownsClassQuery(newClass)) { relId in
-                //print("Added AppOwnsClass \(String(describing: relId))")
+            
+            self.databaseController.runQueryReturnId(transaction: module.ownsClassQuery(newClass)) { relId in
+                print("Added ModuleOwnsClass \(String(describing: relId))")
             }
+            
             
             //self.addParent(newClass)
             
@@ -61,9 +103,12 @@ class DataSyncController {
                     }
                     
                     toAdd -= 1
+                    
+                    print("class + method toAdd \(toAdd)")
                     if toAdd == 0 {
                         print("newClass \(newClass.name) completition")
                         completition(newClass, true)
+                        return
                     }
                  }
             }
@@ -77,12 +122,21 @@ class DataSyncController {
                     }
                     
                     toAdd -= 1
+                    
+                    print("class + variable toAdd \(toAdd)")
                     if toAdd == 0 {
                         print("newClass \(newClass.name) completition")
                         completition(newClass, true)
+                        return
                     }
                 }
             }
+            
+            if toAdd == 0 {
+                completition(newClass, true)
+                return
+            }
+            
            // completition(newClass, true)
         }
     }
@@ -184,69 +238,108 @@ class DataSyncController {
         }
     }
     
-    func nextClassFor(app: App) {
-        print("nextClassFor")
-        if self.classes.count > 0 {
-            let classInstance = self.classes.remove(at: 0)
-            print("Next class: \(classInstance.name)")
-            self.newClass(classInstance, to: app) { (newClass, success) in
-                print("\(newClass) added \(success)")
-                
-                var toAdd = 0
-                
-                //Add parents
-                if self.classes.count == 0 {
-                    for classInstance in app.classes {
-                        toAdd = toAdd + 1
-                        self.addParent(classInstance)  {
-                            toAdd = toAdd - 1
-                            print("toAdd classes: \(toAdd)")
-                            if(toAdd == 0) {
-                                self.doAdditionalStuffAfterAppAdded(app: app)
-                            }
-                        }
-                    }
-                    
-                    for structInstance in app.structures {
-                        toAdd = toAdd + 1
-                        self.addParent(structInstance) {
-                            toAdd = toAdd - 1
-                            print("toAdd: struct \(toAdd)")
-                            if(toAdd == 0) {
-                                self.doAdditionalStuffAfterAppAdded(app: app)
-                            }
-                        }
-                    }
-                    
-                    for protocolInstance in app.protocols {
-                        toAdd = toAdd + 1
-                        self.addParent(protocolInstance) {
-                            toAdd = toAdd - 1
-                            print("toAdd: protocol \(toAdd)")
-                            if(toAdd == 0) {
-                                self.doAdditionalStuffAfterAppAdded(app: app)
-                            }
-                            
-                        }
-                    }
-                } else {
-                    self.nextClassFor(app: app)
-                }
-            }
-        } else {
-            self.doAdditionalStuffAfterAppAdded(app: app)
-        }
-    }
+//    func nextClassFor(app: App) {
+//        print("nextClassFor")
+//        if self.classes.count > 0 {
+//            let classInstance = self.classes.remove(at: 0)
+//            print("Next class: \(classInstance.name)")
+//            self.newClass(classInstance, to: app) { (newClass, success) in
+//                print("\(newClass) added \(success)")
+//
+//                var toAdd = 0
+//
+//                //Add parents
+//                if self.classes.count == 0 {
+//                    for classInstance in app.classes {
+//                        toAdd = toAdd + 1
+//                        self.addParent(classInstance)  {
+//                            toAdd = toAdd - 1
+//                            print("toAdd classes: \(toAdd)")
+//                            if(toAdd == 0) {
+//                                self.doAdditionalStuffAfterAppAdded(app: app)
+//                            }
+//                        }
+//                    }
+//
+//                    for structInstance in app.structures {
+//                        toAdd = toAdd + 1
+//                        self.addParent(structInstance) {
+//                            toAdd = toAdd - 1
+//                            print("toAdd: struct \(toAdd)")
+//                            if(toAdd == 0) {
+//                                self.doAdditionalStuffAfterAppAdded(app: app)
+//                            }
+//                        }
+//                    }
+//
+//                    for protocolInstance in app.protocols {
+//                        toAdd = toAdd + 1
+//                        self.addParent(protocolInstance) {
+//                            toAdd = toAdd - 1
+//                            print("toAdd: protocol \(toAdd)")
+//                            if(toAdd == 0) {
+//                                self.doAdditionalStuffAfterAppAdded(app: app)
+//                            }
+//
+//                        }
+//                    }
+//                } else {
+//                    self.nextClassFor(app: app)
+//                }
+//            }
+//        } else {
+//            self.doAdditionalStuffAfterAppAdded(app: app)
+//        }
+//    }
     
     func sync(app: App) {
         print("Sync!")
-        self.classes.append(contentsOf: app.classes)
-        self.classes.append(contentsOf: app.structures)
-        self.classes.append(contentsOf: app.protocols)
+//        self.classes.append(contentsOf: app.classes)
+//        self.classes.append(contentsOf: app.structures)
+//        self.classes.append(contentsOf: app.protocols)
+        
+        var toAdd = 1
         
         self.newApp(app) { app, success in
             //print("Adding app: \(app.name), success? \(success)")
-            self.nextClassFor(app: app)
+            //self.nextClassFor(app: app)
+            
+            if success {
+                toAdd += app.modules.count
+                toAdd -= 1
+                
+                
+                for module in app.modules {
+                    self.newModule(module, to: app) { newModule, success in
+                        toAdd -= 1
+                        
+                        print("Module added \(module.name)")
+                        print("toAdd: \(toAdd)")
+                        
+                        if toAdd == 0 {
+                            self.addParents(app: app)
+                        }
+                    }
+                }
+            } else {
+                if let finished = self.finished {
+                    finished()
+                }
+            }
+        }
+    }
+    
+    func addParents(app: App) {
+        var toAdd = app.allClasses.count
+        
+        for classInstance in app.allClasses {
+            self.addParent(classInstance) {
+                toAdd -= 1
+                
+                if toAdd == 0 {
+                    self.doAdditionalStuffAfterAppAdded(app: app)
+                }
+            }
         }
     }
     
