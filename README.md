@@ -676,3 +676,45 @@ Definition is taken form Article "Understanding Code Smells in Android Applicati
 Might make sense to also look into if inheritance hierarchy is narrow, but there is no reference that quantifies that. 
 
 ### Tradition Breaker
+
+##### Query string
+
+    MATCH (c:Class)-[r:EXTENDS]->(parent:Class) 
+    WHERE 
+    	NOT ()-[:EXTENDS]->(c) AND 	
+    	c.number_of_methods + c.number_of_attributes < lowNumberOfmethodsAndAttributes AND 
+    	parent.number_of_methods + parent.number_of_attributes >= highNumberOfMethodsAndAttributes 
+    RETURN 
+    	c.app_key as app_key, 
+    	c.name as child_name, 
+    	parent.name as parent_name
+  
+##### Parameters  
+Queries classes that do not have any subclasses, where number of methods and attributes is low and where they inherit from a class whose number of methods and attributes is high. 
+
+##### How are parameters determined
+High number of methods and attributes and low number of methods and attributes both need to be determined statistically using the boxplot technique. 
+
+Qurrently high number of attributes and methods is set to 20 and low number of attributes and methods is set to 5.
+
+##### Implementation details 
+\-
+    
+##### References 
+
+There are different definition for this code smell. We tried to implement the defintion used by decor/ptidej-5 (https://wiki.ptidej.net/doku.php?id=sad): "A class that inherits from a large parent class but that provides little behaviour and without subclasses". The given rule card (although a little bit confusing considering the textual description) is as follows
+  
+    RULE_CARD : TraditionBreaker { 
+   		RULE : TraditionBreaker {INHERIT: inherited FROM: LargeParentClass ONE TO: ChildClass ONE } ; 
+   		RULE : LargeParentClass { INTER LargeClass ParentClass } ; 
+   		RULE : LargeClass { (METRIC: NMD + NAD, LOW, 10) } ; 
+   		RULE : ParentClass {INTER NoInheritance HasChildren };
+   		RULE : NoInheritance {(METRIC: DIT, SUP_EQ, 1, 0) };
+   		RULE : HasChildren {(METRIC: NOC, SUP_EQ, 1, 0) };
+   		RULE : ChildClass { (METRIC: NMD + NAD, HIGH, 10) } ;
+	};
+	
+Here NMD = number of methods declared, NAD = number of attributes declared, DIT = depth of inheritance, NOC = number of children. 
+
+Another definition is given here (https://www.simpleorientedarchitecture.com/how-to-identify-a-tradition-breaker-using-ndepend/): "class suffers from Tradition Breaker when it doesn’t use the protected members of its parent". With this definition it would probably not make sense to apply this code smell for swift. The first definition seems to work. 
+	
