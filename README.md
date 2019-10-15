@@ -631,4 +631,48 @@ This definition for intensive coupling comes from https://www.simpleorientedarch
 
 ### Distorted hierarchy
 
+##### Query string
+
+    MATCH (c:Class) 
+    WHERE c.depth_of_inheritance > shortTermMemoryCap  
+    RETURN 
+    	c.app_key, 
+    	c.name, 
+    	c.depth_of_inheritance
+  
+##### Parameters  
+Queries classes that have an unusually deep inheritance tree. Finds classes with depth of inheritance larger than the short term memory cap.
+
+##### How are parameters determined
+Short term memory cap is currently set to 6. Referenced article says that this is commonly agreed on. Probably needs additional investigation or trying out different values. 
+
+##### Implementation details 
+
+Depth of inheritance is determined as follows
+
+    var depthOfInheritance : Int { // Integer Depth of Inheritance, starting at 1 since classes are at least java.lang.Object. --> which is not true for swift!
+        var depth = 0
+        
+        for parent in self.inheritedClasses {
+            if let parent = parent as? ClassInstance { //TODO: should we only use classInstances, theoretically implemnting protocols is or is not ineritance?
+                depth += 1
+                depth += parent.depthOfInheritance
+                
+            }
+        }
+        
+        // In case superclass is outside of application domain, make depth 1
+        if depth == 0 && (self.parentUsrs.count - self.numberOfImplementedInterfaces) > 0 {
+            return 1
+        }
+        
+        return depth
+    }
+    
+##### References 
+
+Definition is taken form Article "Understanding Code Smells in Android Applications": "A Distorted Hierarchy is an inheritance hierarchy that is unusually narrow and deep. This design flaw is inspired by one of Arthur Riel's [37] heuristics, which says that "in practice, inheritance hierarchies should be no deeper than an average person can keep in his or her short-term memory. A popular value for this depth is six". Having an inheritance hierarchy that is too deep may cause maintainers "to get lost" in the hierarchy making the system in general harder to maintain.[37]"
+
+Might make sense to also look into if inheritance hierarchy is narrow, but there is no reference that quantifies that. 
+
 ### Tradition Breaker

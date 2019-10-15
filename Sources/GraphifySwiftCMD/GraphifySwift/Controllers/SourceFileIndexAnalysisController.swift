@@ -626,7 +626,10 @@ extension SourceFileIndexAnalysisController {
     
     func findReferences(app: App) {
         //TODO: do this also for structs and class and static methods
+        print("findReferences for \(app.name)")
+        print("Allclasses: \(app.classes)")
         for classInstance in app.classes {
+            print("References for class: \(classInstance.name)")
             for instanceMethod in classInstance.instanceMethods {
                 for reference in instanceMethod.references {
                     if let method = self.allMethods[reference] {
@@ -642,6 +645,8 @@ extension SourceFileIndexAnalysisController {
             }
             
             //Add parents and extendedInterfaces
+            print("Fiding references for parentUsrs: \(classInstance.parentUsrs)")
+            print("AllClasses: \(self.allClasses)")
             for usr in classInstance.parentUsrs {
                 if let object = self.allClasses[usr] {
                     if let parentClass = object as? ClassInstance {

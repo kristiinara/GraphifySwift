@@ -15,7 +15,7 @@ class AnalysisController {
         
         switch queryString {
         case "all":
-            queries = [LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery()]
+            queries = [LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery()]
         case "LM":
             queries = [LongMethodQuery()]
         case "BLOB":
@@ -36,6 +36,8 @@ class AnalysisController {
             queries = [CyclicClassDependenciesQuery()]
         case "IntensiveCoupling":
             queries = [IntensiveCouplingQuery()]
+        case "DistortedHierarchy":
+            queries = [DistortedHierarchyQuery()]
         default:
             queries = [CustomQuery(queryString: queryString)]
         }
