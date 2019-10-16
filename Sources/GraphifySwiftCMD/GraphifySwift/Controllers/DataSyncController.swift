@@ -13,6 +13,7 @@ class DataSyncController {
     var classes : [Class] = []
     var finished : (() -> Void)?
     var addingAdditionalStuff = false
+    var addingDuplications = false
     
     func newApp(_ app: App, completition: @escaping (App, Bool) -> Void) {
         databaseController.runQueryReturnId(transaction: app.createQuery) { id in
@@ -145,13 +146,43 @@ class DataSyncController {
         print("doAdditionalStuffAfterAppAdded")
         if addingAdditionalStuff == false {
             addingAdditionalStuff = true
-            addMethodRelationships(app: app)
+            addMethodRelationships(app: app) {
+                if self.addingDuplications == false {
+                    self.addingDuplications = true
+                    self.addDuplications(app: app) {
+                        if let finished = self.finished {
+                            finished()
+                            self.finished = nil
+                        }
+                    }
+                }
+            }
         } else {
             print("do nothing")
         }
     }
     
-    func addMethodRelationships(app: App) {
+    func addDuplications(app: App, completition: @escaping (()->())) {
+        var queryCount = app.duplicates.count
+        for duplicate in app.duplicates {
+            self.databaseController.runQueryReturnId(transaction: duplicate.addDuplicationQuery) { relId in
+                print("Added duplicate \(String(describing: relId))")
+                queryCount -= 1
+                
+                if queryCount == 0 {
+                    completition()
+                    return
+                }
+            }
+        }
+        
+        if queryCount == 0 {
+            completition()
+            return
+        }
+    }
+    
+    func addMethodRelationships(app: App, completition: @escaping (()->())) {
         print("addMethodRelationships")
         var allClasses: [Class] = []
         allClasses.append(contentsOf: app.classes)
@@ -194,10 +225,12 @@ class DataSyncController {
                     print("Added MethodCallsMethodQuery \(String(describing: relId))")
                     queryCount -= 1
                     if queryCount == 0 {
-                        if let finished = self.finished {
-                            finished()
-                            self.finished = nil
-                        }
+//                        if let finished = self.finished {
+//                            finished()
+//                            self.finished = nil
+//                        }
+                        completition()
+                        return
                     }
                 }
             }
@@ -207,10 +240,12 @@ class DataSyncController {
                     print("Added MethodUsesVariableQuery \(String(describing: relId))")
                     queryCount -= 1
                     if queryCount == 0 {
-                        if let finished = self.finished {
-                            finished()
-                            self.finished = nil
-                        }
+//                        if let finished = self.finished {
+//                            finished()
+//                            self.finished = nil
+//                        }
+                        completition()
+                        return
                     }
                 }
             }
@@ -222,19 +257,23 @@ class DataSyncController {
                 print("Added VariableIsOfTypeQuery \(String(describing: relId))")
                 queryCount -= 1
                 if queryCount == 0 {
-                    if let finished = self.finished {
-                        finished()
-                        self.finished = nil
-                    }
+//                    if let finished = self.finished {
+//                        finished()
+//                        self.finished = nil
+//                    }
+                    completition()
+                    return
                 }
             }
         }
         
         if queryCount == 0 {
-            if let finished = self.finished {
-                finished()
-                self.finished = nil
-            }
+//            if let finished = self.finished {
+//                finished()
+//                self.finished = nil
+//            }
+            completition()
+            return
         }
     }
     

@@ -16,6 +16,7 @@ class App : Kind {
 //    var protocols: [Protocol] = []
     
     var modules: [Module] = []
+    var duplicates: [Duplication] = []
     
     var classes: [ClassInstance] {
         var allClasses: [ClassInstance] = []

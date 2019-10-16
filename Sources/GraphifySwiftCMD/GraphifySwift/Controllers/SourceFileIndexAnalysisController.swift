@@ -79,6 +79,14 @@ class SourceFileIndexAnalysisController {
     
     func analyseAllFilesAndAddToDatabase(finished: @escaping () -> Void) {
         let app = analyseAllFiles()
+        
+//        let reportPath = self.homeURL.appendingPathComponent("jscpd-report/jscpd-report.json")
+//        print("jscpd report: \(reportPath)")
+//        let duplicationParser = DuplicationParser(path: reportPath.path) //TODO: maybe pass url instead of String?
+        
+        let duplicationParser = DuplicationParser(homePath: homeURL.path, ignore: [".build/**","**/Carthage/**", "**/Pods/**"])
+        duplicationParser.addDuplicatesToApp(app: app)
+        
         ObjectPrinter.printApp(app)
         
         self.dataSyncController.finished = finished

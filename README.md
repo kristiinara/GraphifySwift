@@ -717,4 +717,163 @@ There are different definition for this code smell. We tried to implement the de
 Here NMD = number of methods declared, NAD = number of attributes declared, DIT = depth of inheritance, NOC = number of children. 
 
 Another definition is given here (https://www.simpleorientedarchitecture.com/how-to-identify-a-tradition-breaker-using-ndepend/): "class suffers from Tradition Breaker when it doesn’t use the protected members of its parent". With this definition it would probably not make sense to apply this code smell for swift. The first definition seems to work. 
-	
+
+### Sibling Duplication 
+
+##### Query string
+
+    MATCH 
+    	(firstClass:Class)-[:EXTENDS*]-> (parent:Class) <-[:EXTENDS*]-(secondClass:Class), 
+    	(firstClass:Class)-[:DUPLICATES]->(secondClass:Class) 
+    RETURN 
+    	firstClass.app_key as app_key, 
+    	firstClass.name as first_class, 
+    	secondClass.name as second_class, 
+    	parent.name as parent_class
+  
+##### Parameters  
+Query classes that have a common parent class (somewhere in the hierarchy) and that share duplicated code. 
+
+##### How are parameters determined
+\-
+
+##### Implementation details 
+To find duplicated code we are using the program jscpd https://github.com/kucherenko/jscpd#getting-started . It has to be installed on the system and is called automatically by the code analysis tool. 
+
+For installation on Mac OS:
+
+- brew update
+- brew install node
+- npm install -g jscpd
+
+After that jscpd can be used from the command line. 
+
+We get the jscpd analysis for a project with as follows
+
+        var path = homePath
+        if !path.hasSuffix("/") {
+            path = "\(path)/"
+        }
+        
+        let task = Process()
+        task.launchPath = "/usr/bin/env"
+        task.arguments = [
+            "jscpd",
+            homePath,
+            "--min-tokens", "10",
+            "--format", "swift",
+            "--reporters", "json",
+            "--absolute",
+            "--output", "\(homePath)jscpd-report/",
+            "--ignore ", ignore.joined(separator: ",")
+        ]
+        task.launch()
+        task.waitUntilExit()
+        
+        self.json = self.jsonFromPath(path:"\(homePath)jscpd-report/jscpd-report.json")
+        
+When we have the result json, then we go through the duplication results, which are in form: 
+
+       "duplicates": [
+		{
+			"format": "swift",
+			"lines": 15,
+			"fragment": ".......",
+			"tokens": 0,
+			"firstFile": {
+				"name": "Sources/GraphifySwiftCMD/Application.swift",
+				"start": 95,
+				"end": 109,
+				"startLoc": {
+					"line": 95,
+					"column": 82
+				},
+				"endLoc": {
+					"line": 109,
+					"column": 21
+				}
+			},
+			"secondFile": {
+				"name": "Sources/GraphifySwiftCMD/Application.swift",
+				"start": 60,
+				"end": 75,
+				"startLoc": {
+					"line": 60,
+					"column": 84
+				},
+				"endLoc": {
+					"line": 75,
+					"column": 20
+				}
+			} 		
+		},
+		...
+		]
+
+We then match these duplications with class instances through the file paths. 
+
+All found duplications are recorded in the database as relationships between classes i.e. (:Class)-[:DUPLICATES]->(:Class). In reality the direction of the relationship has no meaning, but it is not possible to add relationships without directions. It is on the other hand possible to query relationships without specifying the direction.
+
+NB: it is possible to change the threshold for the duplication level, minimum number of tokens etc. It would make sense to play around with these values to see if we can find the most appropriate ones for the current context. 
+
+##### References 
+
+From "Understanding Code Smells in Android Applications": "Sibling Duplication means duplication between siblings in an inheritance hierarchy. Two or more siblings that define a similar functionality make it much harder to locate errors [4,12,18,19].".
+
+
+### Internal Duplication 
+
+##### Query string
+
+    MATCH 
+    	(firstClass:Class)-[:DUPLICATES]->(secondClass:Class), 
+    	(module:Module)-[:MODULE_OWNS_CLASS]->(firstClass), 
+    	(module:Module)-[:MODULE_OWNS_CLASS]->(secondClass) 
+    RETURN 
+    	firstClass.app_key as app_key, 
+    	firstClass.name as first_class, 
+    	secondClass.name as second_class, 
+    	module.name as module_name
+  
+##### Parameters  
+Query classes that belong to the same module and that share duplicated code. 
+
+##### How are parameters determined
+\-
+
+##### Implementation details 
+See Sibling Duplication.
+
+##### References 
+
+From "Understanding Code Smells in Android Applications": "Internal Duplication means duplication between portions of the same class or module. Thus, the presence of code duplication bloats the class or module and all the clones do not evolve the same way [4,12,18,19].".
+
+### External Duplication 
+
+##### Query string
+
+    MATCH 
+    	(firstClass:Class)-[:DUPLICATES]->(secondClass:Class), 
+    	(module:Module)-[:MODULE_OWNS_CLASS]->(firstClass), 
+    	(secondModule:Module)-[:MODULE_OWNS_CLASS]->(secondClass) 
+    WHERE 
+    	id(module) <> id(secondModule) 
+    RETURN 
+    	firstClass.app_key as app_key, 
+    	firstClass.name as first_class, 
+    	secondClass.name as second_class, 
+    	module.name as module_name, 
+    	secondModule.name as second_module_name
+  
+##### Parameters  
+Query classes that belong to different modules and that share duplicated code. 
+
+##### How are parameters determined
+\-
+
+##### Implementation details 
+See Sibling Duplication.
+
+##### References 
+
+From "Understanding Code Smells in Android Applications": External Duplication means duplication between unrelated capsules of the system [4,12,18,19].".

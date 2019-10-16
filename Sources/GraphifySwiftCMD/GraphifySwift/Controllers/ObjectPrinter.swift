@@ -41,6 +41,14 @@ class ObjectPrinter {
                 printVariable(variable)
             }
         }
+        
+        print("Duplicates: ")
+        for duplicate in app.duplicates {
+            print("firstClass: \(String(describing: duplicate.firstClass?.name))")
+            print("secondClass: \(String(describing: duplicate.secondClass?.name))")
+            print("fragment: \(duplicate.fragment)")
+            print("")
+        }
     }
     
     static func printMethod(_ method: Function) {
