@@ -15,7 +15,7 @@ class ShotgunSurgeryQuery: Query {
     var json: [String : Any]?
     
     var string: String {
-        return "MATCH (other_m:Method)-[r:CALLS]->(m:Method) with m, COUNT(r) as number_of_callers where number_of_callers > \(self.veryHighNumberOfCallers) RETURN m.name as name, m.app_key as app_key, number_of_callers as number_of_callers"
+        return "MATCH (other_m:Method)-[r:CALLS]->(m:Method)<-[:CLASS_OWNS_METHOD]-(c:Class) with c,m, COUNT(r) as number_of_callers where number_of_callers > \(self.veryHighNumberOfCallers) RETURN c.name as class_name, m.name as name, m.app_key as app_key, number_of_callers as number_of_callers"
     }
     
     var notes: String {

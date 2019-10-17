@@ -117,10 +117,14 @@ Definition taken from Paprika.
 ### Shotgun surgery
 ##### Query string
 
-    MATCH (other_m:Method)-[r:CALLS]->(m:Method) with m, 
-    COUNT(r) as number_of_callers 
+    MATCH (other_m:Method)-[r:CALLS]->(m:Method)<-[:CLASS_OWNS_METHOD]-(c:Class) 
+    WITH
+    	c, 
+    	m, 
+    	COUNT(r) as number_of_callers 
     WHERE number_of_callers > veryHighNumberOfCallers
     RETURN 
+    	c.name as class_name,
     	m.name as name, 
     	m.app_key as app_key, 
     	number_of_callers as number_of_caller
@@ -883,13 +887,15 @@ From "Understanding Code Smells in Android Applications": External Duplication m
 ##### Query string
 
     MATCH 
-    	(m:Method)-[r:CALLS]->(other_method:Method) 
+    	(c:Class)-[:CLASS_OWNS_METHOD]->(m:Method)-[r:CALLS]->(other_method:Method) 
     WITH 
+    	c,
     	m, 
     	COUNT(r) as number_of_called_methods 
     WHERE 
     	number_of_called_methods > veryHighNumberOfCalledMethods
     RETURN 
+    	c.name as class_name,
     	m.name as name, 
     	m.app_key as app_key, 
     	number_of_called_methods as number_of_called_methods
