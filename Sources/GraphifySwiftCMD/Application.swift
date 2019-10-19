@@ -11,10 +11,19 @@ import Utility
 class Application {
     let dispatchGroup = DispatchGroup()
     
+    var analysisResults: [String: [[String]]] = [:]
+    var analysisResultsHeaders: [String: [String]] = [:]
+    var dateString = ""
+    
     func start() {
         
         do {
             print("Starting application")
+            
+            let dateFormatter : DateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+            let date = Date()
+            self.dateString = dateFormatter.string(from: date)
             
             let parser = ArgumentParser(commandName: "GraphifySwiftCMD", usage: "appKey [--appkey AppKey], folder", overview: "Analyse swift app and insert classes data into neo4j database.")
             
@@ -33,6 +42,10 @@ class Application {
             //parser.add
             
             let queryArgument: OptionArgument<String> = queryParser.add(option: "--query", shortName: "-q", kind: String.self, usage: "Query to run.", completion: .none)
+            
+            let htmlArgument: OptionArgument<String> = queryParser.add(option: "--htmlFile", shortName: "-t", kind: String.self, usage: "HTML file for output", completion: .filename)
+            
+            let csvArgument: OptionArgument<String> = queryParser.add(option: "--csvFolder", shortName: "-c", kind: String.self, usage: "Folder to write all csv files.", completion: .filename)
             
             let clearFolder = clearParser.add(positional: "foldername", kind: String.self)
             
@@ -60,17 +73,7 @@ class Application {
                     throw ArgumentParserError.expectedArguments(parser, ["--appkey"])
                 }
                 
-                let fileManager = FileManager.default
-                let currentPath = fileManager.currentDirectoryPath
-                
-                var url = URL(fileURLWithPath: currentPath)
-                
-                if path.hasPrefix("/") {
-                    url = URL(fileURLWithPath: path)
-                } else {
-                    //relative path
-                    url.appendPathComponent(path)
-                }
+                let url = urlFromStirng(path: path)
                 
                 var shouldPrintOutput = false
                 if result.get(outputArgument) != nil {
@@ -82,14 +85,28 @@ class Application {
                     shouldIncludeModules = true
                 }
                 
-                self.runAnalysis(url: url, appKey: key, printOutput: shouldPrintOutput, useModules: shouldIncludeModules)
+                self.runAnalysis(url: url!, appKey: key, printOutput: shouldPrintOutput, useModules: shouldIncludeModules)
             } else if subparser == "query" {
                 print("query")
                 guard let query = result.get(queryArgument) else {
                     throw ArgumentParserError.expectedArguments(parser, ["--query"])
                 }
                 
-                self.runQuery(query: query)
+                var htmlOutput = false
+                var url: Foundation.URL? = nil
+                
+                if let htmlFile = result.get(htmlArgument) {
+                    htmlOutput = true
+                    url = urlFromStirng(path: htmlFile)
+                }
+                
+                var csvUrl: Foundation.URL? = nil
+                if let csvPath = result.get(csvArgument) {
+                    csvUrl = urlFromStirng(path: csvPath)
+                }
+                
+                self.runQueryWithStatistics(query: query, htmlURL: url, csvURL: csvUrl)
+                //self.runQuery(query: query)
             } else if subparser == "clearOutput" {
                 guard let path = result.get(clearFolder) else {
                     throw ArgumentParserError.expectedArguments(parser, ["Folder"])
@@ -111,19 +128,9 @@ class Application {
                 guard let path = result.get(diagramFolderPath) else {
                     throw ArgumentParserError.expectedArguments(parser, ["Folder"])
                 }
-                let fileManager = FileManager.default
-                let currentPath = fileManager.currentDirectoryPath
+                let url = urlFromStirng(path: path)
                 
-                var url = URL(fileURLWithPath: currentPath)
-                
-                if path.hasPrefix("/") {
-                    url = URL(fileURLWithPath: path)
-                } else {
-                    //relative path
-                    url.appendPathComponent(path)
-                }
-                
-                self.generateClassDiagram(url: url)
+                self.generateClassDiagram(url: url!)
                 
             } else {
                 print("Specify action as 'analyse', 'query', 'clearOutput' or 'classDiagram'")
@@ -168,16 +175,164 @@ class Application {
         dispatchMain()
     }
     
+    func runQueryWithStatistics(query: String, htmlURL: Foundation.URL?, csvURL: Foundation.URL?) {
+        let analysisController = AnalysisController()
+        //var analysisResults: [String: [[String: Any]]] = [:]
+        
+        analysisController.analyse(queryString: query) { name, rows, headers in
+            if let rows = rows {
+                if var existing = self.analysisResults[name] {
+                    existing.append(contentsOf: rows)
+                } else {
+                    self.analysisResults[name] = rows
+                }
+                
+                if let headers = headers {
+                    self.analysisResultsHeaders[name] = headers
+                }
+                
+                self.printStatistics(results: self.analysisResults, headers: self.analysisResultsHeaders, htmlURL: htmlURL, csvURL: csvURL)
+            }
+        }
+    }
+    
+    func printStatistics(results: [String: [[String]]], headers: [String:[String]], htmlURL: Foundation.URL?, csvURL: Foundation.URL?) {
+        print("Print statistics!")
+        var applications: [String: [String: [[String]]]] = [:]
+        print("\(results)")
+        
+        for queryName in results.keys {
+            print("query: \(queryName)")
+            if let queryResult = results[queryName] {
+                for row in queryResult {
+                    print("row: \(row)")
+                    if row.count >= 1 {
+                        let appKey = row[0]
+                        
+                        if applications[appKey] == nil {
+                            applications[appKey] = [String: [[String]]]()
+                        }
+                        
+                        if var appStuff = applications[appKey] {
+                            print("starting with query stuff")
+                            if appStuff[queryName] == nil {
+                                print("nil")
+                                appStuff[queryName] = [[String]]()
+                            }
+                            
+                            if var queryStuff = appStuff[queryName] {
+                                print("not nil")
+                                queryStuff.append(row)
+                                appStuff[queryName] = queryStuff
+                                
+                                print("appStuff[queryName] = \(appStuff[queryName])")
+                                print("queryStuff = \(queryStuff)")
+                            }
+                            
+                            applications[appKey] = appStuff
+                        }
+                    }
+                    
+                    
+                    /*
+                    if let appKey = row["app_key"] as? String {
+                        if applications[appKey] == nil {
+                            applications[appKey] = [:]
+                        }
+                        
+                        if var appStuff = applications[appKey] {
+                            if appStuff[queryName] == nil {
+                                appStuff[queryName] = [[String: Any]]()
+                            }
+                            
+                            if var queryArray = appStuff[queryName] as? [[String: Any]] {
+                                queryArray.append(row)
+                            }
+                        }
+                    }
+                    */
+                }
+            }
+        }
+        
+        print("applications: \(applications)")
+        
+        for key in applications.keys {
+            print("application: \(key)")
+            
+            if let applicationStuff = applications[key] {
+                for query in applicationStuff.keys {
+                    print("       query: \(query)")
+                    if let queryResults = applicationStuff[query] {
+                        for result in queryResults {
+                            print("              \(result)")
+                        }
+                    }
+                }
+            }
+        }
+        
+        if let htmlURL = htmlURL {
+            let htmlString = HTMLPresenter.generateHTML(dictionary: applications, headerDictionary: headers)
+            
+            do {
+                try htmlString.write(to: htmlURL, atomically: false, encoding: .utf8)
+            } catch let error {
+                print("error \(error)")
+            }
+        }
+        
+        if let csvURL = csvURL {
+            let queryCSVs = HTMLPresenter.generateCSV(dictionary: results, headerDictionary: headers, fileNamePrefix: "\(self.dateString)-")
+            
+            do {
+                try FileManager.default.createDirectory(at: csvURL, withIntermediateDirectories: true, attributes: nil)
+            }
+            catch let error {
+                print("error \(error)")
+            }
+            
+            for fileName in queryCSVs.keys {
+                if let fileString = queryCSVs[fileName] {
+                    let url = csvURL.appendingPathComponent(fileName)
+                    
+                    do {
+                        try fileString.write(to: url, atomically: false, encoding: .utf8)
+                    } catch let error {
+                        print("error \(error)")
+                    }
+                }
+            }
+        }
+    }
+    
+    func urlFromStirng(path: String) -> Foundation.URL? {
+        let fileManager = FileManager.default
+        let currentPath = fileManager.currentDirectoryPath
+        
+        var url = URL(fileURLWithPath: currentPath)
+        
+        if path.hasPrefix("/") {
+            url = URL(fileURLWithPath: path)
+        } else {
+            //relative path
+            url.appendPathComponent(path)
+        }
+        
+        return url
+    }
+    
     func runQuery(query: String) {
         let analysisController = AnalysisController()
         
-        analysisController.analyse(queryString: query) { rows in
+        analysisController.analyse(queryString: query) { name, rows, headers in
             if let rows = rows {
                 print("Query number of results: \(rows.count)")
+                print("\(headers)")
                 for row in rows {
                     print(row.reduce("") { result, item in
                         if result.count == 0 {
-                            return item
+                            return "\(item)"
                         }
                         return "\(result), \(item)"
                     })

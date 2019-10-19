@@ -11,7 +11,7 @@ class CyclicClassDependenciesQuery: Query {
     var name = "CyclicClassDependency"
     
     var string: String {
-        return "match (c:Class)-[:CLASS_OWNS_VARIABLE]->(v:Variable)-[:IS_OF_TYPE]->(c2:Class), cyclePath=shortestPath((c2)-[*]->(c)) with c, v, [n in nodes(cyclePath) | n.name ] as names, filter(n in nodes(cyclePath) where not n:Variable) as classes unwind classes as node with max(id(node)) as max match (c:Class) where id(c)=max return c.name, c.app_key"
+        return "match (c:Class)-[:CLASS_OWNS_VARIABLE]->(v:Variable)-[:IS_OF_TYPE]->(c2:Class), cyclePath=shortestPath((c2)-[*]->(c)) with c, v, [n in nodes(cyclePath) | n.name ] as names, filter(n in nodes(cyclePath) where not n:Variable) as classes unwind classes as node with max(id(node)) as max match (c:Class) where id(c)=max return c.app_key as app_key, c.name as class_name"
     }
     
     var detailedResultString: String {

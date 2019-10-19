@@ -15,7 +15,7 @@ class DivergentChangeQuery: Query {
     var json: [String : Any]?
     
     var string: String {
-        return "MATCH (c:Class)-[:CLASS_OWNS_METHOD]-> (m:Method)-[r:CALLS]->(other_method:Method) with c, m, COUNT(r) as number_of_called_methods where number_of_called_methods > \(self.veryHighNumberOfCalledMethods) RETURN c.name as class_name, m.name as name, m.app_key as app_key, number_of_called_methods as number_of_called_methods"
+        return "MATCH (c:Class)-[:CLASS_OWNS_METHOD]-> (m:Method)-[r:CALLS]->(other_method:Method) with c, m, COUNT(r) as number_of_called_methods where number_of_called_methods > \(self.veryHighNumberOfCalledMethods) RETURN m.app_key as app_key, c.name as class_name, m.name as method_name, number_of_called_methods as number_of_called_methods"
     }
     
     var notes: String {

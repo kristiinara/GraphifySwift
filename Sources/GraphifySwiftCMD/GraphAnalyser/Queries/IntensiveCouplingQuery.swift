@@ -20,7 +20,7 @@ class IntensiveCouplingQuery: Query {
     var json: [String : Any]?
     
     var string: String {
-        return "match (c:Class)-[r:CLASS_OWNS_METHOD]->(m1:Method)-[s:CALLS]->(m2:Method), (c2:Class)-[r2:CLASS_OWNS_METHOD]->(m2) where id(c) <> id(c2) with c,m1, count(distinct m2) as method_count, collect(distinct m2.name) as names, collect(distinct c2.name) as class_names, count(distinct c2) as class_count  where ((method_count >= \(self.maxNumberOfShortMemoryCap) and class_count/method_count <= \(self.halfCouplingDispersion)) or (method_count >= \(self.fewCouplingIntensity) and class_count/method_count <= \(self.quarterCouplingDispersion))) and m1.max_nesting_depth >= \(self.shallowMaximumNestingDepth) return m1.app_key as app_key, m1.name as method_name, c.name as class_name"
+        return "match (c:Class)-[r:CLASS_OWNS_METHOD]->(m1:Method)-[s:CALLS]->(m2:Method), (c2:Class)-[r2:CLASS_OWNS_METHOD]->(m2) where id(c) <> id(c2) with c,m1, count(distinct m2) as method_count, collect(distinct m2.name) as names, collect(distinct c2.name) as class_names, count(distinct c2) as class_count  where ((method_count >= \(self.maxNumberOfShortMemoryCap) and class_count/method_count <= \(self.halfCouplingDispersion)) or (method_count >= \(self.fewCouplingIntensity) and class_count/method_count <= \(self.quarterCouplingDispersion))) and m1.max_nesting_depth >= \(self.shallowMaximumNestingDepth) return m1.app_key as app_key, c.name as class_name, m1.name as method_name"
     }
     
     var detailedResultString: String {

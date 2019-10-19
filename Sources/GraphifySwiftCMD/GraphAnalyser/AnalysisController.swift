@@ -10,7 +10,7 @@ import Foundation
 class AnalysisController {
     let dispatchGroup = DispatchGroup()
     
-    func analyse(queryString: String, completition: @escaping ([[String]]?) -> Void) {
+    func analyse(queryString: String, completition: @escaping (String, [[String]]?, [String]?) -> Void) {
         var queries: [Query?]
         
         switch queryString {
@@ -63,23 +63,29 @@ class AnalysisController {
         dispatchMain()
     }
     
-    func runquery(query: Query?, completition: @escaping ([[String]]?) -> Void) {
+    func runquery(query: Query?, completition: @escaping (String, [[String]]?, [String]?) -> Void) {
         if var query = query {
             let dbController = DatabaseController()
             print("Running query: \(query.string)")
             dbController.runQueryReturnDataString(transaction: query.string) { json in
                 print(" --- Query: \(query.name) ---")
                 query.json = json
-                if let parsedResults = query.parsedResult {
-                    completition(parsedResults)
+                
+                print("res nonparsed: \(json)")
+                print("res: \(query.parsedResult)")
+//                if let parsedResults = query.parsedResult {
+//                    completition(query.name, parsedResults)
+//                    self.dispatchGroup.leave()
+                if let parsedDictionary = query.parsedDictionary {
+                    completition(query.name, parsedDictionary, query.headers)
                     self.dispatchGroup.leave()
                 } else {
-                    completition(nil)
+                    completition(query.name, nil, query.headers)
                     self.dispatchGroup.leave()
                 }
             }
         } else {
-            completition(nil)
+            completition("", nil, nil)
             self.dispatchGroup.leave()
         }
     }

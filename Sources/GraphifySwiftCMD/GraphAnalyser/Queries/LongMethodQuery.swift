@@ -12,7 +12,7 @@ class LongMethodQuery : Query {
     var veryHighNumberOfInstructions = 26
     
     var string: String {
-        return "MATCH (c:Class)-[r:CLASS_OWNS_METHOD]->(m:Method) WHERE m.number_of_instructions > \(self.veryHighNumberOfInstructions) RETURN m.name as name, c.name as class_name, m.app_key as app_key, m.number_of_instructions as number_of_instructions"
+        return "MATCH (c:Class)-[r:CLASS_OWNS_METHOD]->(m:Method) WHERE m.number_of_instructions > \(self.veryHighNumberOfInstructions) RETURN m.app_key as app_key, c.name as class_name, m.name as method_name, m.number_of_instructions as number_of_instructions"
     }
     
     var result: String?

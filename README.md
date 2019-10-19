@@ -27,9 +27,9 @@ Our goal is to analyse 31 code smells in total. We combined the code smells defi
     MATCH (c:Class)-[r:CLASS_OWNS_METHOD]->(m:Method) 
     WHERE m.number_of_instructions > veryHighNumberOfInstructions 
     RETURN 
-      	m.name as name, 
-      	c.name as class_name, 
       	m.app_key as app_key, 
+      	c.name as class_name,
+      	m.name as method_name, 
       	m.number_of_instructions as number_of_instructions
   
 ##### Parameters  
@@ -68,8 +68,11 @@ Definition is taken from Paprika.
        cl.number_of_methods >  veryHighNumberOfMethods AND
        cl.number_of_attributes > veryHighNumberOfMethods
     RETURN 
+      	cl.app_key as app_key, 
       	cl.name as class_name, 
-    	cl.app_key as app_key
+      	cl.lack_of_cohesion_in_methods as lack_of_cohesion_in_methods, 
+      	cl.number_of_methods as number_of_methods, 
+      	cl.number_of_attributes as number_of_attributes
   
 ##### Parameters  
 Query matches all classes where lack of cohesion in methods is very high, number of methods is very high and number of attributes is very high. 
@@ -124,10 +127,10 @@ Definition taken from Paprika.
     	COUNT(r) as number_of_callers 
     WHERE number_of_callers > veryHighNumberOfCallers
     RETURN 
-    	c.name as class_name,
-    	m.name as name, 
     	m.app_key as app_key, 
-    	number_of_callers as number_of_caller
+    	c.name as class_name, 
+    	m.name as method_name, 
+    	number_of_callers as number_of_callers
   
 ##### Parameters  
 Queries all methods that are called by more than a very high number of callers.
@@ -157,9 +160,9 @@ Martin Fowlers book: "Shotgun surgery is similar to divergent change but is the 
     MATCH (c:Class)-[r:CLASS_OWNS_METHOD]->(m:Method) 
     WHERE m.number_of_switch_statements >= highNumberOfSwitchStatments
     RETURN 
-    	m.name as name, 
-    	c.name as class_name, 
     	m.app_key as app_key, 
+    	c.name as class_name, 
+    	m.name as method_name, 
     	m.number_of_switch_statements as number_of_switch_statements
   
 ##### Parameters  
@@ -212,8 +215,8 @@ Martin Fowlers book: "One of the most obvious symptoms of object-oriented code i
     	(c.coupling_between_object_classes < mediumCouplingBetweenObjectClasses AND 
     		c.depth_of_inheritance > numberOfSomeDepthOfInheritance) 
     RETURN 
-    	c.name as name, 
-    	c.app_key as app_key
+    	c.app_key as app_key, 
+    	c.name as class_name
   
 ##### Parameters  
 Queries all methods, where the number of switch statements is higher than high number of switch statements.
@@ -320,9 +323,9 @@ weighted\_methods\_per\_class = sum of all method complexities in a class
     MATCH (c:Class)-[CLASS_OWNS_METHOD]-(m:Method) 
     WHERE m.max_number_of_chaned_message_calls > veryHighNumberOfChainedMessages 
     RETURN 
-    	m.name as name, 
-    	c.name as class_name, 
     	m.app_key as app_key, 
+    	c.name as class_name, 
+    	m.name as method_name, 
     	m.max_number_of_chaned_message_calls as max_number_of_chaned_message_calls
   
 ##### Parameters  
@@ -384,8 +387,8 @@ Chained method calls is determined in the Instruction class as follows
     MATCH (c:Class) 
     WHERE c.number_of_methods = 0 
     RETURN 
-    	c.name as name, 
     	c.app_key as app_key, 
+    	c.name as class_name, 
     	c.number_of_attributes as number_of_attributes
   
 ##### Parameters  
@@ -448,8 +451,9 @@ Definition taken from https://www.simpleorientedarchitecture.com/how-to-identify
     MATCH (c:Class) 
     WHERE c.number_of_comments highNumberOfComments 
     RETURN 
-    	c.name, 
-    	c.number_of_comments
+    	c.app_key as app_key, 
+    	c.name as class_name, 
+    	c.number_of_comments as number_of_comments
   
 ##### Parameters  
 Queries all classes where number of comments is high. 
@@ -539,7 +543,9 @@ A good time to use a comment is when you don't know what to do. In addition to d
     WITH max(id(node)) as max 
     MATCH (c:Class) 
     WHERE id(c)=max 
-    RETURN c.name, c.app_key
+    RETURN 
+    	c.app_key as app_key, 
+    	c.name as class_name
   
 ##### Parameters  
 Queries all cycles between Class-Variable-Class, finds the shortest cycle and returns the name of the class and app_key with the biggest id in this cycle as the beginning point.
@@ -593,8 +599,8 @@ Article "Architectural Smells Detected by Tools: a Catalogue Proposal": "Detecti
     	m1.max_nesting_depth >= shallowMaximumNestingDepth
     RETURN 
     	m1.app_key as app_key, 
-    	m1.name as method_name, 
-    	c.name as class_name
+    	c.name as class_name, 
+    	m1.name as method_name
   
 ##### Parameters  
 Queries methods that are intensively coupled with methods in other classes. A method is defined as intensely coupled if the number of methods it calls is larger than the short memory cap and coupling dispersion is lower than half or if the number of methods it calls is larger than few and coupling dispersion is smaller than few and the maximum nesting depth of the method is larger than shallow. 
@@ -640,9 +646,9 @@ This definition for intensive coupling comes from https://www.simpleorientedarch
     MATCH (c:Class) 
     WHERE c.depth_of_inheritance > shortTermMemoryCap  
     RETURN 
-    	c.app_key, 
-    	c.name, 
-    	c.depth_of_inheritance
+    	c.app_key as app_key, 
+    	c.name as class_name, 
+    	c.depth_of_inheritance as dept_of_inheritance
   
 ##### Parameters  
 Queries classes that have an unusually deep inheritance tree. Finds classes with depth of inheritance larger than the short term memory cap.
@@ -690,8 +696,8 @@ Might make sense to also look into if inheritance hierarchy is narrow, but there
     	parent.number_of_methods + parent.number_of_attributes >= highNumberOfMethodsAndAttributes 
     RETURN 
     	c.app_key as app_key, 
-    	c.name as child_name, 
-    	parent.name as parent_name
+    	c.name as class_name, 
+    	parent.name as parent_class_name
   
 ##### Parameters  
 Queries classes that do not have any subclasses, where number of methods and attributes is low and where they inherit from a class whose number of methods and attributes is high. 
@@ -731,9 +737,9 @@ Another definition is given here (https://www.simpleorientedarchitecture.com/how
     	(firstClass:Class)-[:DUPLICATES]->(secondClass:Class) 
     RETURN 
     	firstClass.app_key as app_key, 
-    	firstClass.name as first_class, 
-    	secondClass.name as second_class, 
-    	parent.name as parent_class
+    	firstClass.name as class_name, 
+    	secondClass.name as second_class_name, 
+    	parent.name as parent_class_name
   
 ##### Parameters  
 Query classes that have a common parent class (somewhere in the hierarchy) and that share duplicated code. 
@@ -830,14 +836,15 @@ From "Understanding Code Smells in Android Applications": "Sibling Duplication m
 ##### Query string
 
     MATCH 
-    	(firstClass:Class)-[:DUPLICATES]->(secondClass:Class), 
+    	(firstClass:Class)-[r:DUPLICATES]->(secondClass:Class), 
     	(module:Module)-[:MODULE_OWNS_CLASS]->(firstClass), 
     	(module:Module)-[:MODULE_OWNS_CLASS]->(secondClass) 
     RETURN 
     	firstClass.app_key as app_key, 
-    	firstClass.name as first_class, 
-    	secondClass.name as second_class, 
-    	module.name as module_name
+    	firstClass.name as class_name, 
+    	secondClass.name as second_class_name, 
+    	module.name as module_name, 
+    	r.fragment as text_fragment
   
 ##### Parameters  
 Query classes that belong to the same module and that share duplicated code. 
@@ -864,8 +871,8 @@ From "Understanding Code Smells in Android Applications": "Internal Duplication 
     	id(module) <> id(secondModule) 
     RETURN 
     	firstClass.app_key as app_key, 
-    	firstClass.name as first_class, 
-    	secondClass.name as second_class, 
+    	firstClass.name as class_name, 
+    	secondClass.name as second_class_name, 
     	module.name as module_name, 
     	secondModule.name as second_module_name
   
@@ -895,9 +902,9 @@ From "Understanding Code Smells in Android Applications": External Duplication m
     WHERE 
     	number_of_called_methods > veryHighNumberOfCalledMethods
     RETURN 
-    	c.name as class_name,
-    	m.name as name, 
     	m.app_key as app_key, 
+    	c.name as class_name, 
+    	m.name as method_name, 
     	number_of_called_methods as number_of_called_methods
   
 ##### Parameters  

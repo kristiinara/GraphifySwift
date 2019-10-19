@@ -16,7 +16,7 @@ class TraditionBreakerQuery: Query {
     var json: [String : Any]?
     
     var string: String {
-        return "match (c:Class)-[r:EXTENDS]->(parent:Class) where not ()-[:EXTENDS]->(c) and c.number_of_methods+c.number_of_attributes < \(self.lowNumberOfmethodsAndAttributes) and parent.number_of_methods + parent.number_of_attributes >= \(self.highNumberOfMethodsAndAttributes) return c.app_key as app_key, c.name as child_name, parent.name as parent_name"
+        return "match (c:Class)-[r:EXTENDS]->(parent:Class) where not ()-[:EXTENDS]->(c) and c.number_of_methods+c.number_of_attributes < \(self.lowNumberOfmethodsAndAttributes) and parent.number_of_methods + parent.number_of_attributes >= \(self.highNumberOfMethodsAndAttributes) return c.app_key as app_key, c.name as class_name, parent.name as parent_class_name"
     }
     
     var notes: String {
