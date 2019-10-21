@@ -352,17 +352,33 @@ private extension SourceFileIndexAnalysisController {
         print("handle substructure of kind: \(kind) type: \(type)")
         print("structure: \(structure)")
         
-        if kind == "source.lang.swift.decl.var.parameter" {
-            let parameter = FuncParameter(kind: kind!, type: type ?? "No type", name: name ?? "No name")
-            entity.parameters.append(parameter)
-            return
-        }
+//        if kind == "source.lang.swift.decl.var.parameter" {
+//            print("FuncParameter: \(name), method.name: \(entity.name)")
+//            let parameter = FuncParameter(kind: kind!, type: type ?? "No type", name: name ?? "No name")
+//            entity.parameters.append(parameter)
+//            return
+//        }
         
         if let type = type {
             entity.type = type
         }
         
         //TODO: change instructions to old instructions. Could we somehow add structure to each class and do the parsing there? Or add instructions to each method and do the parsing there?
+        
+        if let substructures = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
+            for substructure in substructures {
+                let kind = substructure["key.kind"] as? String
+                let name = substructure["key.name"] as? String
+                let type = substructure["key.typename"] as? String
+                
+                if kind == "source.lang.swift.decl.var.parameter" {
+                    if let kind = kind, let name = name {
+                        let parameter = FuncParameter(kind: kind, type: type ?? "No type", name: name)
+                        entity.parameters.append(parameter)
+                    }
+                }
+            }
+        }
         
         let instruction = handleInstruction(structure)
         entity.instructions.append(instruction)
@@ -598,6 +614,14 @@ extension SourceFileIndexAnalysisController {
                             self.allMethods[usr] = method
                             method.usr = usr
                         }
+                        
+                        var count = 0
+                        for parameter in entity.parameters {
+                            let argument = Argument(name: parameter.name, type: parameter.type, position: count, appKey: method.appKey)
+                            method.parameters.append(argument)
+                            count += 1
+                        }
+                        
                         
                     } else if entity.kind.contains("decl.var") {
                         let variable = InstanceVariable(name: name, appKey: appKey, modifier: "", type: "", isStatic: false, isFinal: false)

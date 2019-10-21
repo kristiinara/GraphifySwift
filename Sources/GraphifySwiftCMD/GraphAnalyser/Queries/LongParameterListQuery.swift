@@ -1,0 +1,26 @@
+//
+//  LongParameterListQuery.swift
+//  Basic
+//
+//  Created by Kristiina Rahkema on 19/10/2019.
+//
+
+import Foundation
+
+class LongParameterListQuery: Query {
+    var name = "LongParameterList"
+    let veryHighNumberOfParameters = 6
+    
+    var result: String?
+    var json: [String : Any]?
+    
+    var string: String {
+        return "match (c:Class)-[:CLASS_OWNS_METHOD]->(m:Method)-[r:METHOD_OWNS_ARGUMENT]->(a:Argument) with c, m, count(a) as argument_count where argument_count > \(self.veryHighNumberOfParameters) return m.app_key as app_key, c.name as class_name, m.name as method_name, argument_count as argument_count"
+    }
+    
+    var notes: String {
+        return ""
+    }
+    
+    
+}

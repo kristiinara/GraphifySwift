@@ -103,6 +103,26 @@ class DataSyncController {
                         print("Added ClassownsMethodQuery \(String(describing: relId))")
                     }
                     
+                    toAdd += method.parameters.count
+                    for argument in method.parameters {
+                        self.databaseController.runQueryReturnId(transaction: argument.createQuery) { argumentId in
+                            argument.id = argumentId
+                            print("Added argumnet \(argument.name)")
+                            print("query: \(method.ownsArgumentQuery(argument))")
+                            
+                            self.databaseController.runQueryReturnId(transaction: method.ownsArgumentQuery(argument)) { relId2 in
+                                print("Added MethodOwnsArgumentQuery \(String(describing: relId2))")
+                                
+                                toAdd -= 1
+                                if toAdd == 0 {
+                                    print("newClass \(newClass.name) completition")
+                                    completition(newClass, true)
+                                    return
+                                }
+                            }
+                        }
+                    }
+                    
                     toAdd -= 1
                     
                     print("class + method toAdd \(toAdd)")

@@ -22,7 +22,7 @@ class Argument {
 
 extension Argument : Node4jInsertable {
     var nodeName: String {
-        return "Argumnet"
+        return "Argument"
     }
     
     var createQuery: String? {

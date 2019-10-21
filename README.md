@@ -922,3 +922,33 @@ Very high number of methods has to be determined statistically using the boxplot
 - Fowler's book: "We structure our software to make change easier; after all, software is meant to be soft. When we make a change we want to be able to jump to a single clear point in the system and make the change. When you can't do this you are smelling one of two closely related pungencies. Divergent change occurs when one class is commonly changed in different ways for different reasons. If you look at a class and say, "Well, I will have to change these three methods every time I get a new database; I have to change these four methods every time there is a new financial instrument," you likely have a situation in which two objects are better than one. That way each object is changed only as a result of one kind of change. Of course, you often discover this only after you've added a few databases or financial instruments. Any change to handle a variation should change a single class, and all the typing in the new class should express the variation. To clean this up you identify everything that changes for a particular cause and use Extract Class to put them all together."
 - opposite of shotgun surgery (based on Fowler's book)
 - shotgun surgery: methods that are called from more than n other methods
+
+### Long parameter list
+
+##### Query string
+
+    MATCH 
+    	(c:Class)-[:CLASS_OWNS_METHOD]->(m:Method)-[r:METHOD_OWNS_ARGUMENT]->(a:Argument) 
+    WITH 
+    	c, 
+    	m, 
+    	count(a) as argument_count 
+    WHERE argument_count > veryHighNumberOfParameters 
+    RETURN 
+    	m.app_key as app_key, 
+    	c.name as class_name, 
+    	m.name as method_name, 
+    	argument_count as argument_count
+  
+##### Parameters  
+Query methods that have a very long paramter list. 
+
+##### How are parameters determined
+Very high number of parameters either has to be determined statistically using the boxplot technique or it should be the threshold that a person can reasonably handle when reading the function description. 
+
+##### Implementation details 
+\-
+
+##### References 
+Fowler's book: "In our early programming days we were taught to pass in as parameters everything needed by a routine. This was understandable because the alternative was global data, and global data is evil and usually painful. Objects change this situation because if you don't have something you need, you can always ask another object to get it for you. Thus with objects you don't pass in everything the method needs; instead you pass enough so that the method can get to everything it needs. A lot of what a method needs is available on the method's host class. In object-oriented programs parameter lists tend to be much smaller than in traditional programs.
+This is good because long parameter lists are hard to understand, because they become inconsistent and difficult to use, and because you are forever changing them as you need more data. Most changes are removed by passing objects because you are much more likely to need to make only a couple of requests to get at a new piece of data."
