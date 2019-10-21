@@ -18,7 +18,7 @@ class SourceFileIndexAnalysisController {
     
     var fileQueue: [URL]
     var allPaths: [String]
-    var printOutput = true
+    var printOutput = false
     var useModules = false
     
     var allFirstLevel: [String:FirstLevel] = [:]

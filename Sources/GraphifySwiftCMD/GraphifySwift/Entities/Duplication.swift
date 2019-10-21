@@ -34,7 +34,8 @@ class Duplication {
 extension Duplication {
     var addDuplicationQuery: String? {
         if let firstClassId = self.firstClass?.id, let secondClassId = self.secondClass?.id {
-            let fragment = self.fragment.replacingOccurrences(of: "\"", with: "'")
+            var fragment = self.fragment.replacingOccurrences(of: "\"", with: "'")
+            fragment = fragment.replacingOccurrences(of: "\\", with: "\\\\")
             
             return "match (first:Class), (second:Class) where id(first) = \(firstClassId) and id(second) = \(secondClassId) create (first)-[r:DUPLICATES {fragment: \"\(fragment)\"} ]->(second) return id(r)"
         }
