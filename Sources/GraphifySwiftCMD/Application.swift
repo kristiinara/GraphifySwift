@@ -181,6 +181,7 @@ class Application {
         
         analysisController.analyse(queryString: query) { name, rows, headers in
             if let rows = rows {
+                print("rows: \(rows)")
                 if var existing = self.analysisResults[name] {
                     existing.append(contentsOf: rows)
                 } else {

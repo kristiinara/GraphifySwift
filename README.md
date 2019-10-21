@@ -15,6 +15,39 @@ Query code smells:
 Display prototype of architecture analysis:
 
     GraphifySwiftCMD classDiagram <pathToRepository>
+    
+    
+## Additioal queries
+
+### Information
+
+Information query is not a code smell, but provides basic information for each application for overview purposes. Might make sense to add such information also for each module or class in the future. 
+
+##### Query string
+
+    MATCH 
+    	(a:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(c:Class) 
+   	OPTIONAL MATCH 
+    	(c)-[:CLASS_OWNS_METHOD]->(m:Method) 
+  	OPTIONAL MATCH 
+  		(c)-[:CLASS_OWNS_VARIABLE]->(v:Variable) 
+  	WITH 
+  		a, 
+  		count(distinct c) as number, 
+  		count(distinct m) as methods, 
+  		count(distinct v) as variables, 
+  		count(distinct module) as modules 
+  	RETURN 
+  		a.app_key as app_key, 
+  		a.name as name, 
+  		modules as number_of_modules, 
+  		a.number_of_classes as number_of_classes, 
+  		a.number_of_interfaces as number_of_interfaces, 
+  		number as number_of_types, 
+  		methods as number_of_methods, 
+  		variables as number_of_variables, 
+  		a.date_download as date_download, 
+  		a.developer as developer
 
 ## Code smell definitions
 

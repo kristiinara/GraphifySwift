@@ -15,7 +15,9 @@ class AnalysisController {
         
         switch queryString {
         case "all":
-            queries = [LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery(), TraditionBreakerQuery(), SiblingDuplicationQuery(), InternalDuplicationQuery(), ExternalDuplicationQuery(), DivergentChangeQuery(), LongParameterListQuery()]
+            queries = [InfoQuery(), LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery(), TraditionBreakerQuery(), SiblingDuplicationQuery(), InternalDuplicationQuery(), ExternalDuplicationQuery(), DivergentChangeQuery(), LongParameterListQuery()]
+        case "Info":
+            queries = [InfoQuery()]
         case "LM":
             queries = [LongMethodQuery()]
         case "BLOB":
@@ -75,6 +77,7 @@ class AnalysisController {
                 
                 print("res nonparsed: \(json)")
                 print("res: \(query.parsedResult)")
+                print("res dictionary: \(query.parsedDictionary)")
 //                if let parsedResults = query.parsedResult {
 //                    completition(query.name, parsedResults)
 //                    self.dispatchGroup.leave()
