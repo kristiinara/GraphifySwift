@@ -20,6 +20,7 @@ class SourceFileIndexAnalysisController {
     var allPaths: [String]
     var printOutput = false
     var useModules = false
+    var insertToDatabase = true
     
     var allFirstLevel: [String:FirstLevel] = [:]
     var allEntities: [String:Entity] = [:]
@@ -89,8 +90,12 @@ class SourceFileIndexAnalysisController {
         
         ObjectPrinter.printApp(app)
         
-        self.dataSyncController.finished = finished
-        self.dataSyncController.sync(app: app)
+        if insertToDatabase == true {
+            self.dataSyncController.finished = finished
+            self.dataSyncController.sync(app: app)
+        } else {
+            finished()
+        }
     }
     
     func makeStructureRequest(at path: String) -> [String: SourceKitRepresentable] {

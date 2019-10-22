@@ -36,6 +36,7 @@ class Application {
             let folderPath = analyseParser.add(positional: "foldername", kind: String.self)
             let outputArgument: OptionArgument<Bool> = analyseParser.add(option: "--resultOutput", shortName: "-o", kind: Bool.self, usage: "Determines if a result file is created for every swift file.", completion: .none)
             let moduleArgument: OptionArgument<Bool> = analyseParser.add(option: "--includModules", shortName: "-m", kind: Bool.self, usage: "Determines if modules should be included.", completion: .none)
+            let noDatabaseArgumnet: OptionArgument<Bool> = analyseParser.add(option: "--noDatabase", shortName: "-n", kind: Bool.self, usage: "Flag determines that analysis results are not entered into a database.", completion: .none)
             
             let diagramFolderPath = diagramParser.add(positional: "foldername", kind: String.self)
           
@@ -85,7 +86,12 @@ class Application {
                     shouldIncludeModules = true
                 }
                 
-                self.runAnalysis(url: url!, appKey: key, printOutput: shouldPrintOutput, useModules: shouldIncludeModules)
+                var shouldInsertToDatabase = true
+                if result.get(noDatabaseArgumnet) != nil {
+                    shouldInsertToDatabase = false
+                }
+                
+                self.runAnalysis(url: url!, appKey: key, printOutput: shouldPrintOutput, useModules: shouldIncludeModules, insertToDatabase: shouldInsertToDatabase)
             } else if subparser == "query" {
                 print("query")
                 guard let query = result.get(queryArgument) else {
@@ -153,7 +159,7 @@ class Application {
         ResultToFileHandler.clearOutput(at: url)
     }
     
-    func runAnalysis(url: Foundation.URL, appKey: String, printOutput: Bool, useModules: Bool) {
+    func runAnalysis(url: Foundation.URL, appKey: String, printOutput: Bool, useModules: Bool, insertToDatabase: Bool) {
         dispatchGroup.enter()
         
         var dependencyURL = url
@@ -162,6 +168,8 @@ class Application {
         
         let analysisController = SourceFileIndexAnalysisController(homeURL: url, dependencyURL: dependencyURL)
         analysisController.useModules = useModules
+        analysisController.printOutput = printOutput
+        analysisController.insertToDatabase = insertToDatabase
         
         analysisController.analyseAllFilesAndAddToDatabase() {
             print("finished")
