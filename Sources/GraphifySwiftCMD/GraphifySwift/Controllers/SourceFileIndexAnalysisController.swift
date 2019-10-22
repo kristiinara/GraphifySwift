@@ -615,7 +615,7 @@ extension SourceFileIndexAnalysisController {
                         
                         methods.append(method) //TODO: add stuff into constructor
                         
-                        if let usr = object.usr {
+                        if let usr = entity.usr {
                             self.allMethods[usr] = method
                             method.usr = usr
                         }
@@ -636,7 +636,7 @@ extension SourceFileIndexAnalysisController {
                         }
                         variables.append(variable) //TODO: add stuff into constructor
                         
-                        if let usr = object.usr {
+                        if let usr = entity.usr {
                             self.allVariables[usr] = variable
                             variable.usr = usr
                         }
@@ -667,16 +667,19 @@ extension SourceFileIndexAnalysisController {
         print("Allclasses: \(app.classes)")
         for classInstance in app.classes {
             print("References for class: \(classInstance.name)")
-            for instanceMethod in classInstance.instanceMethods {
+            for instanceMethod in classInstance.allMethods {
+                print("References for method: \(instanceMethod.name)")
                 for reference in instanceMethod.references {
                     if let method = self.allMethods[reference] {
                         instanceMethod.referencedMethods.append(method)
                         method.methodReferences.append(instanceMethod)
+                        print("Found method: \(method.name) - usr: \(reference)")
                     }
                     
                     if let variable = self.allVariables[reference] {
                         instanceMethod.referencedVariables.append(variable)
                         variable.methodReferences.append(instanceMethod)
+                        print("Found variable: \(variable.name) - usr: \(reference)")
                     }
                 }
             }
