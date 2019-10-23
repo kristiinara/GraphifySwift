@@ -26,7 +26,7 @@ extension Argument : Node4jInsertable {
     }
     
     var createQuery: String? {
-        return "create (n:\(self.nodeName) {name:'\(self.name)', position:\(self.position), app_key:'\(self.appKey)'}) return id(n)"
+        return "create (n:\(self.nodeName) {name:'\(self.name)', position:\(self.position), app_key:'\(self.appKey)', type:'\(self.type)'}) return id(n)"
     }
     
     var deleteQuery: String? {

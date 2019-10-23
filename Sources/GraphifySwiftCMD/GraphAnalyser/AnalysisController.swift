@@ -15,7 +15,7 @@ class AnalysisController {
         
         switch queryString {
         case "all":
-            queries = [InfoQuery(), LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery(), TraditionBreakerQuery(), SiblingDuplicationQuery(), InternalDuplicationQuery(), ExternalDuplicationQuery(), DivergentChangeQuery(), LongParameterListQuery(), FeatureEnvyQuery()]
+            queries = [InfoQuery(), LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery(), TraditionBreakerQuery(), SiblingDuplicationQuery(), InternalDuplicationQuery(), ExternalDuplicationQuery(), DivergentChangeQuery(), LongParameterListQuery(), FeatureEnvyQuery(), DataClumpArgumentsQuery(), DataClumpFieldsQuery()]
         case "Info":
             queries = [InfoQuery()]
         case "LM":
@@ -54,6 +54,10 @@ class AnalysisController {
             queries = [LongParameterListQuery()]
         case "FeatureEnvy":
             queries = [FeatureEnvyQuery()]
+        case "DataClumpArguments":
+            queries = [DataClumpArgumentsQuery()]
+        case "DataClumpFields":
+            queries = [DataClumpFieldsQuery()]
         default:
             queries = [CustomQuery(queryString: queryString)]
         }
