@@ -226,6 +226,7 @@ class DataSyncController {
             for method in methods {
                 queryCount += method.referencedMethods.count
                 queryCount += method.referencedVariables.count
+                queryCount += method.parameters.count
             }
             
             let variables = classInstance.allVariables
@@ -283,6 +284,18 @@ class DataSyncController {
 //                    }
                     completition()
                     return
+                }
+            }
+        }
+        
+        for method in allMethods {
+            for argument in method.parameters {
+                self.databaseController.runQueryReturnId(transaction: argument.isTypeQuery) { relId in
+                    print("Added VariableIsOfTypeQuery \(String(describing: relId))")
+                    queryCount -= 1
+                    if queryCount == 0 {completition()
+                        return
+                    }
                 }
             }
         }
@@ -408,7 +421,7 @@ class DataSyncController {
         for parent in classInstance.inheritedClasses {
             toAdd = toAdd + 1
             self.databaseController.runQueryReturnId(transaction: classInstance.extendsQuery(parent)) { relId in
-                //print("Added AppExtendsParent \(String(describing: relId))")
+                print("Added AppExtendsParent \(String(describing: relId))")
                 toAdd = toAdd - 1
                 //print("toAdd: \(toAdd)")
                 if(toAdd == 0) {
@@ -420,10 +433,10 @@ class DataSyncController {
         for protocolInstance in classInstance.extendedInterfaces {
             toAdd = toAdd + 1
             self.databaseController.runQueryReturnId(transaction: classInstance.implementsQuery(protocolInstance)) { relId in
-                //print("Added AppImplements \(String(describing: relId))")
+                print("Added AppImplements \(String(describing: relId))")
                 toAdd = toAdd - 1
                 if(toAdd == 0) {
-                    //  print("toAdd: \(toAdd)")
+                    //print("toAdd: \(toAdd)")
                     completition()
                 }
             }

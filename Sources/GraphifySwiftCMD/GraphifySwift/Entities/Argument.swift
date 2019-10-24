@@ -11,12 +11,20 @@ class Argument {
     var position: Int
     var appKey: String
     var id: Int?
+    var typeClass: Class?
     
     init(name: String, type: String, position: Int, appKey: String) {
         self.name = name
         self.type = type
         self.position = position
         self.appKey = appKey
+    }
+    
+    var cleanedType: String {
+        var typeString = self.type
+        typeString = typeString.replacingOccurrences(of: "?", with: "")
+        typeString = typeString.replacingOccurrences(of: "!", with: "")
+        return typeString
     }
 }
 
@@ -39,6 +47,15 @@ extension Argument : Node4jInsertable {
     var updateQuery: String? {
         if let id = self.id {
             return "match (n:\(self.nodeName) where id(n)=\(id) set n.name = '\(self.name)', position:\(self.position), app_key: '\(self.appKey)'"
+        }
+        return nil
+    }
+    
+    var isTypeQuery: String? {
+        if let typeClass = self.typeClass {
+            if let selfid = self.id, let  classId = typeClass.id {
+                return "match (a:Argument), (c:Class) where id(a) = \(selfid) and id(c) = \(classId) create (a)-[r:IS_OF_TYPE]->(c) return id(r)"
+            }
         }
         return nil
     }

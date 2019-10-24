@@ -223,9 +223,13 @@ private extension SourceFileIndexAnalysisController {
                     if let name = name {
                         relatedClasses.append((name: name, usr: usr))
                     }
-                } else if kind == "ource.lang.swift.ref.struct" {
+                } else if kind == "source.lang.swift.ref.struct" {
                     if let name = name {
                         relatedStructures.append((name: name, usr: usr))
+                    }
+                } else if kind == "source.lang.swift.ref.protocol" {
+                    if let name = name {
+                        relatedClasses.append((name: name, usr: usr))
                     }
                 }
             }
@@ -565,6 +569,7 @@ extension SourceFileIndexAnalysisController {
                 }
             }
             
+            var newInstance = true
             if object.kind == ClassInstance.kittenKey {
                 let classInstanceInstance = ClassInstance(name: object.name, appKey: appKey, modifier: "", module: module!)
                 module?.classes.append(classInstanceInstance)
@@ -578,19 +583,37 @@ extension SourceFileIndexAnalysisController {
                 let protocolInstance = Protocol(name: object.name, appKey: appKey, modifier: "", module: module!)
                 module?.protocols.append(protocolInstance)
                 classInstance = protocolInstance
+            } else if object.kind == "source.lang.swift.decl.extension.class" {
+                if let classInstanceInstance = self.classDictionary[object.name] as? ClassInstance {
+                    newInstance = false
+                    classInstance = classInstanceInstance
+                }
+                //TODO: handle cases where extension is found before class itself??
+            } else if object.kind == "source.lang.swift.decl.extension.struct" {
+                if let structInstance = self.classDictionary[object.name] as? Struct {
+                    newInstance = false
+                    classInstance = structInstance
+                }
+            } else if object.kind == "source.lang.swift.decl.extension.protocol" {
+                if let protocolInstance = self.classDictionary[object.name] as? Struct {
+                    newInstance = false
+                    classInstance = protocolInstance
+                }
             }
             
-            if let classInstance = classInstance {
-                self.classDictionary[classInstance.name] = classInstance
-            }
-            
-            if let path = object.path {
-                classInstance?.path = path
-            }
-            
-            if let usr = object.usr {
-                self.allClasses[usr] = classInstance
-                classInstance?.usr = usr
+            if newInstance == true {
+                if let classInstance = classInstance {
+                    self.classDictionary[classInstance.name] = classInstance
+                }
+                
+                if let path = object.path {
+                    classInstance?.path = path
+                }
+                
+                if let usr = object.usr {
+                    self.allClasses[usr] = classInstance
+                    classInstance?.usr = usr
+                }
             }
             
             var parents = object.parentsClasses
@@ -646,14 +669,22 @@ extension SourceFileIndexAnalysisController {
                 }
             }
             
-            classInstance?.instanceMethods = methods
-            classInstance?.instanceVariables = variables
+            classInstance?.instanceMethods.append(contentsOf: methods)
+            classInstance?.instanceVariables.append(contentsOf: variables)
         }
         
         for classInstance in app.allClasses {
             for variable in classInstance.allVariables {
                 if let classType = self.classDictionary[variable.cleanedType] {
                     variable.typeClass = classType
+                }
+            }
+            
+            for method in classInstance.allMethods {
+                for argument in method.parameters {
+                    if let classType = self.classDictionary[argument.cleanedType] {
+                        argument.typeClass = classType
+                    }
                 }
             }
         }
@@ -665,7 +696,7 @@ extension SourceFileIndexAnalysisController {
         //TODO: do this also for structs and class and static methods
         print("findReferences for \(app.name)")
         print("Allclasses: \(app.classes)")
-        for classInstance in app.classes {
+        for classInstance in app.allClasses {
             print("References for class: \(classInstance.name)")
             for instanceMethod in classInstance.allMethods {
                 print("References for method: \(instanceMethod.name)")
@@ -690,10 +721,13 @@ extension SourceFileIndexAnalysisController {
             for usr in classInstance.parentUsrs {
                 if let object = self.allClasses[usr] {
                     if let parentClass = object as? ClassInstance {
+                        print("class \(parentClass.name) is classInstance")
                         classInstance.inheritedClasses.append(parentClass)
                     } else if let parentProtocol = object as? Protocol {
+                        print("class \(parentProtocol.name) is protocol")
                         classInstance.extendedInterfaces.append(parentProtocol)
                     } else if let parentStruct = object as? Struct {
+                        print("class \(parentStruct.name) is struct")
                         classInstance.inheritedClasses.append(parentStruct)
                     }
                 } else if usr.contains("c:objc(cs)") {

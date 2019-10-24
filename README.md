@@ -1279,3 +1279,71 @@ definition for data clumps:
       - 2. These parameters should have same signatures (same names, same data types). 
       - 3. These parameters may not group together in the same order. 
 
+### Speculative generality (interfaces)
+
+##### Query string
+
+    MATCH 
+    	(class:Class) 
+    WHERE NOT 
+    	()-[:IMPLEMENTS|EXTENDS]->(class) and  
+    	class.is_interface = true 
+    RETURN 
+    	class.app_key as app_key, 
+    	class.name as class_name
+  
+##### Parameters  
+Query interfaces that are not implemented or extended. 
+
+##### How are parameters determined
+\-
+
+##### Implementation details 
+\-
+
+##### References 
+From article "Improving the Precision of Fowler’s Definitions of Bad Smells": 
+definition for data clumps: 
+            
+- Situation 1:
+	1. A class is an abstract class or interface.
+	2. This class has not been inherited or is only inherited by one class.
+- Situation 2:
+	1. A class contains at least one method which contains at least one parameter which is unused. 
+
+### Speculative generality (methods)
+
+__Not working as we cannot determine the case when an argument is used to just set a value in the class.__
+
+##### Query string
+
+    MATCH 
+    	(class)-[:CLASS_OWNS_METHOD]->(m:Method)-[:METHOD_OWNS_ARGUMENT]->(p:Argument)-[:IS_OF_TYPE]->(other_class:Class) 
+    WHERE NOT 
+   		(m)-[:CALLS|USES]->()<-[:CLASS_OWNS_VARIABLE|CLASS_OWNS_METHOD]-(other_class) and 
+   		class.is_interface = false 
+   	RETURN 
+   		class.app_key as app_key, 
+   		class.name as class_name, 
+   		m.name as method_name, 
+   		p.name as argument_name, 
+   		other_class.name as type_name
+  
+##### Parameters  
+Query methods that have unused parameters. Unused paramater is defined by there being no relationship of USES or CALLS between the origin class and the type class of the parameter. Currently not working correctly.  
+
+##### How are parameters determined
+\-
+
+##### Implementation details 
+Not working correctly, as we don't have a reference if an argument is only used to set a value. 
+
+##### References 
+From article "Improving the Precision of Fowler’s Definitions of Bad Smells": 
+definition for data clumps: 
+            
+- Situation 1:
+	1. A class is an abstract class or interface.
+	2. This class has not been inherited or is only inherited by one class.
+- Situation 2:
+	1. A class contains at least one method which contains at least one parameter which is unused. 
