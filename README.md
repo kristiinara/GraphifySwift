@@ -1347,3 +1347,55 @@ definition for data clumps:
 	2. This class has not been inherited or is only inherited by one class.
 - Situation 2:
 	1. A class contains at least one method which contains at least one parameter which is unused. 
+
+### Middle man
+
+##### Query string
+
+    MATCH 
+    	(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)-[:USES|CALLS]->(ref)<-[:CLASS_OWNS_VARIABLE|CLASS_OWNS_METHOD]-(other_class:Class) 
+    WHERE 
+    	class <> other_class and 
+    	method.number_of_instructions < smallNumberOfLines 
+    WITH 
+    	class, 
+    	method, 
+    	collect(ref.name) as referenced_names, 
+    	collect(other_class.name) as class_names 
+    WITH 
+    	collect(method.name) as method_names, 
+    	collect(referenced_names) as references, 
+    	collect(class_names) as classes, 
+    	collect(method.number_of_instructions) as 
+    	numbers_of_instructions, 
+    	class, 
+    	count(method) as method_count, 
+    	count(method)*1.0/class.number_of_methods as method_ratio 
+    WHERE 
+    	method_ratio > delegationToAllMethodsRatioHalf  
+    return 
+    	class.app_key as app_key, 
+    	class.name as class_name, 
+    	method_names, 
+    	classes, 
+    	numbers_of_instructions, 
+    	method_ratio
+  
+##### Parameters  
+Querying all classes where more than half of the methods are delegation methods.  Delegation methods are methods that have at least one reference (uses/calles) to another class but have less than a small number of lines.
+
+##### How are parameters determined
+Small number of lines should be determined statistically using the box-plot technique, currently set to 5. Delegation to all methods ratio is set to 0.5.
+
+##### Implementation details 
+\-
+
+##### References 
+From article "Improving the Precision of Fowler’s Definitions of Bad Smells": 
+definition for data clumps: 
+            
+  1. Half of a class’s methods are delegation methods. 
+  2. A delegation method is a method that: 
+       - Contains at least one reference to another Class. 
+       - Contains less than a threshold value of LOC. 
+	
