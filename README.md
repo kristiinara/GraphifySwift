@@ -1399,3 +1399,69 @@ definition for data clumps:
        - Contains at least one reference to another Class. 
        - Contains less than a threshold value of LOC. 
 	
+### Parallel inheritance hiearchies
+
+##### Query string
+
+    MATCH 
+    	(parent:Class)<-[:MODULE_OWNS_CLASS]-(:Module)<-[:APP_OWNS_MODULE]-(app:App)
+    MATCH 
+    	(other_app:App)-[:APP_OWNS_MODULE]->(:Module)-[:MODULE_OWNS_CLASS]->(other_parent:Class)
+	WHERE 
+		app = other_app
+	MATCH 
+		path = (class:Class)-[:EXTENDS*]->(parent) 
+	MATCH 
+		other_path = (other_class:Class)-[:EXTENDS*]->(other_parent)
+	WHERE 
+		parent <> other_parent and 
+		length(path) = length(other_path) and 
+		length(path) > 0 and 
+		class.name starts with substring(other_class.name, 0, prefixLength) and 
+		parent.name starts with substring(other_parent.name, 0, prefixLength) 
+	WITH 
+		collect(distinct [n in nodes(path) | n.name ]) as first, 
+		collect(distinct [n in nodes(other_path) | n.name]) as second, 
+		parent, 
+		other_parent
+	WITH 
+		REDUCE(output = [], r IN first | output + r) as first_names, 
+		REDUCE(output = [], r IN second | output + r) as second_names, 
+		parent, 
+		other_parent
+	UNWIND first_names as first_name
+	WITH 
+		collect(distinct first_name) as first_names, 
+		second_names, 
+		parent, 
+		other_parent
+	UNWIND 
+		second_names as second_name
+	WITH 
+		collect(distinct second_name) as second_names, 
+		first_names, 
+		parent, 
+		other_parent
+	WHERE 
+		size(first_names) >= minimumNumberOfClassesInHierarchy
+	RETURN 
+		parent.app_key as app_key, 
+		parent.name as parent_class_name, 
+		other_parent.name as other_parent_class_name , 
+		first_names as first_class_names, 
+		second_names as second_class_names, 
+		size(first_names) as number_of_classes
+  
+##### Parameters  
+Queries parallel hierarchy trees for classes that start with the same prefixes. Prefix length currently set to 1, minimumNumberOfClassesInHierarchy set to 5.
+
+##### How are parameters determined
+For prefix length we should try this query out on a big number of projects and check for false positives, 1 might be an acceptable number. Minimum number of classes in hierarchy is currently set to 5, we should follow the same process as for prefix length. 
+
+##### Implementation details 
+It is mostly a historical smell, meaning that it relies on how the code evolves, but it has been suggested that detection should also be possible without historical data if we also look at class prefixes. 
+
+##### References 
+From article "Towards a Principle-based Classification of Structural Design Smells": "This design smell arises when there are two structurally similar (symmetrical) class hierarchies with same class name prefixes [Fow99]."
+
+Fowler: "Making a new subclass of one class means that we need to make the same kind of subclass of another class"
