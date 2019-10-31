@@ -282,12 +282,38 @@ class Application {
         }
         
         if let htmlURL = htmlURL {
-            let htmlString = HTMLPresenter.generateHTML(dictionary: applications, headerDictionary: headers)
+            let htmlFiles = HTMLPresenter.generateHTML(fileName: "html-result", dictionary: applications, headerDictionary: headers)
+            
+            
+//            for key in htmlFiles.keys {
+//                if let htmlString = htmlFiles[key] {
+//                    let url = URL(key)
+//
+//                    do {
+//                        try htmlString.write(to: url, atomically: false, encoding: .utf8)
+//                    } catch let error {
+//                        print("error \(error)")
+//                    }
+//                }
+//            }
             
             do {
-                try htmlString.write(to: htmlURL, atomically: false, encoding: .utf8)
-            } catch let error {
+                try FileManager.default.createDirectory(at: htmlURL, withIntermediateDirectories: true, attributes: nil)
+            }
+            catch let error {
                 print("error \(error)")
+            }
+            
+            for fileName in htmlFiles.keys {
+                if let fileString = htmlFiles[fileName] {
+                    let url = htmlURL.appendingPathComponent(fileName)
+                    
+                    do {
+                        try fileString.write(to: url, atomically: false, encoding: .utf8)
+                    } catch let error {
+                        print("error \(error)")
+                    }
+                }
             }
         }
         

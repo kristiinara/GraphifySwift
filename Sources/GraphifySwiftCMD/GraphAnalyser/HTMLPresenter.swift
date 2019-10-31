@@ -9,7 +9,9 @@ import Foundation
 
 class HTMLPresenter {
     
-    static func generateHTML(dictionary: [String:[String:[[String]]]], headerDictionary: [String: [String]]) -> String {
+    static func generateHTML(fileName: String, dictionary: [String:[String:[[String]]]], headerDictionary: [String: [String]]) -> [String: String] {
+        var files: [String: String] = [:]
+        
         var body = ""
         
         for appName in dictionary.keys {
@@ -22,22 +24,58 @@ class HTMLPresenter {
                         body += "\(queryName) (\(queryStuff.count))</summary>"
                         body += "<table>"
                         
+                        var mainIndex: Int? = nil
+                        var affectedIndex: Int? = nil
+                        
                         if let headers = headerDictionary[queryName] {
+                            var count = 0
                             body += "<tr>"
                             for header in headers {
-                                body += "<th>\(header)</th>"
+                                if header == "main_text" {
+                                    mainIndex = count
+                                } else if header == "affected_text" {
+                                    affectedIndex = count
+                                } else {
+                                    body += "<th>\(header)</th>"
+                                }
+                                count += 1
                             }
+                            if mainIndex != nil { // && affectedIndex != nil {
+                                body += "<th>Code</th>"
+                            }
+                            
                             body += "</tr>"
                         }
                         
+                        var rowCount = 0
                         for row in queryStuff {
-                            body += "<tr>"
+                            var mainString: String? = nil
+                            var affectedString: String? = nil
                             
+                            var count = 0
+                            body += "<tr>"
                             for column in row {
-                                body += "<td>\(column)</td>"
+                                if count == mainIndex {
+                                    mainString = column
+                                } else if count == affectedIndex {
+                                    affectedString = column
+                                } else {
+                                    body += "<td>\(column)</td>"
+                                }
+                                count += 1
+                            }
+                            
+                            if let mainString = mainString {
+                                let subHtml = generateHTML(mainText: mainString, affectedText: affectedString)
+                                let subFileName = "\(fileName)-\(queryName)-\(rowCount).html"
+                                
+                                
+                                body += "<td><a href=\"\(subFileName)\">Code</a></td>"
+                                files[subFileName] = subHtml
                             }
                             
                             body += "</tr>"
+                            rowCount += 1
                         }
                         
                         body += "</table>"
@@ -89,6 +127,66 @@ class HTMLPresenter {
                \(body)
             </body>
         """
+        files[fileName] = htmlString
+        
+        return files
+    }
+    
+    static func generateHTML(mainText: String, affectedText: String?) -> String {
+        var body = ""
+        
+        if let affectedText = affectedText {
+            let split = mainText.split(around: affectedText)
+            body += "<pre><code><font color=\"black\">\(split.0)"
+            if let second = split.1 {
+                body += "<font color=\"red\">\(affectedText)</font>"
+                body += "\(second)"
+            }
+            body += "</font></code></pre>"
+            
+        } else {
+            body += "\(mainText)"
+        }
+        
+        let htmlString = """
+            <head>
+                <style type="text/css">
+                    details {
+                border: 1px solid #aaa;
+                border-radius: 4px;
+                padding: .5em .5em 0;
+            }
+
+            summary {
+                font-weight: bold;
+                margin: -.5em -.5em 0;
+                padding: .5em;
+            }
+
+            details[open] {
+                padding: .5em;
+            }
+
+            details[open] summary {
+                border-bottom: 1px solid #aaa;
+                margin-bottom: .5em;
+            }
+
+            table, th, td {
+              border: 1px solid black;
+              border-collapse: collapse;
+              padding: 5px;
+            }
+                </style>
+
+            </head>
+
+            <body>
+               \(body)
+            </body>
+        """
+        
+        print("htmlString: \(htmlString)")
         
         return htmlString
     }

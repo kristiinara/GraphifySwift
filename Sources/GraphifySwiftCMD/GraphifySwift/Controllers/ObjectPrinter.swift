@@ -40,6 +40,10 @@ class ObjectPrinter {
             for variable in classInstance.staticVariables {
                 printVariable(variable)
             }
+            print("     ------------")
+            print("     DataString: ")
+            print("     \(classInstance.dataString): ")
+            print("     ------------")
         }
         
         print("Duplicates: ")
@@ -58,6 +62,7 @@ class ObjectPrinter {
         print("                           ref: \(method.methodReferenceNames)")
         print("                           refVar: \(method.variableReferenceNames)")
         print("                           refLocalVar: \(method.localVariableNames)")
+        print("                           dataString: \(method.dataString)")
         
         for argument in method.parameters {
             print("                      Argument: \(argument.name)")

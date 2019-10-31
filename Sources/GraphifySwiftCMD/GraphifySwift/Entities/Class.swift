@@ -10,6 +10,7 @@ import Foundation
 
 class Class : Kind {
     weak var module: Module?
+    var dataString: String = ""
     
     var id: Int?
     var path: String = ""
@@ -238,6 +239,9 @@ extension Class: Node4jInsertable {
     }
     
     var properties: String {
+        var dataString = self.dataString.replacingOccurrences(of: "\"", with: "'")
+        dataString = dataString.replacingOccurrences(of: "\\", with: "\\\\")
+        
         return """
         {
         name:'\(self.name)',
@@ -266,7 +270,8 @@ extension Class: Node4jInsertable {
         number_of_instructions:\(self.numberOfInstructions),
         number_of_weighted_methods:\(self.numberOfWeightedMethods),
         depth_of_inheritance:\(self.depthOfInheritance),
-        number_of_comments:\(self.numberOfComments)
+        number_of_comments:\(self.numberOfComments),
+        data_string:\"\(dataString)\"
         }
         """
     }

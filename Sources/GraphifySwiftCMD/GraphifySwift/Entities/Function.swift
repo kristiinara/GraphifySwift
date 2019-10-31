@@ -20,6 +20,8 @@ class Function: Kind {
     var length: Int?
     var lineNumber: Int?
     var endLineNumber: Int?
+    var dataString: String = ""
+    
     weak var classInstance: Class?
     
     var uses: [Int]?
@@ -199,6 +201,9 @@ extension Function: Node4jInsertable {
     }
     
     var properties: String {
+        var dataString = self.dataString.replacingOccurrences(of: "\"", with: "'")
+        dataString = dataString.replacingOccurrences(of: "\\", with: "\\\\")
+        
         return """
         {
             name:'\(self.name)',
@@ -220,7 +225,8 @@ extension Function: Node4jInsertable {
             is_synchronized:\(self.isSyncronized),
             number_of_switch_statements:\(self.numberOfSwitchStatements),
             max_number_of_chaned_message_calls:\(self.maxNumberOfChanedMessageCalls),
-            max_nesting_depth:\(self.maxNestingDepth)
+            max_nesting_depth:\(self.maxNestingDepth),
+            data_string:\"\(dataString)\"
         }
         """
     }

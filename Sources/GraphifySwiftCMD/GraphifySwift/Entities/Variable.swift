@@ -17,6 +17,7 @@ class Variable : Kind {
     var isFinal: Bool = false
     weak var classInstance: Class?
     var typeClass: Class?
+    var dataString: String = ""
     
     var cleanedType: String {
         var typeString = self.type
@@ -55,6 +56,9 @@ extension Variable: Node4jInsertable {
     }
     
     var properties: String {
+        var dataString = self.dataString.replacingOccurrences(of: "\"", with: "'")
+        dataString = dataString.replacingOccurrences(of: "\\", with: "\\\\")
+        
         return """
         {
         name:'\(self.name)',
@@ -62,7 +66,8 @@ extension Variable: Node4jInsertable {
         modifier:'\(self.modifier)',
         type:'\(self.type)',
         is_static:\(self.isStatic),
-        is_final:\(self.isFinal)
+        is_final:\(self.isFinal),
+        data_string:\"\(dataString)\"
         }
         """
     }
