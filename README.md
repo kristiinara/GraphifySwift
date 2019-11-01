@@ -1313,30 +1313,36 @@ definition for data clumps:
 
 ### Speculative generality (methods)
 
-__Not working as we cannot determine the case when an argument is used to just set a value in the class.__
-
 ##### Query string
 
-    MATCH 
-    	(class)-[:CLASS_OWNS_METHOD]->(m:Method)-[:METHOD_OWNS_ARGUMENT]->(p:Argument)-[:IS_OF_TYPE]->(other_class:Class) 
-    WHERE NOT 
-   		(m)-[:CALLS|USES]->()<-[:CLASS_OWNS_VARIABLE|CLASS_OWNS_METHOD]-(other_class) and 
-   		class.is_interface = false 
-   	RETURN 
-   		class.app_key as app_key, 
-   		class.name as class_name, 
-   		m.name as method_name, 
-   		p.name as argument_name, 
-   		other_class.name as type_name
+    MATCH  
+    	(class)-[:CLASS_OWNS_METHOD]->(m:Method)
+    		-[:METHOD_OWNS_ARGUMENT]->(p:Argument)
+    		-[:IS_OF_TYPE]->(other_class:Class) 
+    WHERE 
+    	NOT (m)-[:CALLS|USES]->()
+    		<-[:CLASS_OWNS_VARIABLE|CLASS_OWNS_METHOD]-(other_class) AND 
+    	NOT m.data_string contains (\"=\" + p.name) AND 
+    	NOT m.data_string contains (\"= \" + p.name) AND 
+    	NOT m.data_string contains (\":\" + p.name) AND 
+    	NOT m.data_string contains (\": \" + p.name) AND 
+    	class.is_interface = false 
+    RETURN 
+    	class.app_key as app_key, 
+    	class.name as class_name, 
+    	m.name as method_name, 
+    	p.name as argument_name, 
+    	m.data_string as main_text, 
+    	p.name as affected_text
   
 ##### Parameters  
-Query methods that have unused parameters. Unused paramater is defined by there being no relationship of USES or CALLS between the origin class and the type class of the parameter. Currently not working correctly.  
+Query methods that have unused parameters. Unused paramater is defined by there being no relationship of USES or CALLS between the origin class and the type class of the parameter. Parameters are also excluded if they are cointained in the method text as "= parameter\_name" or ": parameter\_name". The idea behing this is to exclude methods where a parameter is used to set antoher parameter all used as a parameter in a function call. 
 
 ##### How are parameters determined
 \-
 
 ##### Implementation details 
-Not working correctly, as we don't have a reference if an argument is only used to set a value. 
+\-
 
 ##### References 
 From article "Improving the Precision of Fowler’s Definitions of Bad Smells": 
