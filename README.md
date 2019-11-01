@@ -1631,3 +1631,71 @@ Fraction for tight class cohesion is set to 0.3. Very high number of weighted me
 
 ##### References 
 Def. from https://www.simpleorientedarchitecture.com/how-to-identify-god-class-using-ndepend/.
+
+### SAP Breaker
+
+##### Query string
+
+    MATCH (class:Class)
+    MATCH (other_class:Class)
+    WHERE 
+    	(other_class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
+    		<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(class)
+    WITH 
+    	count(distinct other_class) as number_of_dependant_classes, class
+    WITH 
+    class, number_of_dependant_classes as efferent_coupling_number
+
+    MATCH (class:Class)
+    MATCH (other_class:Class)
+    WHERE 
+    	(class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
+    		<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(other_class)
+    WITH 
+    	count(distinct other_class) as afferent_coupling_number, 
+    	class, efferent_coupling_number
+    WITH 
+    	efferent_coupling_number*1.0/(efferent_coupling_number + afferent_coupling_number) as instability_number, 
+    	class, 
+    	afferent_coupling_number, 
+    	efferent_coupling_number
+
+    OPTIONAL MATCH 
+    	(class)-[:CLASS_OWNS_METHOD]->(method:Method)
+    WHERE 
+    	method.is_abstract
+    WITH 
+    	count(distinct method)/class.number_of_methods as abstractness_number, 
+    	instability_number, 
+    	afferent_coupling_number, 
+    	efferent_coupling_number, 
+    	class
+    WITH 
+    	1 - (abstractness_number + instability_number)^2 as difference_from_main, 
+    	instability_number, 
+    	abstractness_number, 
+    	class
+
+    WHERE 
+    	difference_from_main < - allowedDistanceFromMain or 
+    	difference_from_main > allowedDistanceFromMain
+    RETURN 
+    	class.app_key as app_key, 
+    	class.name as class_name, 
+    	instability_number, 
+    	abstractness_number, 
+    	difference_from_main
+  
+##### Parameters  
+Queries classes where class abstractness + instability is far from the 1-x mainline. AllowedDistanceFromMain is currently set to 0.5.
+
+##### How are parameters determined
+
+
+##### Implementation details 
+\-
+
+##### References 
+More detailed def from https://javadepend.com/Blog/?p=585
+
+From "understanding code smells in android applications": "Stable Abstraction Breaker is a subsystem (component) for which its stability level is not proportional with its abstractness. This design flaw is inspired by Robert Martin's stable abstractions principle, which states that for well-designed software there should be a specific relationship between two subsystem measures: the abstractness of a subsystem, which shall express the portion of contained abstract types, and its stability, which indicates whether the subsystem is mainly used by other client subsystems (stable) or if it mainly depends on other subsystems (unstable). For short, "a subsystem should be as abstract as it is stable". The problem with subsystems that are heavily used by other subsystems and at the same time are not abstract is that if they change (and they are likely to), potentially all clients must also change. This in turn leads to systems that are hard to maintain. [26 and 19] "

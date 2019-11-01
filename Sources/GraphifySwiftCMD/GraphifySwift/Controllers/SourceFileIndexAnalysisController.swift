@@ -506,6 +506,19 @@ private extension SourceFileIndexAnalysisController {
                     }
                 }
             }
+            
+            if substructures.count == entity.parameters.count {
+                if (kind?.starts(with: "source.lang.swift.decl.function.method") ?? false) == true {
+                    //method and no substructure --> must be abstract method
+                    //somethimes fails when only one line in method
+                    entity.isAbstract = true
+                }
+            }
+        } else {
+            if (kind?.starts(with: "source.lang.swift.decl.function.method") ?? false) == true {
+                //method and no substructure --> must be abstract method
+                entity.isAbstract = true
+            }
         }
         
         let instruction = handleInstruction(structure)
@@ -760,6 +773,10 @@ extension SourceFileIndexAnalysisController {
                         let method = InstanceFunction(name: name, fullName: name, appKey: appKey, modifier: "", returnType: "")
                         method.instructions = entity.instructions
                         method.references = entity.allReferences
+                        if classInstance!.isInterface {
+                            //can only be abstract, if classInstance itself is interface
+                            method.isAbstract = entity.isAbstract
+                        }
                         
                         if let dataString = entity.dataString {
                           //  print("Method entity.dataString: \(dataString)")
@@ -926,6 +943,7 @@ class Entity {
     var startLine: Int?
     var endLine: Int?
     var dataString: String?
+    var isAbstract = false
     
     var relatedObjects:[(name: String, kind: String, usr: String?)] = []
     
