@@ -70,6 +70,8 @@ class AnalysisController {
             queries = [InappropriateIntimacyQuery()]
         case "BrainMethod":
             queries = [BrainMethodQuery()]
+        case "GodClass":
+            queries = [GodClassQuery()]
         default:
             queries = [CustomQuery(queryString: queryString)]
         }

@@ -1555,3 +1555,79 @@ High number of instructions for class and high cyclomatic complexity should be d
 
 ##### References 
 Def. from https://www.simpleorientedarchitecture.com/how-to-identify-brain-method-using-ndepend/.
+
+### God class
+
+##### Query string
+
+   	MATCH 
+   		(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)
+   	MATCH 
+   		(class)-[:CLASS_OWNS_METHOD]->(other_method:Method)
+   	WHERE 
+   		method <> other_method
+   	WITH 
+   		count(DISTINCT [method, other_method]) as pair_count, 
+   		class
+   	MATCH 
+   		(class)-[:CLASS_OWNS_METHOD]->(method:Method)
+   	MATCH 
+   		(class)-[:CLASS_OWNS_METHOD]->(other_method:Method)
+   	MATCH 
+   		(class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)
+   	WHERE 
+   		method <> other_method and 
+   		(method)-[:USES]->(variable)<-[:USES]-(other_method)
+   	WITH 
+   		class, 
+   		pair_count, 
+   		method, 
+   		other_method, 
+   		collect(distinct variable.name) as variable_names, 
+   		count(distinct variable) as variable_count
+    WHERE 
+    	variable_count >= 1
+    WITH 
+    	class, 
+    	pair_count, 
+    	count(distinct [method, other_method]) as connected_method_count
+    WITH 
+    	class, 
+    	connected_method_count*0.1/pair_count as class_cohesion, 
+    	connected_method_count, 
+    	pair_count
+   	WHERE 
+    	class_cohesion < tightClassCohesionFraction and
+    	class.number_of_weighted_methods >= veryHighWeightedMethodCount
+   	OPTIONAL MATCH 
+   		(class)-[:CLASS_OWNS_METHOD]->(m:Method)-[:USES]
+   			->(variable:Variable)<-[:CLASS_OWNS_VARIABLE]-(other_class:Class)
+    WHERE class <> other_class
+        with class, 
+        class_cohesion, 
+        connected_method_count, 
+        pair_count, 
+        count(distinct variable) as foreign_variable_count
+    WHERE 
+    	foreign_variable_count >= fewAccessToForeignData
+    RETURN 
+    	class.app_key as app_key, 
+    	class.name as class_name, 
+    	pair_count, 
+    	connected_method_count, 
+    	class_cohesion, 
+    	class.number_of_weighted_methods as number_of_weighted_method, 
+    	foreign_variable_count, 
+    	class.data_string as main_text
+  
+##### Parameters  
+Queries classes whose tight class cohesion is lower than 0.3, number of weighted mehtods is very high ad access to foreign data is at least view.
+
+##### How are parameters determined
+Fraction for tight class cohesion is set to 0.3. Very high number of weighted mehtods should be determined statistically using the box-plot technique. At least view access to foreign data variables is a generally accepted threshold 2-5.
+
+##### Implementation details 
+\-
+
+##### References 
+Def. from https://www.simpleorientedarchitecture.com/how-to-identify-god-class-using-ndepend/.
