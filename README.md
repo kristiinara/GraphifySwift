@@ -1515,3 +1515,43 @@ Def: "All pairs of classes having a number of method’s calls between them high
 
 Fowler: "when a class knows too much of the internals of another class"
 
+### Brain method
+
+##### Query string
+
+    MATCH 
+    	(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)
+    MATCH 
+    	(method)-[:USES]->(variable:Variable)
+    WITH 
+    	class, 
+    	method, 
+    	count(distinct variable) as number_of_variables, 
+    	collect(distinct variable.name) as variable_names
+    WHERE 
+    	class.number_of_instructions > highNumberOfInstructionsForClass and 
+    	method.cyclomatic_complexity >= highCyclomaticComplexity and 
+    	method.max_nesting_depth >= severalMaximalNestingDepth and 
+    	number_of_variables > manyAccessedVariables
+    RETURN 
+    	class.app_key as app_key,
+    	class.name as class_name, 
+    	method.name as method_name, 
+    	method.cyclomatic_complexity as cyclomatic_complexity, 
+    	method.max_nesting_depth as max_nesting_depth, 
+    	number_of_variables, 
+    	variable_names, 
+    	class.data_string as main_text, 
+    	method.data_string as affected_tex
+  
+##### Parameters  
+Queries methods with high cyclomatic complexity, a max nesting depth of several, many accessed variables that belong to classes with high number of instructions. 
+
+##### How are parameters determined
+High number of instructions for class and high cyclomatic complexity should be determined statistically using the boxplot technique. Nesting depth of several is a generally accepted meaning threshold between 2 and 5 and many accessed variables is the short term memory capacity between 7 and 8. High number of instructions is currently set to 130, high cyclomatic complexity to 3.1, nesting depth of several to 3 and many accessed variables to 7.
+
+##### Implementation details 
+\-
+
+##### References 
+Def. from https://www.simpleorientedarchitecture.com/how-to-identify-brain-method-using-ndepend/.
