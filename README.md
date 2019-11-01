@@ -1471,3 +1471,47 @@ It is mostly a historical smell, meaning that it relies on how the code evolves,
 From article "Towards a Principle-based Classification of Structural Design Smells": "This design smell arises when there are two structurally similar (symmetrical) class hierarchies with same class name prefixes [Fow99]."
 
 Fowler: "Making a new subclass of one class means that we need to make the same kind of subclass of another class"
+
+### Inappropriate intimacy
+
+##### Query string
+
+    MATCH 
+    	(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)
+	MATCH 
+		(other_class:Class)-[:CLASS_OWNS_METHOD]->(other_method:Method)
+	MATCH 
+		(method)-[r:CALLS]-(other_method)
+	WHERE  
+		class <> other_class
+	WITH 
+		count(distinct r) as number_of_calls, 
+		collect(distinct method.name) as method_names, 
+		collect(distinct other_method.name) as other_method_names, 
+		class, 
+		other_class
+	WHERE 
+		number_of_calls > highNumberOfCallsBetweenClasses
+	RETURN 
+		class.app_key as app_key, 
+		class.name as class_name, 
+		other_class.name as other_class_name, 
+		method_names, 
+		other_method_names, 
+		number_of_calls
+  
+##### Parameters  
+Queries pairs of classes that have more method calls between them than a high number of calls between classes.
+
+##### How are parameters determined
+High number of calls between classes needs to be determined statistically using the box-plot technique. Currently set to 4.
+
+##### Implementation details 
+\-
+
+##### References 
+Def. from article "On the diffuseness and the impact on maintainability of code smells: a large scale empirical investigation".
+Def: "All pairs of classes having a number of method’s calls between them higher than the average number of calls between all pairs of classes."
+
+Fowler: "when a class knows too much of the internals of another class"
+
