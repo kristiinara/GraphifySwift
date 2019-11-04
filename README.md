@@ -1699,3 +1699,84 @@ Queries classes where class abstractness + instability is far from the 1-x mainl
 More detailed def from https://javadepend.com/Blog/?p=585
 
 From "understanding code smells in android applications": "Stable Abstraction Breaker is a subsystem (component) for which its stability level is not proportional with its abstractness. This design flaw is inspired by Robert Martin's stable abstractions principle, which states that for well-designed software there should be a specific relationship between two subsystem measures: the abstractness of a subsystem, which shall express the portion of contained abstract types, and its stability, which indicates whether the subsystem is mainly used by other client subsystems (stable) or if it mainly depends on other subsystems (unstable). For short, "a subsystem should be as abstract as it is stable". The problem with subsystems that are heavily used by other subsystems and at the same time are not abstract is that if they change (and they are likely to), potentially all clients must also change. This in turn leads to systems that are hard to maintain. [26 and 19] "
+
+
+### SAP Breaker for Modules
+
+##### Query string
+
+    MATCH 
+    	(module:Module)
+    MATCH 
+    	(module)-[:MODULE_OWNS_CLASS]->(class:Class)
+    MATCH 
+    	(other_module)-[:MODULE_OWNS_CLASS]->(other_class:Class)
+    WHERE 
+    	(other_class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
+    		<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(class) and 
+    	module <> other_module
+    WITH 
+    	count(distinct other_class) as number_of_dependant_classes, 
+    	module
+    WITH 
+    	module, 
+    	number_of_dependant_classes as efferent_coupling_number
+
+    MATCH 
+    	(module:Module)-[:MODULE_OWNS_CLASS]->(class:Class)
+    MATCH 
+    	(other_module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)
+    WHERE 
+    	(class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
+    		<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(other_class) and 
+    	module <> other_module
+    WITH 
+    	count(distinct other_class) as afferent_coupling_number, 
+    	module, 
+    	efferent_coupling_number
+    WITH 
+    	efferent_coupling_number*1.0/(efferent_coupling_number + afferent_coupling_number) as instability_number, 
+    	afferent_coupling_number, 
+    	efferent_coupling_number, 
+    	module
+
+    OPTIONAL MATCH 
+    	(module)-[:MODULE_OWNS_CLASS]->(class:Class)
+    WHERE 
+    	class.is_interface
+    WITH 
+    	count(distinct class)/module.number_of_classes as abstractness_number, 
+    	instability_number, 
+    	afferent_coupling_number, 
+    	efferent_coupling_number, 
+    	module
+    WITH 
+    	1 - (abstractness_number + instability_number)^2 as difference_from_main, 
+    	instability_number, 
+    	abstractness_number, 
+    	module
+
+    WHERE 
+    	difference_from_main < - allowedDistanceFromMain or 
+    	difference_from_main > allowedDistanceFromMain
+   	RETURN 
+   		module.app_key as app_key, 
+   		module.name as module_name, 
+   		instability_number, 
+   		abstractness_number, 
+   		difference_from_main
+  
+##### Parameters  
+Queries modules where module abstractness + instability is far from the 1-x mainline. AllowedDistanceFromMain is currently set to 0.5.
+
+##### How are parameters determined
+
+
+##### Implementation details 
+\-
+
+##### References 
+More detailed def from https://javadepend.com/Blog/?p=585
+
+From "understanding code smells in android applications": "Stable Abstraction Breaker is a subsystem (component) for which its stability level is not proportional with its abstractness. This design flaw is inspired by Robert Martin's stable abstractions principle, which states that for well-designed software there should be a specific relationship between two subsystem measures: the abstractness of a subsystem, which shall express the portion of contained abstract types, and its stability, which indicates whether the subsystem is mainly used by other client subsystems (stable) or if it mainly depends on other subsystems (unstable). For short, "a subsystem should be as abstract as it is stable". The problem with subsystems that are heavily used by other subsystems and at the same time are not abstract is that if they change (and they are likely to), potentially all clients must also change. This in turn leads to systems that are hard to maintain. [26 and 19] "
+        

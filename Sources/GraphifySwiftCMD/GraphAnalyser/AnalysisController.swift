@@ -15,7 +15,7 @@ class AnalysisController {
         
         switch queryString {
         case "all":
-            queries = [InfoQuery(), LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery(), TraditionBreakerQuery(), SiblingDuplicationQuery(), InternalDuplicationQuery(), ExternalDuplicationQuery(), DivergentChangeQuery(), LongParameterListQuery(), FeatureEnvyQuery(), DataClumpArgumentsQuery(), DataClumpFieldsQuery(), SpeculativeGeneralityProtocolQuery(), MiddleManQuery(), ParallelInheritanceHierarchiesQuery(), SpeculativeGeneralityMethodQuery(), InappropriateIntimacyQuery(), BrainMethodQuery(), SAPBreakerQuery()]
+            queries = [InfoQuery(), LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery(), TraditionBreakerQuery(), SiblingDuplicationQuery(), InternalDuplicationQuery(), ExternalDuplicationQuery(), DivergentChangeQuery(), LongParameterListQuery(), FeatureEnvyQuery(), DataClumpArgumentsQuery(), DataClumpFieldsQuery(), SpeculativeGeneralityProtocolQuery(), MiddleManQuery(), ParallelInheritanceHierarchiesQuery(), SpeculativeGeneralityMethodQuery(), InappropriateIntimacyQuery(), BrainMethodQuery(), SAPBreakerQuery(), SAPBreakerModuleQuery()]
         case "Info":
             queries = [InfoQuery()]
         case "LM":
@@ -74,6 +74,8 @@ class AnalysisController {
             queries = [GodClassQuery()]
         case "SAPBreaker":
             queries = [SAPBreakerQuery()]
+        case "SAPBreakerModule":
+            queries = [SAPBreakerModuleQuery()]
         default:
             queries = [CustomQuery(queryString: queryString)]
         }
