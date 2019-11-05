@@ -15,7 +15,7 @@ class MessageChainsQuery: Query {
     var json: [String : Any]?
     
     var string: String {
-        return "MATCH (c:Class)-[CLASS_OWNS_METHOD]-(m:Method) where m.max_number_of_chaned_message_calls > \(self.veryHighNumberOfChainedMessages) return m.app_key as app_key, c.name as class_name, m.name as method_name, m.max_number_of_chaned_message_calls as max_number_of_chaned_message_calls"
+        return "MATCH (c:Class)-[CLASS_OWNS_METHOD]-(m:Method) where m.max_number_of_chaned_message_calls > \(self.veryHighNumberOfChainedMessages) return m.app_key as app_key, c.name as class_name, m.name as method_name, m.max_number_of_chaned_message_calls as max_number_of_chaned_message_calls, c.data_string as main_text, m.data_string as affected_text"
     }
     
     var notes: String {

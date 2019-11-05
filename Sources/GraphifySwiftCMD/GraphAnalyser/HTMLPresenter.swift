@@ -15,10 +15,12 @@ class HTMLPresenter {
         var body = ""
         
         for appName in dictionary.keys {
+            print("appName: \(appName)")
             body += "<details open><summary>"
             if let appStuff = dictionary[appName] {
                 body += "\(appName) (\(appStuff.keys.count))</summary>"
                 for queryName in appStuff.keys {
+                    print("query: \(queryName)")
                     body += "<details open><summary>"
                     if let queryStuff = appStuff[queryName] {
                         body += "\(queryName) (\(queryStuff.count))</summary>"
@@ -49,6 +51,7 @@ class HTMLPresenter {
                         
                         var rowCount = 0
                         for row in queryStuff {
+                            print("count: \(rowCount)")
                             var mainString: String? = nil
                             var affectedString: String? = nil
                             
@@ -67,7 +70,7 @@ class HTMLPresenter {
                             
                             if let mainString = mainString {
                                 let subHtml = generateHTML(mainText: mainString, affectedText: affectedString)
-                                let subFileName = "\(fileName)-\(queryName)-\(rowCount).html"
+                                let subFileName = "\(fileName)-\(appName)-\(queryName)-\(rowCount).html"
                                 
                                 
                                 body += "<td><a href=\"\(subFileName)\">Code</a></td>"
@@ -127,7 +130,7 @@ class HTMLPresenter {
                \(body)
             </body>
         """
-        files[fileName] = htmlString
+        files["\(fileName).html"] = htmlString
         
         return files
     }
@@ -145,7 +148,7 @@ class HTMLPresenter {
             body += "</font></code></pre>"
             
         } else {
-            body += "\(mainText)"
+            body += "<pre><code>\(mainText)</code></pre>"
         }
         
         let htmlString = """
@@ -186,7 +189,7 @@ class HTMLPresenter {
             </body>
         """
         
-        print("htmlString: \(htmlString)")
+       // print("htmlString: \(htmlString)")
         
         return htmlString
     }

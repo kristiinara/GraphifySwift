@@ -14,7 +14,7 @@ class ExternalDuplicationQuery: Query {
     var json: [String : Any]?
     
     var string: String {
-        return "MATCH (firstClass:Class)-[:DUPLICATES]->(secondClass:Class), (module:Module)-[:MODULE_OWNS_CLASS]->(firstClass), (secondModule:Module)-[:MODULE_OWNS_CLASS]->(secondClass) where id(module) <> id(secondModule) return firstClass.app_key as app_key, firstClass.name as class_name, secondClass.name as second_class_name, module.name as module_name, secondModule.name as second_module_name"
+        return "MATCH (firstClass:Class)-[d:DUPLICATES]->(secondClass:Class), (module:Module)-[:MODULE_OWNS_CLASS]->(firstClass), (secondModule:Module)-[:MODULE_OWNS_CLASS]->(secondClass) where id(module) <> id(secondModule) where firstClass.data_string contains d.fragment or secondClass.data_string contains d.fragment return firstClass.app_key as app_key, firstClass.name as class_name, secondClass.name as second_class_name, module.name as module_name, secondModule.name as second_module_name, d.fragment as text_fragment, firstClass.data_string as main_text, d.fragment as affected_text"
     }
     
     var notes: String {

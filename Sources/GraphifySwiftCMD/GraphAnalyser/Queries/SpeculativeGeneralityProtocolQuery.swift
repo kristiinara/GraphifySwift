@@ -14,7 +14,7 @@ class SpeculativeGeneralityProtocolQuery: Query {
     var json: [String : Any]?
     
     var string: String {
-        return "match (class:Class) where not ()-[:IMPLEMENTS|EXTENDS]->(class) and  class.is_interface = true return class.app_key as app_key, class.name as class_name"
+        return "match (class:Class) where not ()-[:IMPLEMENTS|EXTENDS]->(class) and  class.is_interface = true return class.app_key as app_key, class.name as class_name, class.data_string as main_text"
     }
     
     var notes: String {

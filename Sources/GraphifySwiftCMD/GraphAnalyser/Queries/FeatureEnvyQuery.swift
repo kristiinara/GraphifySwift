@@ -40,7 +40,7 @@ class FeatureEnvyQuery: Query {
         WHERE
         variable_count > \(self.fewAccessToForeignVariables) and locality < \(self.localityFraction) and class_count <= \(self.fewAccessToForeignClasses)
         RETURN
-            class.app_key as app_key, class.name as class_name, m.name as method_name, variable_count,class_count,names as foreign_variable_names, class_names, local_variable_count, local_names as local_variable_names, locality
+            class.app_key as app_key, class.name as class_name, m.name as method_name, variable_count,class_count,names as foreign_variable_names, class_names, local_variable_count, local_names as local_variable_names, locality, class.data_string as main_text, m.data_string as affected_text
         """
     }
     

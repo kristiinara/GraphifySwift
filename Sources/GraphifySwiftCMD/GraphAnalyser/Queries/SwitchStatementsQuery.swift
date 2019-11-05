@@ -15,7 +15,7 @@ class SwitchStatementsQuery: Query {
     var json: [String : Any]?
     
     var string: String {
-        return "MATCH (c:Class)-[r:CLASS_OWNS_METHOD]->(m:Method) where m.number_of_switch_statements >= \(self.highNumberOfSwitchStatments) return m.app_key as app_key, c.name as class_name, m.name as method_name, m.number_of_switch_statements as number_of_switch_statements"
+        return "MATCH (c:Class)-[r:CLASS_OWNS_METHOD]->(m:Method) where m.number_of_switch_statements >= \(self.highNumberOfSwitchStatments) return m.app_key as app_key, c.name as class_name, m.name as method_name, m.number_of_switch_statements as number_of_switch_statements, c.data_string as main_text, m.data_string as affected_text"
     }
     
     var notes: String {

@@ -81,7 +81,7 @@ extension Query {
                     
                     if let data = item["data"] as? [[String: Any]] {
                         for row in data {
-                            print("     row: \(row)")
+                            //print("     row: \(row)")
                             if let rowRaw = row["row"] as? [Any] {
                                 let rowString = rowRaw.map() { item in return "\(item)" }
                                 parsedDictionary.append(rowString)

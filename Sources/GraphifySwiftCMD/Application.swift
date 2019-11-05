@@ -187,9 +187,9 @@ class Application {
         let analysisController = AnalysisController()
         //var analysisResults: [String: [[String: Any]]] = [:]
         
-        analysisController.analyse(queryString: query) { name, rows, headers in
+        analysisController.analyse(queryString: query) { name, rows, headers, totalQueries, currentQuery in
             if let rows = rows {
-                print("rows: \(rows)")
+                //print("rows: \(rows)")
                 if var existing = self.analysisResults[name] {
                     existing.append(contentsOf: rows)
                 } else {
@@ -200,7 +200,10 @@ class Application {
                     self.analysisResultsHeaders[name] = headers
                 }
                 
-                self.printStatistics(results: self.analysisResults, headers: self.analysisResultsHeaders, htmlURL: htmlURL, csvURL: csvURL)
+                //TODO: change so that we can write to csv files after each query
+                if totalQueries == currentQuery {
+                    self.printStatistics(results: self.analysisResults, headers: self.analysisResultsHeaders, htmlURL: htmlURL, csvURL: csvURL)
+                }
             }
         }
     }
@@ -208,13 +211,13 @@ class Application {
     func printStatistics(results: [String: [[String]]], headers: [String:[String]], htmlURL: Foundation.URL?, csvURL: Foundation.URL?) {
         print("Print statistics!")
         var applications: [String: [String: [[String]]]] = [:]
-        print("\(results)")
+       // print("\(results)")
         
         for queryName in results.keys {
-            print("query: \(queryName)")
+            //print("query: \(queryName)")
             if let queryResult = results[queryName] {
                 for row in queryResult {
-                    print("row: \(row)")
+                 //   print("row: \(row)")
                     if row.count >= 1 {
                         let appKey = row[0]
                         
@@ -223,19 +226,19 @@ class Application {
                         }
                         
                         if var appStuff = applications[appKey] {
-                            print("starting with query stuff")
+                           // print("starting with query stuff")
                             if appStuff[queryName] == nil {
-                                print("nil")
+                             //   print("nil")
                                 appStuff[queryName] = [[String]]()
                             }
                             
                             if var queryStuff = appStuff[queryName] {
-                                print("not nil")
+                              //  print("not nil")
                                 queryStuff.append(row)
                                 appStuff[queryName] = queryStuff
                                 
-                                print("appStuff[queryName] = \(appStuff[queryName])")
-                                print("queryStuff = \(queryStuff)")
+                               // print("appStuff[queryName] = \(appStuff[queryName])")
+                               // print("queryStuff = \(queryStuff)")
                             }
                             
                             applications[appKey] = appStuff
@@ -264,17 +267,19 @@ class Application {
             }
         }
         
-        print("applications: \(applications)")
+        if htmlURL == nil && csvURL == nil {
+            print("applications: \(applications)")
         
-        for key in applications.keys {
-            print("application: \(key)")
-            
-            if let applicationStuff = applications[key] {
-                for query in applicationStuff.keys {
-                    print("       query: \(query)")
-                    if let queryResults = applicationStuff[query] {
-                        for result in queryResults {
-                            print("              \(result)")
+            for key in applications.keys {
+                print("application: \(key)")
+                
+                if let applicationStuff = applications[key] {
+                    for query in applicationStuff.keys {
+                        print("       query: \(query)")
+                        if let queryResults = applicationStuff[query] {
+                            for result in queryResults {
+                                print("              \(result)")
+                            }
                         }
                     }
                 }
@@ -360,7 +365,7 @@ class Application {
     func runQuery(query: String) {
         let analysisController = AnalysisController()
         
-        analysisController.analyse(queryString: query) { name, rows, headers in
+        analysisController.analyse(queryString: query) { name, rows, headers, totalQueries, currentQuery in
             if let rows = rows {
                 print("Query number of results: \(rows.count)")
                 print("\(headers)")

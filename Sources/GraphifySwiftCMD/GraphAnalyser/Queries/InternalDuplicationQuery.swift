@@ -14,7 +14,7 @@ class InternalDuplicationQuery: Query {
     var json: [String : Any]?
     
     var string: String {
-        return "MATCH (firstClass:Class)-[r:DUPLICATES]->(secondClass:Class), (module:Module)-[:MODULE_OWNS_CLASS]->(firstClass), (module:Module)-[:MODULE_OWNS_CLASS]->(secondClass) return firstClass.app_key as app_key, firstClass.name as class_name, secondClass.name as second_class_name, module.name as module_name, r.fragment as text_fragment"
+        return "MATCH (firstClass:Class)-[r:DUPLICATES]->(secondClass:Class), (module:Module)-[:MODULE_OWNS_CLASS]->(firstClass), (module:Module)-[:MODULE_OWNS_CLASS]->(secondClass) where firstClass.data_string contains r.fragment or secondClass.data_string contains r.fragment return firstClass.app_key as app_key, firstClass.name as class_name, secondClass.name as second_class_name, module.name as module_name, r.fragment as text_fragment, firstClass.data_string as main_text, r.fragment as affected_text"
     }
     
     var notes: String {

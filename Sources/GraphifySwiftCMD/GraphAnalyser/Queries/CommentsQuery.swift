@@ -15,7 +15,7 @@ class CommentsQuery: Query {
     var json: [String : Any]?
     
     var string: String {
-        return "match (c:Class) where c.number_of_comments > \(self.highNumberOfComments) return c.app_key as app_key, c.name as class_name, c.number_of_comments as number_of_comments"
+        return "match (c:Class) where c.number_of_comments > \(self.highNumberOfComments) return c.app_key as app_key, c.name as class_name, c.number_of_comments as number_of_comments, c.data_string as main_text"
     }
     
     var notes: String {

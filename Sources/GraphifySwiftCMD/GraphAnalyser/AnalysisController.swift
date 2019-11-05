@@ -9,9 +9,11 @@ import Foundation
 
 class AnalysisController {
     let dispatchGroup = DispatchGroup()
+    var totalQueries = 0
+    var currentQuery = 0
     
-    func analyse(queryString: String, completition: @escaping (String, [[String]]?, [String]?) -> Void) {
-        var queries: [Query?]
+    func analyse(queryString: String, completition: @escaping (String, [[String]]?, [String]?, Int, Int) -> Void) {
+        var queries: [Query]
         
         switch queryString {
         case "all":
@@ -79,6 +81,7 @@ class AnalysisController {
         default:
             queries = [CustomQuery(queryString: queryString)]
         }
+        self.totalQueries = queries.count
         
         for query in queries {
             dispatchGroup.enter()
@@ -91,31 +94,29 @@ class AnalysisController {
         dispatchMain()
     }
     
-    func runquery(query: Query?, completition: @escaping (String, [[String]]?, [String]?) -> Void) {
-        if var query = query {
-            let dbController = DatabaseController()
-            print("Running query: \(query.string)")
-            dbController.runQueryReturnDataString(transaction: query.string) { json in
-                print(" --- Query: \(query.name) ---")
-                query.json = json
-                
-                print("res nonparsed: \(json)")
-                print("res: \(query.parsedResult)")
-                print("res dictionary: \(query.parsedDictionary)")
-//                if let parsedResults = query.parsedResult {
+    func runquery(query: Query, completition: @escaping (String, [[String]]?, [String]?, Int, Int) -> Void) {
+        var query = query
+        let dbController = DatabaseController()
+        print("Running query: \(query.string)")
+        dbController.runQueryReturnDataString(transaction: query.string) { json in
+            self.currentQuery += 1
+                    
+            print(" --- Query: \(query.name) ---")
+            query.json = json
+                            
+            //print("res nonparsed: \(json)")
+            //print("res: \(query.parsedResult)")
+            // print("res dictionary: \(query.parsedDictionary)")
+//                if let parsedResults = query.parsedResult
 //                    completition(query.name, parsedResults)
 //                    self.dispatchGroup.leave()
-                if let parsedDictionary = query.parsedDictionary {
-                    completition(query.name, parsedDictionary, query.headers)
-                    self.dispatchGroup.leave()
-                } else {
-                    completition(query.name, nil, query.headers)
-                    self.dispatchGroup.leave()
-                }
+            if let parsedDictionary = query.parsedDictionary {
+                completition(query.name, parsedDictionary, query.headers, self.totalQueries, self.currentQuery)
+                self.dispatchGroup.leave()
+            } else {
+                completition(query.name, nil, query.headers, self.totalQueries, self.currentQuery)
+                self.dispatchGroup.leave()
             }
-        } else {
-            completition("", nil, nil)
-            self.dispatchGroup.leave()
         }
     }
 }

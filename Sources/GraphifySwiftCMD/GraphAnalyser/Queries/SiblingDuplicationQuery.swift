@@ -14,7 +14,7 @@ class SiblingDuplicationQuery: Query {
     var json: [String : Any]?
     
     var string: String {
-        return "MATCH (firstClass:Class)-[:EXTENDS*]->(parent:Class)<-[:EXTENDS*]-(secondClass:Class), (firstClass:Class)-[:DUPLICATES]->(secondClass:Class) return firstClass.app_key as app_key, firstClass.name as class_name, secondClass.name as second_class_name, parent.name as parent_class_name"
+        return "MATCH (firstClass:Class)-[:EXTENDS*]->(parent:Class)<-[:EXTENDS*]-(secondClass:Class), (firstClass:Class)-[d:DUPLICATES]->(secondClass:Class) where firstClass.data_string contains d.fragment or secondClass.data_string contains d.fragment return firstClass.app_key as app_key, firstClass.name as class_name, secondClass.name as second_class_name, parent.name as parent_class_name, firstClass.data_string as main_text, d.fragment as affected_text"
     }
 
     var notes: String {
