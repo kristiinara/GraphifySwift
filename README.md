@@ -1888,3 +1888,62 @@ From "understanding code smells in android applications": "Stable Abstraction Br
 From "Understanding code smells in Android applications": "Unstable Dependencies are violations of Robert Martin's Stable Dependencies Principle (SDP)[26]. The SDP affirms that "the dependencies between subsystems in a design should be in the direction of the stability of the subsystems. A subsystem should only depend upon subsystems that are more or at least as stable as it is". Stability is defined in terms of number of reasons to change and number of reasons not to change for a given subsystem. A subsystem that does not depend on many other subsystems but is depended upon by other subsystems, has few reasons to change and respectively many reasons not to change. [26]"
 
 Used instability definition from here: https://javadepend.com/Blog/?p=585
+
+### Primitive obsession
+
+##### Query string
+
+   	MATCH 
+   		(class:Class)
+   	MATCH 
+   		(class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)
+   	MATCH 
+   		(method:Method)-[use:USES]->(variable)
+   	WHERE 
+   		not (variable)-[:IS_OF_TYPE]->()
+   	WITH 
+   		collect(distinct method.name) as uses, 
+   		count(distinct method) as use_count, 
+   		variable, 
+   		class
+   	WHERE 
+   		use_count > primitiveVariableUsedTooManyTimes
+
+  	RETURN 
+  		class.app_key as app_key, 
+  		class.name as class_name, 
+  		variable.name as variable_name, 
+  		variable.type as variable_type, 
+  		uses, 
+  		use_count, 
+  		class.data_string as main_text, 
+  		variable.data_string as affected_text
+  
+##### Parameters  
+Queries variables whoese type is not a type defined in this application and that are used by multiple methods. 
+
+##### How are parameters determined
+primitiveVariableUsedTooManyTimes should probably be determined statistically. Currently set to 3. 
+
+##### Implementation details 
+\-
+
+##### References 
+def "Primitive Obsession. Primitive Obsession is the situation in which objects should have been used instead of primitives. It is further divided into three subcategories: Simple Primitive Obsession, Simple Type Code, and Complex Type Code [3]." from (https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=5680918)
+
+def "Primitive types are building blocks; Overuse of this type can cause this smell" from (https://www.researchgate.net/profile/Sanjay_Misra2/publication/318435921_A_Systematic_Literature_Review_Code_Bad_Smells_in_Java_Source_Code/links/59ce24c4a6fdcce3b34b8531/A-Systematic-Literature-Review-Code-Bad-Smells-in-Java-Source-Code.pdf)
+
+long blog post on primitive obsession (https://dzone.com/articles/code-quality-fighting-primitive-obsession-code-sme-1)
+
+Our definition: 
+  
+  - none of the above provided an implementation
+  - idea behind our implementation: we define as primitives all classes/structs that are not defined in our application
+  - problem with this definition: a lot of these types are not really primitives, but they are not specifically defined for domain they are used in
+  - just identifying all variables with such a types does not make sense, makes more sense to look for such variables that are also accessed often by methods
+
+This literature review claims that primitive obsession cannot be detected with any tools in java (https://www.researchgate.net/profile/Sanjay_Misra2/publication/318435921_A_Systematic_Literature_Review_Code_Bad_Smells_in_Java_Source_Code/links/59ce24c4a6fdcce3b34b8531/A-Systematic-Literature-Review-Code-Bad-Smells-in-Java-Source-Code.pdf)
+   
+   - might mean that detection is not possible
+   - or it has simply not yet been implemented
+   - there has been a tool before that did it, but not available anymore

@@ -1,0 +1,33 @@
+//
+//  PrimitiveObsessionQuery.swift
+//  Basic
+//
+//  Created by Kristiina Rahkema on 05/11/2019.
+//
+
+import Foundation
+
+class PrimitiveObsessionQuery: Query {
+    let name = "PrimitiveObsession"
+    let primitiveVariableUsedTooManyTimes = 3
+    
+    var result: String?
+    var json: [String : Any]?
+    
+    var string: String {
+        return """
+        match (class:Class)
+        match (class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)
+        match (method:Method)-[use:USES]->(variable)
+        where not (variable)-[:IS_OF_TYPE]->()
+        with collect(distinct method.name) as uses, count(distinct method) as use_count, variable, class
+        where use_count > \(self.primitiveVariableUsedTooManyTimes)
+
+        return class.app_key, class.name, variable.name, variable.type, uses, use_count, class.data_string as main_text, variable.data_string as affected_text
+        """
+    }
+    
+    var notes: String {
+        return "Query variables whose types are not types of this application and that are used often by methods."
+    }
+}
