@@ -1780,3 +1780,111 @@ More detailed def from https://javadepend.com/Blog/?p=585
 
 From "understanding code smells in android applications": "Stable Abstraction Breaker is a subsystem (component) for which its stability level is not proportional with its abstractness. This design flaw is inspired by Robert Martin's stable abstractions principle, which states that for well-designed software there should be a specific relationship between two subsystem measures: the abstractness of a subsystem, which shall express the portion of contained abstract types, and its stability, which indicates whether the subsystem is mainly used by other client subsystems (stable) or if it mainly depends on other subsystems (unstable). For short, "a subsystem should be as abstract as it is stable". The problem with subsystems that are heavily used by other subsystems and at the same time are not abstract is that if they change (and they are likely to), potentially all clients must also change. This in turn leads to systems that are hard to maintain. [26 and 19] "
         
+
+### Unstable dependencies
+
+##### Query string
+
+   	MATCH 
+    	(class:Class)
+   	MATCH 
+   		(other_class:Class)
+   	WHERE 
+   		(other_class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
+   			<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(class) and 
+   		class <> other_class
+   	WITH 
+   		count(distinct other_class) as number_of_dependant_classes, 
+   		class
+   	WITH 
+   		class, 
+   		number_of_dependant_classes as efferent_coupling_number
+
+   	MATCH 
+   		(class:Class)
+   	MATCH 
+   		(other_class:Class)
+   	WHERE 
+   		(class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
+   			<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(other_class) and 
+   		class <> other_class
+   	WITH 
+   		count(distinct other_class) as afferent_coupling_number, 
+   		class, 
+   		efferent_coupling_number
+   	WITH 
+   		efferent_coupling_number*1.0/(efferent_coupling_number + afferent_coupling_number) as instability_number, 
+   		class, 
+   		afferent_coupling_number, 
+   		efferent_coupling_number
+
+   	MATCH 
+   		(comparison_class:Class)
+   	WHERE 
+   		(comparison_class)-[:CLASS_OWNS_METHOD]->(:Method)-[:USES|:CALLS]->()
+   			<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(class) and 
+   		comparison_class <> class
+
+   	MATCH 
+   		(other_class:Class)
+   	WHERE 
+   		(other_class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
+   			<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(comparison_class) and 
+   		comparison_class <> other_class
+   	WITH 
+   		count(distinct other_class) as number_of_dependant_classes2, 
+   		comparison_class, 
+   		class, 
+   		instability_number
+   	WITH 
+   		comparison_class, 
+   		number_of_dependant_classes2 as efferent_coupling_number2, 
+   		class, 
+   		instability_number
+
+   	MATCH 
+   		(comparison_class:Class)
+   	MATCH 
+   		(other_class:Class)
+   	WHERE 
+   		(comparison_class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
+   			<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(other_class) and 
+   		comparison_class <> other_class
+   	WITH 
+   		count(distinct other_class) as afferent_coupling_number2, 
+   		comparison_class, 
+   		efferent_coupling_number2, 
+   		class, 
+   		instability_number
+  	WITH 
+  		efferent_coupling_number2*1.0/(efferent_coupling_number2 + afferent_coupling_number2) as 
+  		instability_number2, 
+  		comparison_class, 
+  		afferent_coupling_number2, 
+  		efferent_coupling_number2, 
+  		class, 
+  		instability_number
+                
+   	WHERE 
+   		instability_number2 < instability_number
+
+   	RETURN 
+   		comparison_class.app_key as app_key, 
+   		comparison_class.name as class_name, 
+   		class.name as referenced_class_name, 
+   		instability_number2 as instability_number, 
+   		instability_number as referenced_instability_number
+  
+##### Parameters  
+\-
+
+##### How are parameters determined
+\-
+
+##### Implementation details 
+\-
+
+##### References 
+From "Understanding code smells in Android applications": "Unstable Dependencies are violations of Robert Martin's Stable Dependencies Principle (SDP)[26]. The SDP affirms that "the dependencies between subsystems in a design should be in the direction of the stability of the subsystems. A subsystem should only depend upon subsystems that are more or at least as stable as it is". Stability is defined in terms of number of reasons to change and number of reasons not to change for a given subsystem. A subsystem that does not depend on many other subsystems but is depended upon by other subsystems, has few reasons to change and respectively many reasons not to change. [26]"
+
+Used instability definition from here: https://javadepend.com/Blog/?p=585
