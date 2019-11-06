@@ -44,11 +44,11 @@ class Function: Kind {
     var isAbstract = false
     var isFinal = false
     var isStatic = false
-    var isGetter = false // android specific? or look how get, set is displayed for swift
+    var isGetter = false //TODO:  android specific? or look how get, set is displayed for swift
     var isSetter = false // same
     var isSyncronized = false // android specific?
     
-    //TODO: stuff that we cannot set at the beginning
+    //stuff that we cannot set at the beginning
     var numberOfCallers : Int {
         return self.methodReferences.count + variableReferences.count
     }
