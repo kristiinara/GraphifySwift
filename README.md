@@ -2094,3 +2094,29 @@ Fowler: "Use Rename Method on any methods that do the same thing but have differ
 
 "understanding code smells in android applications": "Two different components have significant similarities, but do not use an interface or a common implementation (the Template Method). [12]"
 
+### Swiss army knife
+
+##### Query string
+
+	MATCH 
+		(cl:Class) 
+	WHERE 
+		cl.is_interface AND 
+		cl.number_of_methods > veryHighNumberOfMethods 
+	RETURN 
+		cl.app_key as app_key, 
+		cl.name as class_name, 
+		cl.number_of_methods as number_of_methods
+  
+##### Parameters  
+Queries classes that are interfaces (i.e. protocols) that have a very high number of methods. 
+
+##### How are parameters determined
+Very high number of methods should be determined statistically using the box-plot technique. Currently value set to 13.
+
+##### Implementation details 
+\-
+
+##### References 
+Definition from PAPRIKA https://github.com/GeoffreyHecht/paprika/blob/master/src/paprika/neo4j/SAKQuery.java.
+

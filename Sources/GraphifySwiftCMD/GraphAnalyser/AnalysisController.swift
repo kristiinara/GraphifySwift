@@ -17,7 +17,7 @@ class AnalysisController {
         
         switch queryString {
         case "all":
-            queries = [InfoQuery(), LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery(), TraditionBreakerQuery(), SiblingDuplicationQuery(), InternalDuplicationQuery(), ExternalDuplicationQuery(), DivergentChangeQuery(), LongParameterListQuery(), FeatureEnvyQuery(), DataClumpArgumentsQuery(), DataClumpFieldsQuery(), SpeculativeGeneralityProtocolQuery(), MiddleManQuery(), ParallelInheritanceHierarchiesQuery(), SpeculativeGeneralityMethodQuery(), InappropriateIntimacyQuery(), BrainMethodQuery(), SAPBreakerQuery(), SAPBreakerModuleQuery(), UnstableDependenciesQuery(), PrimitiveObsessionQuery(), AlternativeClassesWithDifferentInterfacesQuery(), MissingTemplateMethodQuery()]
+            queries = [InfoQuery(), LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery(), TraditionBreakerQuery(), SiblingDuplicationQuery(), InternalDuplicationQuery(), ExternalDuplicationQuery(), DivergentChangeQuery(), LongParameterListQuery(), FeatureEnvyQuery(), DataClumpArgumentsQuery(), DataClumpFieldsQuery(), SpeculativeGeneralityProtocolQuery(), MiddleManQuery(), ParallelInheritanceHierarchiesQuery(), SpeculativeGeneralityMethodQuery(), InappropriateIntimacyQuery(), BrainMethodQuery(), SAPBreakerQuery(), SAPBreakerModuleQuery(), UnstableDependenciesQuery(), PrimitiveObsessionQuery(), AlternativeClassesWithDifferentInterfacesQuery(), MissingTemplateMethodQuery(), SwissArmyKnifeQuery()]
         case "Info":
             queries = [InfoQuery()]
         case "LM":
@@ -86,6 +86,8 @@ class AnalysisController {
             queries = [AlternativeClassesWithDifferentInterfacesQuery()]
         case "MissingTemplateMethod":
             queries = [MissingTemplateMethodQuery()]
+        case "SwissArmyKnife":
+            queries = [SwissArmyKnifeQuery()]
         default:
             queries = [CustomQuery(queryString: queryString)]
         }
