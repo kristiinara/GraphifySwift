@@ -1947,3 +1947,79 @@ This literature review claims that primitive obsession cannot be detected with a
    - might mean that detection is not possible
    - or it has simply not yet been implemented
    - there has been a tool before that did it, but not available anymore
+
+
+### Alternative classes with different interfaces
+
+##### Query string
+
+   	MATCH 
+   		(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)
+   			-[:METHOD_OWNS_ARGUMENT]->(argument:Argument)
+  	MATCH 
+  		(other_class:Class)-[:CLASS_OWNS_METHOD]->(other_method:Method)
+  			-[:METHOD_OWNS_ARGUMENT]->(other_argument:Argument)
+  	WHERE
+     	not (class)-[:IMPLEMENTS|:EXTENDS]->()
+     		<-[:IMPLEMENTS|:EXTENDS]-(other_class) and
+     	not (class)-[:IMPLEMENTS|:EXTENDS]-(other_class) and
+     	class.app_key = other_class.app_key and 
+     	class <> other_class and 
+     	method.number_of_parameters = other_method.number_of_parameters and 
+     	method.number_of_parameters >= minimumNumberOfParameters and 
+     	argument.type = other_argument.type and
+      	method.return_type = other_method.return_type
+  	WITH 
+  		class, 
+  		other_class, 
+  		method, 
+  		other_method, 
+  		argument order by argument.type
+	WITH 
+		collect(distinct argument) as arguments, 
+		count(distinct argument) as number_of_arguments, 
+		method, 
+		other_method, 
+		class, 
+		other_class
+	WHERE 
+		number_of_arguments = method.number_of_parameters
+  	WITH 
+  		[argument in arguments | argument.type] as arguments, 
+  		number_of_arguments, 
+  		method, 
+  		other_method, 
+  		class, 
+  		other_class 
+  		order by method.name
+  	WITH 
+  		collect(class.name +"."+method.name) as method_names, 
+  		count(distinct method) as method_count, 
+  		class, 
+  		other_class, 
+  		collect(arguments) as types
+  	WHERE 
+  		method_count >= minimumCommonMethodCount
+  	WITH 
+  		collect(method_names) as method_names, 
+  		collect(class.name) as class_names, 
+  		types, class.app_key as app_key
+	RETURN 
+		app_key, 
+		class_names, 
+		method_names, 
+		types
+  
+##### Parameters  
+Queries classes that have at least minimumCommonMethodCount methods in common that have the same types of parameters, but where the classes do not extend/implement the same parent class/protocol and do not extend/implement eachother. Query considers methods that have more than minimumNumberOfParameters arguments. 
+
+##### How are parameters determined
+minimumCommonMethodCount is set to be 2 as it made sense that only 1 mehtod in common might not be enough to add a protocol. minimumNumberOfParameters is set to 2 as we want to exclude methods that have no parameters. 
+
+##### Implementation details 
+\-
+
+##### References 
+Fowler: "Use Rename Method on any methods that do the same thing but have different signatures for what they do. Often this doesn't go far enough. In these cases the classes aren't yet doing enough. Keep using Move Method to move behavior to the classes until the protocols are the same. If you have to redundantly move code to accomplish this, you may be able to use Extract Superclass to atone."
+
+"understanding code smells in android applications": "Two different components have significant similarities, but do not use an interface or a common implementation (the Template Method). [12]"
