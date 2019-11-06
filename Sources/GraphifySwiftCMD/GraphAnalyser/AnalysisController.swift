@@ -17,7 +17,7 @@ class AnalysisController {
         
         switch queryString {
         case "all":
-            queries = [InfoQuery(), LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery(), TraditionBreakerQuery(), SiblingDuplicationQuery(), InternalDuplicationQuery(), ExternalDuplicationQuery(), DivergentChangeQuery(), LongParameterListQuery(), FeatureEnvyQuery(), DataClumpArgumentsQuery(), DataClumpFieldsQuery(), SpeculativeGeneralityProtocolQuery(), MiddleManQuery(), ParallelInheritanceHierarchiesQuery(), SpeculativeGeneralityMethodQuery(), InappropriateIntimacyQuery(), BrainMethodQuery(), SAPBreakerQuery(), SAPBreakerModuleQuery(), UnstableDependenciesQuery(), PrimitiveObsessionQuery()]
+            queries = [InfoQuery(), LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery(), TraditionBreakerQuery(), SiblingDuplicationQuery(), InternalDuplicationQuery(), ExternalDuplicationQuery(), DivergentChangeQuery(), LongParameterListQuery(), FeatureEnvyQuery(), DataClumpArgumentsQuery(), DataClumpFieldsQuery(), SpeculativeGeneralityProtocolQuery(), MiddleManQuery(), ParallelInheritanceHierarchiesQuery(), SpeculativeGeneralityMethodQuery(), InappropriateIntimacyQuery(), BrainMethodQuery(), SAPBreakerQuery(), SAPBreakerModuleQuery(), UnstableDependenciesQuery(), PrimitiveObsessionQuery(), AlternativeClassesWithDifferentInterfacesQuery(), MissingTemplateMethodQuery()]
         case "Info":
             queries = [InfoQuery()]
         case "LM":
@@ -82,6 +82,10 @@ class AnalysisController {
             queries = [UnstableDependenciesQuery()]
         case "PrimitiveObsession":
             queries = [PrimitiveObsessionQuery()]
+        case "AlternativeClassesWithDifferentInterfaces":
+            queries = [AlternativeClassesWithDifferentInterfacesQuery()]
+        case "MissingTemplateMethod":
+            queries = [MissingTemplateMethodQuery()]
         default:
             queries = [CustomQuery(queryString: queryString)]
         }

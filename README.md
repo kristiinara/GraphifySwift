@@ -2023,3 +2023,74 @@ minimumCommonMethodCount is set to be 2 as it made sense that only 1 mehtod in c
 Fowler: "Use Rename Method on any methods that do the same thing but have different signatures for what they do. Often this doesn't go far enough. In these cases the classes aren't yet doing enough. Keep using Move Method to move behavior to the classes until the protocols are the same. If you have to redundantly move code to accomplish this, you may be able to use Extract Superclass to atone."
 
 "understanding code smells in android applications": "Two different components have significant similarities, but do not use an interface or a common implementation (the Template Method). [12]"
+
+
+### Missing template method
+
+##### Query string
+
+	MATCH 
+		(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)
+  	MATCH 
+  		(other_class:Class)-[:CLASS_OWNS_METHOD]->(other_method:Method)
+	OPTIONAL MATCH 
+		(method)-[:USES]->(common_variable:Variable)<-[:USES]-(other_method)
+   	OPTIONAL MATCH 
+   		(method)-[:CALLS]->(common_method:Method)<-[:CALLS]-(other_method)
+ 	WHERE
+    	class.app_key = other_class.app_key and
+      	method <> other_method
+  	WITH
+		collect(distinct common_variable) as common_variables,
+      	collect(distinct common_method) as common_methods,
+		count(distinct common_variable) as common_variable_count,
+    	count(DISTINCT common_method) as common_method_count,
+		class, 
+		other_class, 
+		method, 
+		other_method
+ 	WHERE
+  		common_variable_count + common_method_count >= minimalCommonMethodAndVariableCount
+ 	WITH
+    	[variable in common_variables | class.name+"."+variable.name] as common_variable_names,
+    	[common_method in common_methods | class.name+"."+common_method.name] as common_method_names,
+    	class, 
+    	other_class, 
+    	method, 
+    	other_method, 
+    	common_variable_count, 
+    	common_method_count
+	WITH
+     	collect(class.name) as class_names,
+      	collect(class.name + "." + method.name) as method_names,
+   		count(distinct method) as method_count,
+      	class.app_key as app_key,
+      	common_variable_count, 
+      	common_method_count,
+      	common_variable_names,
+      	common_method_names
+ 	WHERE
+     	method_count >= minimalMethodCount
+ 	RETURN 
+ 		app_key, 
+ 		class_names, 
+ 		method_names, 
+ 		common_variable_count, 
+ 		common_method_count, 
+ 		common_variable_names, 
+ 		common_method_names
+  
+##### Parameters  
+Queries methods that call the same methods and use the same variables. Number of common methods and common variables should be at least minimalCommonMethodAndVariableCount. Number of methods having these variables and methods in common should be at least minimalMethodCount.
+
+##### How are parameters determined
+minimalCommonMethodAndVariableCount is currently set to 5, should test other values as well and see which ones give the most reasonable output. minimalMethodCount is set to 2.
+
+##### Implementation details 
+\-
+
+##### References 
+Fowler: "Use Rename Method on any methods that do the same thing but have different signatures for what they do. Often this doesn't go far enough. In these cases the classes aren't yet doing enough. Keep using Move Method to move behavior to the classes until the protocols are the same. If you have to redundantly move code to accomplish this, you may be able to use Extract Superclass to atone."
+
+"understanding code smells in android applications": "Two different components have significant similarities, but do not use an interface or a common implementation (the Template Method). [12]"
+
