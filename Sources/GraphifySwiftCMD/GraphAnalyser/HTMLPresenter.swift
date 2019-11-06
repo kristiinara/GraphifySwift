@@ -209,9 +209,26 @@ class HTMLPresenter {
             if let rows = dictionary[queryName] {
                 for var row in rows {
                     row = row.map() { item in
+                        var item = item
+                        var changed = false
+                        
                         if item.contains("\n") {
-                            return "\"\(item.replacingOccurrences(of: "\n", with: "\r"))\""
+                            item = item.replacingOccurrences(of: "\n", with: "\r")
+                            changed = true
                         }
+                        
+                        if item.contains(",") {
+                            changed = true
+                        }
+                        
+                        if item.contains("\"") {
+                            item = item.replacingOccurrences(of: "\"", with: "\'")
+                        }
+                        
+                        if changed {
+                            return "\"\(item)\""
+                        }
+                        
                         return item
                     }
                     

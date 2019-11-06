@@ -200,15 +200,42 @@ class Application {
                     self.analysisResultsHeaders[name] = headers
                 }
                 
-                //TODO: change so that we can write to csv files after each query
-                if totalQueries == currentQuery {
-                    self.printStatistics(results: self.analysisResults, headers: self.analysisResultsHeaders, htmlURL: htmlURL, csvURL: csvURL)
+                if let csvURL = csvURL {
+                    //TODO: fix? small hack where we only write results for the current query
+                    self.printStatistics(results: [name: self.analysisResults[name]!], headers: self.analysisResultsHeaders, csvURL: csvURL)
+                }
+                
+                if (csvURL == nil || htmlURL != nil) && totalQueries == currentQuery {
+                    self.printStatistics(results: self.analysisResults, headers: self.analysisResultsHeaders, htmlURL: htmlURL)
                 }
             }
         }
     }
     
-    func printStatistics(results: [String: [[String]]], headers: [String:[String]], htmlURL: Foundation.URL?, csvURL: Foundation.URL?) {
+    func printStatistics(results: [String: [[String]]], headers: [String:[String]], csvURL: Foundation.URL) {
+        let queryCSVs = HTMLPresenter.generateCSV(dictionary: results, headerDictionary: headers, fileNamePrefix: "\(self.dateString)-")
+         
+         do {
+             try FileManager.default.createDirectory(at: csvURL, withIntermediateDirectories: true, attributes: nil)
+         }
+         catch let error {
+             print("error \(error)")
+         }
+         
+         for fileName in queryCSVs.keys {
+             if let fileString = queryCSVs[fileName] {
+                 let url = csvURL.appendingPathComponent(fileName)
+                 
+                 do {
+                     try fileString.write(to: url, atomically: false, encoding: .utf8)
+                 } catch let error {
+                     print("error \(error)")
+                 }
+             }
+         }
+    }
+    
+    func printStatistics(results: [String: [[String]]], headers: [String:[String]], htmlURL: Foundation.URL?) {
         print("Print statistics!")
         var applications: [String: [String: [[String]]]] = [:]
        // print("\(results)")
@@ -267,7 +294,7 @@ class Application {
             }
         }
         
-        if htmlURL == nil && csvURL == nil {
+        if htmlURL == nil{
             print("applications: \(applications)")
         
             for key in applications.keys {
@@ -312,29 +339,6 @@ class Application {
             for fileName in htmlFiles.keys {
                 if let fileString = htmlFiles[fileName] {
                     let url = htmlURL.appendingPathComponent(fileName)
-                    
-                    do {
-                        try fileString.write(to: url, atomically: false, encoding: .utf8)
-                    } catch let error {
-                        print("error \(error)")
-                    }
-                }
-            }
-        }
-        
-        if let csvURL = csvURL {
-            let queryCSVs = HTMLPresenter.generateCSV(dictionary: results, headerDictionary: headers, fileNamePrefix: "\(self.dateString)-")
-            
-            do {
-                try FileManager.default.createDirectory(at: csvURL, withIntermediateDirectories: true, attributes: nil)
-            }
-            catch let error {
-                print("error \(error)")
-            }
-            
-            for fileName in queryCSVs.keys {
-                if let fileString = queryCSVs[fileName] {
-                    let url = csvURL.appendingPathComponent(fileName)
                     
                     do {
                         try fileString.write(to: url, atomically: false, encoding: .utf8)

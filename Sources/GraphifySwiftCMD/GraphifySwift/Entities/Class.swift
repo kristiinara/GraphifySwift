@@ -172,6 +172,7 @@ class Class : Kind {
         }
     }
     
+    //TODO: remove --> we already have classComplexity --> does the same thing!
     var numberOfWeightedMethods: Int {
         return self.allMethods.reduce(0) { res, method in
             return res + method.cyclomaticComplexity
