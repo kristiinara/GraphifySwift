@@ -109,9 +109,9 @@ class BulkAnalysisController {
             
             print("cloning succeeded? \(success)")
             
-            //if self.counProjectsAnalysed < 3 {
+            if self.counProjectsAnalysed < 3 {
                 analyseNext()
-            //}
+            }
         } else {
             self.dispatchGroup.leave()
         }

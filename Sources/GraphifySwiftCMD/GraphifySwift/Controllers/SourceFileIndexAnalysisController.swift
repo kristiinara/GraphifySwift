@@ -18,7 +18,7 @@ class SourceFileIndexAnalysisController {
     
     var fileQueue: [URL]
     var allPaths: [String]
-    var printOutput = false
+    var printOutput = true
     var useModules = false
     var insertToDatabase = true
     
@@ -664,6 +664,19 @@ extension SourceFileIndexAnalysisController {
             categroy: "PRODUCTIVITY"
         )
         
+        let floatingExtensions = self.addObjectsToApp(objects: objects, app: app)
+        // try to add floating extensions again, in the hope that corresponding classes were already added
+        let stillFloating = self.addObjectsToApp(objects: floatingExtensions, app: app)
+        
+        print("floatingExtensions: \(floatingExtensions.map() { object in object.name } )")
+        print("stillFloating: \(stillFloating.map() { object in object.name } )")
+        
+        return app
+    }
+    
+    func addObjectsToApp(objects: [FirstLevel], app: App) -> [FirstLevel] {
+        var floatingExtensions: [FirstLevel] = []
+        
         for object in objects {
             var classInstance: Class?
             
@@ -676,7 +689,7 @@ extension SourceFileIndexAnalysisController {
                     if let existingModule = self.allModules[name] {
                         module = existingModule
                     } else {
-                        let newModule = Module(name: name, appKey: appKey)
+                        let newModule = Module(name: name, appKey: app.appKey)
                         
                         app.modules.append(newModule)
                         newModule.belongsToApp = app
@@ -688,48 +701,57 @@ extension SourceFileIndexAnalysisController {
             }
             
             if module == nil {
-                if let existingModule = self.allModules[appKey] {
+                if let existingModule = self.allModules[app.appKey] {
                     module = existingModule
                 } else {
-                    let newModule = Module(name: appKey, appKey: appKey)
+                    let newModule = Module(name: app.appKey, appKey: app.appKey)
                     
                     app.modules.append(newModule)
                     newModule.belongsToApp = app
                     
-                    self.allModules[appKey] = newModule
+                    self.allModules[app.appKey] = newModule
                     module = newModule
                 }
             }
             
             var newInstance = true
             if object.kind == ClassInstance.kittenKey {
-                let classInstanceInstance = ClassInstance(name: object.name, appKey: appKey, modifier: "", module: module!)
+                let classInstanceInstance = ClassInstance(name: object.name, appKey: app.appKey, modifier: "", module: module!)
                 module?.classes.append(classInstanceInstance)
                 
                 classInstance = classInstanceInstance
             } else if object.kind == Struct.kittenKey {
-                let structInstance = Struct(name: object.name, appKey: appKey, modifier: "", module: module!)
+                let structInstance = Struct(name: object.name, appKey: app.appKey, modifier: "", module: module!)
                 module?.structures.append(structInstance)
                 classInstance = structInstance
             } else if object.kind == Protocol.kittenKey {
-                let protocolInstance = Protocol(name: object.name, appKey: appKey, modifier: "", module: module!)
+                let protocolInstance = Protocol(name: object.name, appKey: app.appKey, modifier: "", module: module!)
                 module?.protocols.append(protocolInstance)
                 classInstance = protocolInstance
             } else if object.kind == "source.lang.swift.decl.extension.class" {
                 if let classInstanceInstance = self.classDictionary[object.name] as? ClassInstance {
                     newInstance = false
                     classInstance = classInstanceInstance
+                } else {
+                    floatingExtensions.append(object)
+                    newInstance = false
                 }
                 //TODO: handle cases where extension is found before class itself??
             } else if object.kind == "source.lang.swift.decl.extension.struct" {
                 if let structInstance = self.classDictionary[object.name] as? Struct {
                     newInstance = false
                     classInstance = structInstance
+                } else {
+                    floatingExtensions.append(object)
+                    newInstance = false
                 }
             } else if object.kind == "source.lang.swift.decl.extension.protocol" {
                 if let protocolInstance = self.classDictionary[object.name] as? Struct {
                     newInstance = false
                     classInstance = protocolInstance
+                } else {
+                    floatingExtensions.append(object)
+                    newInstance = false
                 }
             }
             
@@ -771,7 +793,7 @@ extension SourceFileIndexAnalysisController {
                 for entity in object.entities {
                     if let name = entity.name {
                         if entity.kind.contains("decl.function.method") {
-                            let method = InstanceFunction(name: name, fullName: name, appKey: appKey, modifier: "", returnType: "")
+                            let method = InstanceFunction(name: name, fullName: name, appKey: app.appKey, modifier: "", returnType: "")
                             method.instructions = entity.instructions
                             method.references = entity.allReferences
                             if classInstance.isInterface {
@@ -800,7 +822,7 @@ extension SourceFileIndexAnalysisController {
                             
                             
                         } else if entity.kind.contains("decl.var") {
-                            let variable = InstanceVariable(name: name, appKey: appKey, modifier: "", type: "", isStatic: false, isFinal: false)
+                            let variable = InstanceVariable(name: name, appKey: app.appKey, modifier: "", type: "", isStatic: false, isFinal: false)
                             
                             if let type = entity.type {
                                 variable.type = type
@@ -845,7 +867,7 @@ extension SourceFileIndexAnalysisController {
             }
         }
         
-        return app
+        return floatingExtensions
     }
     
     func findReferences(app: App) {
