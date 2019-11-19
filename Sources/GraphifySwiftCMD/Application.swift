@@ -31,6 +31,7 @@ class Application {
             let queryParser = parser.add(subparser: "query", overview: "Query existing database for code smells.")
             let clearParser = parser.add(subparser: "clearOutput", overview: "Clears .result files from folder")
             let diagramParser = parser.add(subparser: "classDiagram", overview: "Generates and displayes class diagram")
+            let analyseBulkParaser = parser.add(subparser: "analyseBulk", overview: "Analyses multiple application at once")
             
             let appKey: OptionArgument<String> = analyseParser.add(option: "--appkey", shortName: "-a", kind: String.self, usage: "Appkey as unique identifier of the app.", completion: .none)
             let folderPath = analyseParser.add(positional: "foldername", kind: String.self)
@@ -49,6 +50,10 @@ class Application {
             let csvArgument: OptionArgument<String> = queryParser.add(option: "--csvFolder", shortName: "-c", kind: String.self, usage: "Folder to write all csv files.", completion: .filename)
             
             let clearFolder = clearParser.add(positional: "foldername", kind: String.self)
+            
+            let fileArgument: OptionArgument<String> = analyseBulkParaser.add(option: "--fileName", shortName: "-f", kind: String.self, usage: "Path to file with list of applications", completion: .filename)
+            let outputFolder = analyseBulkParaser.add(positional: "foldername", kind: String.self)
+            
             
             let args = Array(CommandLine.arguments.dropFirst())
             let result = try parser.parse(args)
@@ -138,6 +143,22 @@ class Application {
                 
                 self.generateClassDiagram(url: url!)
                 
+            } else if subparser == "analyseBulk" {
+                guard let inputPath = result.get(fileArgument) else {
+                    throw ArgumentParserError.expectedArguments(parser, ["--fileName"])
+                }
+                
+                guard let outputFolder = result.get(outputFolder) else {
+                    throw ArgumentParserError.expectedArguments(parser, ["Folder"])
+                }
+                
+                let inputURL = self.urlFromStirng(path: inputPath)
+                let outputURL = self.urlFromStirng(path: outputFolder)
+                if let inputURL = inputURL, let outputURL = outputURL {
+                    self.analyseInBulk(inputFileURL: inputURL, outputFolderURL: outputURL)
+                } else {
+                    print("Input or output url was nil: \(inputURL), \(outputURL)")
+                }
             } else {
                 print("Specify action as 'analyse', 'query', 'clearOutput' or 'classDiagram'")
                // throw ArgumentParserError.unknownOption(action)
@@ -153,6 +174,11 @@ class Application {
         } catch {
             print(error.localizedDescription)
         }
+    }
+    
+    func analyseInBulk(inputFileURL: Foundation.URL, outputFolderURL: Foundation.URL) {
+        let analysisController = BulkAnalysisController(inputFileURL: inputFileURL, outputFolderURL: outputFolderURL)
+        analysisController.analyse()
     }
     
     func clearOutput(url: Foundation.URL) {

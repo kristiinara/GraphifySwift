@@ -29,7 +29,7 @@ class ParallelInheritanceHierarchiesQuery: Query {
         with collect(distinct first_name) as first_names, second_names, parent, other_parent
         unwind second_names as second_name
         with collect(distinct second_name) as second_names, first_names, parent, other_parent
-        where size(first_names) >= \(self.minimumNumberOfClassesInHierarcy)
+        where size(first_names) >= \(self.minimumNumberOfClassesInHierarcy) and size(second_names) >= \(self.minimumNumberOfClassesInHierarcy)
         return parent.app_key as app_key, parent.name as parent_class_name, other_parent.name as other_parent_class_name , first_names as first_class_names, second_names as second_class_names, size(first_names) as number_of_classes
         """
     }

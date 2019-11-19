@@ -45,6 +45,6 @@ class FeatureEnvyQuery: Query {
     }
     
     var notes: String {
-        return ""
+        return "Queries classes that tend to access more foreign variables than local variables."
     }
 }

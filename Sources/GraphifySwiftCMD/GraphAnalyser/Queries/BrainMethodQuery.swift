@@ -23,7 +23,7 @@ class BrainMethodQuery: Query {
         match (method)-[:USES]->(variable:Variable)
         with class, method, count(distinct variable) as number_of_variables, collect(distinct variable.name) as variable_names
         where class.number_of_instructions > \(self.highNumberOfInstructionsForClass) and method.cyclomatic_complexity >= \(self.highCyclomaticComplexity) and method.max_nesting_depth >= \(self.severalMaximalNestingDepth) and number_of_variables > \(self.manyAccessedVariables)
-        return class.app_key as app_key, class.name as class_name, method.name as method_name, method.cyclomatic_complexity as cyclomatic_complexity, method.max_nesting_depth as max_nesting_depth, number_of_variables, variable_names, class.data_string as main_text, method.data_string as affected_tex
+        return class.app_key as app_key, class.name as class_name, method.name as method_name, method.cyclomatic_complexity as cyclomatic_complexity, method.max_nesting_depth as max_nesting_depth, number_of_variables, variable_names, class.data_string as main_text, method.data_string as affected_text
         """
     }
     

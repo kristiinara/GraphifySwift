@@ -93,15 +93,34 @@ class AnalysisController {
         }
         self.totalQueries = queries.count
         
-        for query in queries {
-            dispatchGroup.enter()
-            runquery(query: query, completition: completition)
-        }
+        
+//        for query in queries {
+//            dispatchGroup.enter()
+//            runquery(query: query, completition: completition)
+//        }
+        
+        nextQuery(queries: queries, completition: completition)
         
         dispatchGroup.notify(queue: DispatchQueue.main) {
             exit(EXIT_SUCCESS)
         }
         dispatchMain()
+    }
+    
+    func nextQuery(queries: [Query], completition:@escaping (String, [[String]]?, [String]?, Int, Int) -> Void) {
+        var queries = queries
+        
+        if let query = queries.popLast() {
+             dispatchGroup.enter()
+            
+            runquery(query: query) { queryName, results, headers, totalQueries, currentQuery in
+                completition(queryName, results, headers, totalQueries, currentQuery)
+                
+                self.nextQuery(queries: queries, completition: completition)
+                
+                self.dispatchGroup.leave()
+            }
+        }
     }
     
     func runquery(query: Query, completition: @escaping (String, [[String]]?, [String]?, Int, Int) -> Void) {
@@ -122,10 +141,10 @@ class AnalysisController {
 //                    self.dispatchGroup.leave()
             if let parsedDictionary = query.parsedDictionary {
                 completition(query.name, parsedDictionary, query.headers, self.totalQueries, self.currentQuery)
-                self.dispatchGroup.leave()
+                //self.dispatchGroup.leave()
             } else {
                 completition(query.name, nil, query.headers, self.totalQueries, self.currentQuery)
-                self.dispatchGroup.leave()
+                //self.dispatchGroup.leave()
             }
         }
     }

@@ -754,75 +754,79 @@ extension SourceFileIndexAnalysisController {
                 }
             }
             
-            var parents = object.parentsClasses
-            parents.append(contentsOf: object.parentStructs)
-            
-            for parent in parents {
-                if let usr = parent.usr {
-                    classInstance?.parentUsrs.append(usr)
-                }
-            }
-            
-            //TODO: make distinction between instance, class, static
-            var methods: [Function] = []
-            var variables: [Variable] = []
-            
-            for entity in object.entities {
-                if let name = entity.name {
-                    if entity.kind.contains("decl.function.method") {
-                        let method = InstanceFunction(name: name, fullName: name, appKey: appKey, modifier: "", returnType: "")
-                        method.instructions = entity.instructions
-                        method.references = entity.allReferences
-                        if classInstance!.isInterface {
-                            //can only be abstract, if classInstance itself is interface
-                            method.isAbstract = entity.isAbstract
-                        }
-                        
-                        if let dataString = entity.dataString {
-                          //  print("Method entity.dataString: \(dataString)")
-                            method.dataString = dataString
-                        }
-                        
-                        methods.append(method) //TODO: add stuff into constructor
-                        
-                        if let usr = entity.usr {
-                            self.allMethods[usr] = method
-                            method.usr = usr
-                        }
-                        
-                        var count = 0
-                        for parameter in entity.parameters {
-                            let argument = Argument(name: parameter.name, type: parameter.type, position: count, appKey: method.appKey)
-                            method.parameters.append(argument)
-                            count += 1
-                        }
-                        
-                        
-                    } else if entity.kind.contains("decl.var") {
-                        let variable = InstanceVariable(name: name, appKey: appKey, modifier: "", type: "", isStatic: false, isFinal: false)
-                        
-                        if let type = entity.type {
-                            variable.type = type
-                        }
-                        variables.append(variable) //TODO: add stuff into constructor
-                        
-                        if let dataString = entity.dataString {
-                           // print("Variable entity.dataString: \(dataString)")
-                            variable.dataString = dataString
-                        }
-                        
-                        if let usr = entity.usr {
-                            self.allVariables[usr] = variable
-                            variable.usr = usr
-                        }
+            if let classInstance = classInstance {
+                var parents = object.parentsClasses
+                parents.append(contentsOf: object.parentStructs)
+                
+                for parent in parents {
+                    if let usr = parent.usr {
+                        classInstance.parentUsrs.append(usr)
                     }
-                } else {
-                    print("entity with no name: \(entity.structure) path: \(object.path)")
                 }
+                
+                //TODO: make distinction between instance, class, static
+                var methods: [Function] = []
+                var variables: [Variable] = []
+                
+                for entity in object.entities {
+                    if let name = entity.name {
+                        if entity.kind.contains("decl.function.method") {
+                            let method = InstanceFunction(name: name, fullName: name, appKey: appKey, modifier: "", returnType: "")
+                            method.instructions = entity.instructions
+                            method.references = entity.allReferences
+                            if classInstance.isInterface {
+                                //can only be abstract, if classInstance itself is interface
+                                method.isAbstract = entity.isAbstract
+                            }
+                            
+                            if let dataString = entity.dataString {
+                              //  print("Method entity.dataString: \(dataString)")
+                                method.dataString = dataString
+                            }
+                            
+                            methods.append(method) //TODO: add stuff into constructor
+                            
+                            if let usr = entity.usr {
+                                self.allMethods[usr] = method
+                                method.usr = usr
+                            }
+                            
+                            var count = 0
+                            for parameter in entity.parameters {
+                                let argument = Argument(name: parameter.name, type: parameter.type, position: count, appKey: method.appKey)
+                                method.parameters.append(argument)
+                                count += 1
+                            }
+                            
+                            
+                        } else if entity.kind.contains("decl.var") {
+                            let variable = InstanceVariable(name: name, appKey: appKey, modifier: "", type: "", isStatic: false, isFinal: false)
+                            
+                            if let type = entity.type {
+                                variable.type = type
+                            }
+                            variables.append(variable) //TODO: add stuff into constructor
+                            
+                            if let dataString = entity.dataString {
+                               // print("Variable entity.dataString: \(dataString)")
+                                variable.dataString = dataString
+                            }
+                            
+                            if let usr = entity.usr {
+                                self.allVariables[usr] = variable
+                                variable.usr = usr
+                            }
+                        }
+                    } else {
+                        print("entity with no name: \(entity.structure) path: \(object.path)")
+                    }
+                }
+                
+                classInstance.instanceMethods.append(contentsOf: methods)
+                classInstance.instanceVariables.append(contentsOf: variables)
+            } else {
+                print("Classinstance = NIL! Extension found before class declaration?")
             }
-            
-            classInstance?.instanceMethods.append(contentsOf: methods)
-            classInstance?.instanceVariables.append(contentsOf: variables)
         }
         
         for classInstance in app.allClasses {

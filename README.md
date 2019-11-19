@@ -1326,6 +1326,11 @@ definition for data clumps:
     	NOT m.data_string contains (\"= \" + p.name) AND 
     	NOT m.data_string contains (\":\" + p.name) AND 
     	NOT m.data_string contains (\": \" + p.name) AND 
+    	NOT m.data_string contains (\"(\" + p.name + \")\") and 
+    	NOT m.data_string contains (\"(\" + p.name + \",\") and 
+    	NOT m.data_string contains (\"(\" + p.name + \" ,\") and 
+    	NOT m.data_string contains (\", \" + p.name + \")\") and 
+    	NOT m.data_string contains (\", \" + p.name + \",\") and
     	class.is_interface = false 
     RETURN 
     	class.app_key as app_key, 
@@ -1450,6 +1455,7 @@ definition for data clumps:
 		other_parent
 	WHERE 
 		size(first_names) >= minimumNumberOfClassesInHierarchy
+		size(second_names) >= minimumNumberOfClassesInHierarcy
 	RETURN 
 		parent.app_key as app_key, 
 		parent.name as parent_class_name, 
@@ -1954,34 +1960,34 @@ This literature review claims that primitive obsession cannot be detected with a
 ##### Query string
 
    	MATCH 
-   		(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)
-   			-[:METHOD_OWNS_ARGUMENT]->(argument:Argument)
+   		(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)-
+   			[:METHOD_OWNS_ARGUMENT]->(argument:Argument)
   	MATCH 
   		(other_class:Class)-[:CLASS_OWNS_METHOD]->(other_method:Method)
   			-[:METHOD_OWNS_ARGUMENT]->(other_argument:Argument)
   	WHERE
-     	not (class)-[:IMPLEMENTS|:EXTENDS]->()
-     		<-[:IMPLEMENTS|:EXTENDS]-(other_class) and
-     	not (class)-[:IMPLEMENTS|:EXTENDS]-(other_class) and
-     	class.app_key = other_class.app_key and 
-     	class <> other_class and 
-     	method.number_of_parameters = other_method.number_of_parameters and 
-     	method.number_of_parameters >= minimumNumberOfParameters and 
-     	argument.type = other_argument.type and
-      	method.return_type = other_method.return_type
-  	WITH 
-  		class, 
-  		other_class, 
-  		method, 
-  		other_method, 
-  		argument order by argument.type
+  		not (class)-[:IMPLEMENTS|:EXTENDS]->()
+  			<-[:IMPLEMENTS|:EXTENDS]-(other_class) and
+  		not (class)-[:IMPLEMENTS|:EXTENDS]-(other_class) and
+		class.app_key = other_class.app_key and 
+		class <> other_class and 
+		method.number_of_parameters = other_method.number_of_parameters and 
+		method.number_of_parameters >= minimumNumberOfParameters and 
+		argument.type = other_argument.type and
+    	method.return_type = other_method.return_type
 	WITH 
-		collect(distinct argument) as arguments, 
-		count(distinct argument) as number_of_arguments, 
+		class, 
+		other_class, 
 		method, 
 		other_method, 
-		class, 
-		other_class
+		argument order by argument.type
+  	WITH 
+  		collect(distinct argument) as arguments, 
+  		count(distinct argument) as number_of_arguments, 
+  		method, 
+  		other_method, 
+  		class, 
+  		other_class
 	WHERE 
 		number_of_arguments = method.number_of_parameters
   	WITH 
@@ -1990,20 +1996,24 @@ This literature review claims that primitive obsession cannot be detected with a
   		method, 
   		other_method, 
   		class, 
-  		other_class 
-  		order by method.name
+  		other_class order by method.name
   	WITH 
-  		collect(class.name +"."+method.name) as method_names, 
+  		collect(distinct class.name +"."+method.name) as method_names, 
   		count(distinct method) as method_count, 
   		class, 
   		other_class, 
-  		collect(arguments) as types
-  	WHERE 
-  		method_count >= minimumCommonMethodCount
+  		collect(number_of_arguments) as number_of_arguments, 
+  		collect(distinct arguments) as types
+ 	WHERE 
+ 		method_count >= minimumCommonMethodCount
   	WITH 
-  		collect(method_names) as method_names, 
-  		collect(class.name) as class_names, 
-  		types, class.app_key as app_key
+  		collect(distinct method_names) as method_names, 
+  		collect(distinct class.name) as class_names, 
+  		types, 
+  		class.app_key as app_key, 
+  		count(distinct class.name) as class_count
+ 	WHERE 
+ 		class_count >= 2
 	RETURN 
 		app_key, 
 		class_names, 

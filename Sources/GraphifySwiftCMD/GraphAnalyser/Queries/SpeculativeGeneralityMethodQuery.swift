@@ -14,7 +14,7 @@ class SpeculativeGeneralityMethodQuery: Query {
     var json: [String : Any]?
 
     var string: String {
-        return "match  (class)-[:CLASS_OWNS_METHOD]->(m:Method)-[:METHOD_OWNS_ARGUMENT]->(p:Argument)-[:IS_OF_TYPE]->(other_class:Class) where not (m)-[:CALLS|USES]->()<-[:CLASS_OWNS_VARIABLE|CLASS_OWNS_METHOD]-(other_class) and not m.data_string contains (\"=\" + p.name) and not m.data_string contains (\"= \" + p.name) and not m.data_string contains (\":\" + p.name) and not m.data_string contains (\": \" + p.name) and class.is_interface = false return class.app_key as app_key, class.name as class_name, m.name as method_name, p.name as argument_name, m.data_string as main_text, p.name as affected_text"
+        return "match  (class)-[:CLASS_OWNS_METHOD]->(m:Method)-[:METHOD_OWNS_ARGUMENT]->(p:Argument)-[:IS_OF_TYPE]->(other_class:Class) where not (m)-[:CALLS|USES]->()<-[:CLASS_OWNS_VARIABLE|CLASS_OWNS_METHOD]-(other_class) and not m.data_string contains (\"=\" + p.name) and not m.data_string contains (\"= \" + p.name) and not m.data_string contains (\":\" + p.name) and not m.data_string contains (\": \" + p.name) and not m.data_string contains (\"(\" + p.name + \")\") and not m.data_string contains (\"(\" + p.name + \",\") and not m.data_string contains (\", \" + p.name + \")\") and not m.data_string contains (\", \" + p.name + \",\") and class.is_interface = false return class.app_key as app_key, class.name as class_name, m.name as method_name, p.name as argument_name, m.data_string as main_text, p.name as affected_text"
     }
 
     var notes: String {
