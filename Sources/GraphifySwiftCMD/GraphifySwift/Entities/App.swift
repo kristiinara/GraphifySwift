@@ -15,6 +15,9 @@ class App : Kind {
 //    var structures: [Struct] = []
 //    var protocols: [Protocol] = []
     
+    var language: String
+    var languageMixed: Bool
+    
     var modules: [Module] = []
     var duplicates: [Duplication] = []
     
@@ -118,7 +121,7 @@ class App : Kind {
     //Obscure variables?
     //let numberOfArgb8888 = 0 // what is this? argb8888 means alpha, red, green, blue 32bit
     
-    init(name: String, targetSdk: String, dateDownload: String, package: String, versionCode: Int, versionName: String, appKey: String, developer: String, sdk: String, categroy: String) {
+    init(name: String, targetSdk: String, dateDownload: String, package: String, versionCode: Int, versionName: String, appKey: String, developer: String, sdk: String, categroy: String, language: String, languageMixed: Bool) {
         self.name = name
         self.targetSdk = targetSdk
         self.dateDownload = dateDownload
@@ -129,6 +132,9 @@ class App : Kind {
         self.developer = developer
         self.sdk = sdk
         self.category = categroy
+        
+        self.language = language
+        self.languageMixed = languageMixed
     }
     
     var numberOfClasses: Int {
@@ -238,7 +244,9 @@ extension App: Node4jInsertable {
         number_of_view_controllers:\(self.numberOfViewControllers),
         number_of_broadcast_receivers:\(self.numberOfBroadcastReceivers),
         number_of_content_providers:\(self.numberOfContentProviders),
-        number_of_services:\(self.numberOfServices)
+        number_of_services:\(self.numberOfServices),
+        language:'\(self.language)',
+        language_mixed:\(self.languageMixed)
         }
         """
     }

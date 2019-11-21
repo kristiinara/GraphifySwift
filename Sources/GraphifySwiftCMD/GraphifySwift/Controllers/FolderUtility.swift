@@ -75,7 +75,7 @@ class FolderUtility {
                 //print(fileURL.path, resourceValues.creationDate!, resourceValues.isDirectory!)
                 
                 if let name = resourceValues.name {
-                    if name.hasSuffix(".swift") {
+                    if name.hasSuffix(".swift") || name.hasSuffix(".h") {
                         //let size = resourceValues.fileSize!
                         print("\(fileURL.path)")
                         //self.app.size = self.app.size + size

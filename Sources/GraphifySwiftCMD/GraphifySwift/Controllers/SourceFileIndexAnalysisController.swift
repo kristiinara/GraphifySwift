@@ -33,6 +33,8 @@ class SourceFileIndexAnalysisController {
     
     var allModules: [String: Module] = [:]
     
+    var classesWithEmptyType: [Class] = []
+    
     init(homeURL: URL, dependencyURL: URL) {
         self.homeURL = homeURL
         self.dependencyURL = dependencyURL
@@ -50,17 +52,23 @@ class SourceFileIndexAnalysisController {
     func analyseAllFiles() -> App {
         var allObjects : [FirstLevel] = []
         
+        var mixedLanguage = false
+        
         while self.fileQueue.count > 0 {
             let fileUrl = self.fileQueue.remove(at: 0)
-            let result = indexFile(at: fileUrl.path)
-            
-            let objects = analyseResult(result: result.structure, dataString: result.dataString)
-            for object in objects {
-                object.path = fileUrl.path
-                addStructureAnalysis(object: object, path: fileUrl.path)
+            if fileUrl.path.hasSuffix(".swift") {
+                let result = indexFile(at: fileUrl.path)
+                
+                let objects = analyseResult(result: result.structure, dataString: result.dataString)
+                for object in objects {
+                    object.path = fileUrl.path
+                    addStructureAnalysis(object: object, path: fileUrl.path)
+                }
+                
+                allObjects.append(contentsOf: objects)
+            } else {
+                mixedLanguage = true
             }
-            
-            allObjects.append(contentsOf: objects)
         }
         
         for object in allObjects {
@@ -68,6 +76,8 @@ class SourceFileIndexAnalysisController {
         }
         
         let app = translateEntitiesToApp(objects: allObjects)
+        app.languageMixed = mixedLanguage
+        
         self.findReferences(app: app)
         app.calculateCouplingBetweenClasses()
         
@@ -98,7 +108,7 @@ class SourceFileIndexAnalysisController {
         }
     }
     
-    func makeStructureRequest(at path: String) -> [String: SourceKitRepresentable] {
+    func makeStructureRequest(at path: String, filePaths: [String]) -> [String: SourceKitRepresentable] {
         if let file = File(path: path) {
             do {
                 let structure = try Structure(file: file)
@@ -106,6 +116,23 @@ class SourceFileIndexAnalysisController {
             } catch {
                 print("Could not get structure of file \(path)")
             }
+        }
+        return [:]
+    }
+    
+    func docRequest(at path: String, filePaths: [String]) -> [String: SourceKitRepresentable] {
+        if let file = File(path: path) {
+            var arguments = ["-target", self.target, "-sdk", self.sdk ,"-j4"]
+            arguments.append(contentsOf: filePaths)
+            
+            let structure = SwiftDocs(file: file, arguments: arguments)
+             
+            if self.printOutput {
+                let resultString = "\(String(describing: structure))"
+                ResultToFileHandler.writeOther(resultString: resultString, toFile: path)
+            }
+             
+            return structure?.docsDictionary ?? [:]
         }
         return [:]
     }
@@ -436,7 +463,10 @@ private extension SourceFileIndexAnalysisController {
 // structure analysis
 private extension SourceFileIndexAnalysisController {
     func addStructureAnalysis(object: FirstLevel, path: String) {
-        let result = makeStructureRequest(at: path)
+        var paths = self.allPaths
+        paths.append(contentsOf: self.dependencyController.successfullPaths)
+        
+        let result = makeStructureRequest(at: path, filePaths: paths)
 //        print("Structure analysis: \(result)")
         
         guard let substructure = result["key.substructure"] as? [[String: SourceKitRepresentable]] else {
@@ -490,7 +520,6 @@ private extension SourceFileIndexAnalysisController {
         if let type = type {
             entity.type = type
         }
-        
         //TODO: change instructions to old instructions. Could we somehow add structure to each class and do the parsing there? Or add instructions to each method and do the parsing there?
         
         if let substructures = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
@@ -646,6 +675,7 @@ extension SourceFileIndexAnalysisController {
 //        return String(name)
 //    }
     
+    
     func translateEntitiesToApp(objects: [FirstLevel]) -> App {
         let appName = homeURL.lastPathComponent
         let appKey = appName
@@ -661,7 +691,9 @@ extension SourceFileIndexAnalysisController {
             appKey: appKey,
             developer: "Me",
             sdk: "11",
-            categroy: "PRODUCTIVITY"
+            categroy: "PRODUCTIVITY",
+            language: "Swift",
+            languageMixed: false
         )
         
         let floatingExtensions = self.addObjectsToApp(objects: objects, app: app)
@@ -676,6 +708,7 @@ extension SourceFileIndexAnalysisController {
     
     func addObjectsToApp(objects: [FirstLevel], app: App) -> [FirstLevel] {
         var floatingExtensions: [FirstLevel] = []
+        var classesWithEmptyType: [Class] = []
         
         for object in objects {
             var classInstance: Class?
@@ -820,13 +853,21 @@ extension SourceFileIndexAnalysisController {
                                 count += 1
                             }
                             
+                            if let type = entity.type {
+                                method.returnType = type
+                            } else {
+                                classesWithEmptyType.append(classInstance)
+                            }
                             
                         } else if entity.kind.contains("decl.var") {
                             let variable = InstanceVariable(name: name, appKey: app.appKey, modifier: "", type: "", isStatic: false, isFinal: false)
                             
                             if let type = entity.type {
                                 variable.type = type
+                            } else {
+                                classesWithEmptyType.append(classInstance)
                             }
+                            
                             variables.append(variable) //TODO: add stuff into constructor
                             
                             if let dataString = entity.dataString {
@@ -851,6 +892,17 @@ extension SourceFileIndexAnalysisController {
             }
         }
         
+        for classInstance in classesWithEmptyType {
+            print("emtpy type in \(classInstance.name)")
+            //TODO: make doc request --> extract type info (maybe something additional as well?
+            var paths = self.allPaths
+            paths.append(contentsOf: self.dependencyController.successfullPaths)
+            
+            let result = self.docRequest(at: classInstance.path, filePaths: paths)
+            self.addInfoFromDocResult(classInstance: classInstance, result: result)
+        }
+        print("Finished hangling empty types")
+        
         for classInstance in app.allClasses {
             for variable in classInstance.allVariables {
                 if let classType = self.classDictionary[variable.cleanedType] {
@@ -868,6 +920,60 @@ extension SourceFileIndexAnalysisController {
         }
         
         return floatingExtensions
+    }
+    
+    func addInfoFromDocResult(classInstance: Class, result: [String: SourceKitRepresentable]) {
+        if let children = result["key.substructure"] as? [[String: SourceKitRepresentable]] {
+            for substructure in children {
+                print("substructure")
+                //let kind = substructure["key.kind"] as? String
+                if let name = substructure["key.name"] as? String {
+                    print("name: \(name)")
+                    if name == classInstance.name {
+                        if let entities = substructure["key.substructure"] as? [[String: SourceKitRepresentable]] {
+                            outerloop: for entity in entities {
+                                if let entityName = entity["key.name"] as? String,
+                                    let kind = entity["key.kind"] as? String,
+                                    let entityType = entity["key.typename"] as? String {
+                                    print("entityName: \(entityName)")
+                                    print("entityType: \(entityType)")
+                                    
+                                    let variableKinds = [ClassVariable.kittenKey,
+                                        LocalVariable.kittenKey,
+                                        StaticVariable.kittenKey,
+                                        InstanceVariable.kittenKey,
+                                        GlobalVariable.kittenKey]
+                                    
+                                    let methodKinds = [ClassFunction.kittenKey,
+                                                       StaticFunction.kittenKey,
+                                                       InstanceFunction.kittenKey]
+                                    
+                                    if variableKinds.contains(kind) {
+                                        for variable in classInstance.allVariables {
+                                            if variable.name == entityName && variable.type == "" {
+                                                variable.type = entityType
+                                                print("found variable")
+                                                continue outerloop
+                                            }
+                                        }
+                                    }
+                                    
+                                    if methodKinds.contains(kind) {
+                                        for method in classInstance.allMethods {
+                                            if method.name == entityName && method.returnType == "" {
+                                                method.returnType = entityType
+                                                print("found variable")
+                                                continue outerloop
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
     
     func findReferences(app: App) {

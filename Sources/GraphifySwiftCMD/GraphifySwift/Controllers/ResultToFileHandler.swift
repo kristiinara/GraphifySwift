@@ -31,4 +31,13 @@ class ResultToFileHandler {
             print("Could not write to file \(path)")
         }
     }
+    
+    static func writeOther(resultString: String, toFile path: String) {
+        let newPath = path.replacingOccurrences(of: ".swift", with: "-doc-result.json")
+        do {
+            try resultString.write(toFile: newPath, atomically: true, encoding: .utf8)
+        } catch {
+            print("Could not write to file \(path)")
+        }
+    }
 }
