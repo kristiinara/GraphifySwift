@@ -767,7 +767,8 @@ extension SourceFileIndexAnalysisController {
             sdk: self.sdk,
             categroy: self.category,
             language: self.language,
-            languageMixed: false
+            languageMixed: false,
+            platform: "iOS"
         )
         if let stars = self.stars {
             app.stars = stars

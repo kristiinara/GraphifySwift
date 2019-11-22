@@ -17,6 +17,7 @@ class App : Kind {
     
     var language: String
     var languageMixed: Bool
+    var platform: String
     
     var modules: [Module] = []
     var duplicates: [Duplication] = []
@@ -123,7 +124,7 @@ class App : Kind {
     //Obscure variables?
     //let numberOfArgb8888 = 0 // what is this? argb8888 means alpha, red, green, blue 32bit
     
-    init(name: String, targetSdk: String, dateDownload: String, package: String, versionCode: Int, versionName: String, appKey: String, developer: String, sdk: String, categroy: String, language: String, languageMixed: Bool) {
+    init(name: String, targetSdk: String, dateDownload: String, package: String, versionCode: Int, versionName: String, appKey: String, developer: String, sdk: String, categroy: String, language: String, languageMixed: Bool, platform: String) {
         self.name = name
         self.targetSdk = targetSdk
         self.dateDownload = dateDownload
@@ -137,6 +138,7 @@ class App : Kind {
         
         self.language = language
         self.languageMixed = languageMixed
+        self.platform = platform
     }
     
     var numberOfClasses: Int {
@@ -249,7 +251,8 @@ extension App: Node4jInsertable {
         number_of_services:\(self.numberOfServices),
         language:'\(self.language)',
         language_mixed:\(self.languageMixed),
-        stars:\(self.stars)
+        stars:\(self.stars),
+        platform:'\(self.platform)'
         }
         """
     }
