@@ -118,6 +118,8 @@ class App : Kind {
     //We still have to figure out:
     var size = 0 //APK size in bytes --> setting it after going through files (adding up size of each file)
     
+    var stars: Int = 0
+    
     //Obscure variables?
     //let numberOfArgb8888 = 0 // what is this? argb8888 means alpha, red, green, blue 32bit
     
@@ -246,7 +248,8 @@ extension App: Node4jInsertable {
         number_of_content_providers:\(self.numberOfContentProviders),
         number_of_services:\(self.numberOfServices),
         language:'\(self.language)',
-        language_mixed:\(self.languageMixed)
+        language_mixed:\(self.languageMixed),
+        stars:\(self.stars)
         }
         """
     }

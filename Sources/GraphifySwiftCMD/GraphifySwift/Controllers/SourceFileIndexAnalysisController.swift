@@ -18,6 +18,7 @@ class SourceFileIndexAnalysisController {
     let developer: String
     let category: String
     let language: String
+    var stars: Int?
     
     var project: Project?
     
@@ -70,8 +71,9 @@ class SourceFileIndexAnalysisController {
         self.appName = project.name
         self.appKey = project.appKey ?? homeURL.lastPathComponent
         self.developer = project.developer
-        self.category = "\(project.categories ?? "Undefined")"
+        self.category = "\(project.categories ?? [])"
         self.language = "Swift"
+        self.stars = project.stars
         
         //self.sdk = "/Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk"
         self.sdk = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.0.sdk"
@@ -572,6 +574,15 @@ private extension SourceFileIndexAnalysisController {
         let kind = structure["key.kind"] as? String
         let name = structure["key.name"] as? String
         let type = structure["key.typename"] as? String
+        let accessModifier = structure["key.accessibility"] as? String
+        
+        if let accessModifier = accessModifier {
+            if accessModifier.hasPrefix("source.lang.swift.accessibility.") {
+                entity.accessModifier = String(accessModifier.dropFirst("source.lang.swift.accessibility.".count))
+            } else {
+                entity.accessModifier = accessModifier
+            }
+        }
         
 //        print("handle substructure of kind: \(kind) type: \(type)")
 //        print("structure: \(structure)")
@@ -758,6 +769,10 @@ extension SourceFileIndexAnalysisController {
             language: self.language,
             languageMixed: false
         )
+        if let stars = self.stars {
+            app.stars = stars
+        }
+        
         
         let floatingExtensions = self.addObjectsToApp(objects: objects, app: app)
         // try to add floating extensions again, in the hope that corresponding classes were already added
@@ -888,59 +903,80 @@ extension SourceFileIndexAnalysisController {
                 
                 for entity in object.entities {
                     if let name = entity.name {
-                        if entity.kind.contains("decl.function.method") {
-                            let method = InstanceFunction(name: name, fullName: name, appKey: app.appKey, modifier: "", returnType: "")
-                            method.instructions = entity.instructions
-                            method.references = entity.allReferences
-                            if classInstance.isInterface {
-                                //can only be abstract, if classInstance itself is interface
-                                method.isAbstract = entity.isAbstract
+                        if entity.kind.contains("decl.function") {
+                            var method: Function?
+                            
+                            if entity.kind == InstanceFunction.kittenKey {
+                                method = InstanceFunction(name: name, fullName: name, appKey: app.appKey, modifier: entity.accessModifier ?? "", returnType: entity.type ?? "")
+                            } else if entity.kind == ClassFunction.kittenKey {
+                                method = ClassFunction(name: name, fullName: name, appKey: app.appKey, modifier: entity.accessModifier ?? "", returnType: entity.type ?? "")
+                            } else if entity.kind == StaticFunction.kittenKey {
+                                method = StaticFunction(name: name, fullName: name, appKey: app.appKey, modifier: entity.accessModifier ?? "", returnType: entity.type ?? "")
                             }
                             
-                            if let dataString = entity.dataString {
-                              //  print("Method entity.dataString: \(dataString)")
-                                method.dataString = dataString
+                            if let method = method {
+                                method.instructions = entity.instructions
+                                method.references = entity.allReferences
+                                if classInstance.isInterface {
+                                    //can only be abstract, if classInstance itself is interface
+                                    method.isAbstract = entity.isAbstract
+                                }
+                                
+                                if let dataString = entity.dataString {
+                                  //  print("Method entity.dataString: \(dataString)")
+                                    method.dataString = dataString
+                                }
+                                
+                                methods.append(method) //TODO: add stuff into constructor
+                                
+                                if let usr = entity.usr {
+                                    self.allMethods[usr] = method
+                                    method.usr = usr
+                                }
+                                
+                                var count = 0
+                                for parameter in entity.parameters {
+                                    let argument = Argument(name: parameter.name, type: parameter.type, position: count, appKey: method.appKey)
+                                    method.parameters.append(argument)
+                                    count += 1
+                                }
+                                
+                                if let type = entity.type {
+                                    method.returnType = type
+                                } else {
+                                    classesWithEmptyType.append(classInstance)
+                                }
+                            }
+                        }
+                        if entity.kind.contains("decl.var") {
+                            var variable: Variable?
+                            
+                            if entity.kind == InstanceVariable.kittenKey {
+                                variable = InstanceVariable(name: name, appKey: app.appKey, modifier: entity.accessModifier ?? "", type: entity.type ?? "", isStatic: false, isFinal: false)
+                            } else if entity.kind == ClassVariable.kittenKey {
+                                variable = ClassVariable(name: name, appKey: app.appKey, modifier: entity.accessModifier ?? "", type: entity.type ?? "", isStatic: true, isFinal: false)
+                            } else if entity.kind == StaticVariable.kittenKey {
+                                variable = StaticVariable(name: name, appKey: app.appKey, modifier: entity.accessModifier ?? "", type: entity.type ?? "", isStatic: true, isFinal: false)
                             }
                             
-                            methods.append(method) //TODO: add stuff into constructor
-                            
-                            if let usr = entity.usr {
-                                self.allMethods[usr] = method
-                                method.usr = usr
-                            }
-                            
-                            var count = 0
-                            for parameter in entity.parameters {
-                                let argument = Argument(name: parameter.name, type: parameter.type, position: count, appKey: method.appKey)
-                                method.parameters.append(argument)
-                                count += 1
-                            }
-                            
-                            if let type = entity.type {
-                                method.returnType = type
-                            } else {
-                                classesWithEmptyType.append(classInstance)
-                            }
-                            
-                        } else if entity.kind.contains("decl.var") {
-                            let variable = InstanceVariable(name: name, appKey: app.appKey, modifier: "", type: "", isStatic: false, isFinal: false)
-                            
-                            if let type = entity.type {
-                                variable.type = type
-                            } else {
-                                classesWithEmptyType.append(classInstance)
-                            }
-                            
-                            variables.append(variable) //TODO: add stuff into constructor
-                            
-                            if let dataString = entity.dataString {
-                               // print("Variable entity.dataString: \(dataString)")
-                                variable.dataString = dataString
-                            }
-                            
-                            if let usr = entity.usr {
-                                self.allVariables[usr] = variable
-                                variable.usr = usr
+                            if let variable = variable {
+                                if let type = entity.type {
+                                    variable.type = type
+                                } else {
+                                    classesWithEmptyType.append(classInstance)
+                                }
+                                
+                                variables.append(variable) //TODO: add stuff into constructor
+                                
+                                if let dataString = entity.dataString {
+                                   // print("Variable entity.dataString: \(dataString)")
+                                    variable.dataString = dataString
+                                }
+                                
+                                if let usr = entity.usr {
+                                    self.allVariables[usr] = variable
+                                    variable.usr = usr
+                                }
                             }
                         }
                     } else {
@@ -1161,6 +1197,7 @@ class Entity {
     var endLine: Int?
     var dataString: String?
     var isAbstract = false
+    var accessModifier: String?
     
     var relatedObjects:[(name: String, kind: String, usr: String?)] = []
     
