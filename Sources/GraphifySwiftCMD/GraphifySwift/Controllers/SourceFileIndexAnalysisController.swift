@@ -15,6 +15,10 @@ class SourceFileIndexAnalysisController {
     let target: String
     let appKey: String
     let appName: String
+    let developer: String
+    let category: String
+    let language: String
+    
     var project: Project?
     
     let dependencyController: DependencyController
@@ -65,6 +69,9 @@ class SourceFileIndexAnalysisController {
         self.dependencyURL = dependencyURL
         self.appName = project.name
         self.appKey = project.appKey ?? homeURL.lastPathComponent
+        self.developer = project.developer
+        self.category = "\(project.categories ?? "Undefined")"
+        self.language = "Swift"
         
         //self.sdk = "/Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk"
         self.sdk = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.0.sdk"
@@ -93,6 +100,9 @@ class SourceFileIndexAnalysisController {
         
         self.appName = homeURL.lastPathComponent
         self.appKey = appName
+        self.developer = "Undefined"
+        self.category = "Undefined"
+        self.language = "Swift"
     }
     
     
@@ -737,15 +747,15 @@ extension SourceFileIndexAnalysisController {
         let app = App(
             name: appName,
             targetSdk: self.sdk,
-            dateDownload: "2019-04-18 14:35:10",
+            dateDownload: "2019-11-14 14:35:10",
             package: appName,
             versionCode: 1,
             versionName: "1",
             appKey: appKey,
-            developer: "Me",
+            developer: self.developer,
             sdk: self.sdk,
-            categroy: "PRODUCTIVITY",
-            language: "Swift",
+            categroy: self.category,
+            language: self.language,
             languageMixed: false
         )
         

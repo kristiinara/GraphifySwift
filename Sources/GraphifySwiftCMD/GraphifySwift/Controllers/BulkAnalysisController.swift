@@ -315,6 +315,17 @@ class Project: Codable {
     
     var errorDescriptions: [String] = []
     
+    var developer: String {
+        // String between "/github.com/" and "/"
+        
+        let splitString = self.repoPath.split(separator: "/")
+        if splitString.count < 3 {
+            return ""
+        }
+        
+        return String(splitString[splitString.count - 2])
+    }
+    
     init(name: String, repoPath: String, description: String, tags: [String]) {
         self.name = name
         self.repoPath = repoPath

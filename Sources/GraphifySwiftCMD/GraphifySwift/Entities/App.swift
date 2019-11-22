@@ -112,8 +112,8 @@ class App : Kind {
     
     //Variables we should get from appStore
     var rating = 0 //rating from appStore? but as input to program! (application rating)
-    var nbDownload = "0+" //from appStore? but as input to program! (number of downloads for the app)
-    var price = "Free" //from appStore? but as input to program! (price of the application)
+    var nbDownload = "" //from appStore? but as input to program! (number of downloads for the app)
+    var price = "" //from appStore? but as input to program! (price of the application)
     
     //We still have to figure out:
     var size = 0 //APK size in bytes --> setting it after going through files (adding up size of each file)
