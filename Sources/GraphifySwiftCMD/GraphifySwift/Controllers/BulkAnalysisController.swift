@@ -19,11 +19,25 @@ class BulkAnalysisController {
     var shouldRunGitClone = false
     let dispatchGroup = DispatchGroup()
     
+    let outputFileName: String
+    let outputFileURL: URL
+    
+    let dateString: String
+    
     var analysisResults: [String: (Project, Bool)] = [:]
     
     init(inputFileURL: URL, outputFolderURL: URL) {
         self.inputFileURL = inputFileURL
         self.outputFolderURL = outputFolderURL
+        
+        self.outputFileName = "analysedApplications.json"
+        self.outputFileURL = self.outputFolderURL.appendingPathComponent(outputFileName)
+        
+        let dateFormatter : DateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let date = Date()
+        self.dateString = dateFormatter.string(from: date)
+                   
     }
     
     func analyse() {
@@ -91,9 +105,20 @@ class BulkAnalysisController {
                         dependencyURL = dependencyURL.appendingPathComponent("Carthage", isDirectory: true)
                         dependencyURL = dependencyURL.appendingPathComponent("Checkouts", isDirectory: true)
                         
-                        let controller = SourceFileIndexAnalysisController(homeURL: url, dependencyURL: dependencyURL)
-                        controller.analyseAllFilesAndAddToDatabase() {
-                            print("Finished analysis for: \(project.name)")
+                        let appKey = "\(project.name)-\(self.dateString)"
+                        nextProject.appKey = appKey
+                        
+                        do {
+                            let controller = try SourceFileIndexAnalysisController(project: nextProject)
+                            controller.analyseAllFilesAndAddToDatabase() {
+                                print("Finished analysis for: \(project.name)")
+                                project.projectAnalysed = true
+                                self.printToFile(fileURL: self.outputFileURL)
+                                
+                                self.dispatchGroup.leave()
+                            }
+                        } catch let error {
+                            print(error.localizedDescription)
                             self.dispatchGroup.leave()
                         }
                     } else {
@@ -180,6 +205,7 @@ extension Process {
 
 }
 
+// Git stuff
 extension BulkAnalysisController {
     func cloneIfNotAvailable(project: Project, completition: @escaping (Bool, Project) -> Void) -> Bool {
         let url = self.outputFolderURL.appendingPathComponent(project.name)
@@ -211,6 +237,8 @@ extension BulkAnalysisController {
                     try process.clone(repo: project.repoPath, path: url.path)
                     print("created repo: \(project.repoPath) in \(url.path)")
                     
+                    project.projectDownloaded = true
+                    
                     /*
                      xcodebuildProcess.terminationHandler = { process in
                         completion(process.terminationStatus)
@@ -229,7 +257,39 @@ extension BulkAnalysisController {
     }
 }
 
-class Project {
+// Projects to file and back
+extension BulkAnalysisController {
+    func printToFile(fileURL: URL) {
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        encoder.outputFormatting = .prettyPrinted
+        
+        do {
+            let encodedData = try encoder.encode(self.allProjects)
+            try encodedData.write(to: fileURL)
+        } catch let error {
+            print("Writing json to file failed: \(error.localizedDescription)")
+        }
+    }
+    
+    func readFromFile(fileURL: URL) -> [Project] {
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        
+        do {
+            let data = try Data(contentsOf: fileURL)
+            let decodedData = try decoder.decode([Project].self, from: data)
+            
+            return decodedData
+        } catch let error {
+            print("Reading json from file failed: \(error.localizedDescription)")
+        }
+        
+        return []
+    }
+}
+
+class Project: Codable {
     let name: String
     let description: String
     let repoPath: String
@@ -242,6 +302,16 @@ class Project {
     var stars: Int?
     
     var localUrl: URL?
+    
+    var projectDownloaded = false
+    var projectAnalysed = false
+    
+    var appKey: String?
+    
+    var sdk: String?
+    var target: String?
+    
+    var size: Int?
     
     init(name: String, repoPath: String, description: String, tags: [String]) {
         self.name = name

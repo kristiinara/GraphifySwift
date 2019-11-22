@@ -13,6 +13,9 @@ class SourceFileIndexAnalysisController {
     let dependencyURL: URL
     let sdk: String
     let target: String
+    let appKey: String
+    let appName: String
+    
     let dependencyController: DependencyController
     let dataSyncController = DataSyncController()
     
@@ -35,9 +38,29 @@ class SourceFileIndexAnalysisController {
     
     var classesWithEmptyType: [Class] = []
     
-    init(homeURL: URL, dependencyURL: URL) {
+    struct AnalysisError: Error {
+        let message: String
+        public var errorDescription: String? { return self.message }
+        
+        init(message: String) {
+            self.message = message
+        }
+    }
+    
+    init(project:Project) throws {
+        guard let homeURL = project.localUrl else {
+            throw AnalysisError(message: "Missing localURL for \(project.name)")
+        }
+        
         self.homeURL = homeURL
+        var dependencyURL = homeURL
+        dependencyURL = dependencyURL.appendingPathComponent("Carthage", isDirectory: true)
+        dependencyURL = dependencyURL.appendingPathComponent("Checkouts", isDirectory: true)
+        
         self.dependencyURL = dependencyURL
+        self.appName = project.name
+        self.appKey = project.appKey ?? homeURL.lastPathComponent
+        
         //self.sdk = "/Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk"
         self.sdk = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.0.sdk"
         //self.target = "arm64-apple-ios12.1"
@@ -48,6 +71,26 @@ class SourceFileIndexAnalysisController {
         self.fileQueue = FolderUtility.getFileQueue(for: homeURL, ignore: ["Carthage", "Pods"])
         self.allPaths = self.fileQueue.map() { url in return url.path }
     }
+    
+    init(homeURL: URL, dependencyURL: URL) {
+        self.homeURL = homeURL
+        self.dependencyURL = dependencyURL
+        
+        //self.sdk = "/Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk"
+        self.sdk = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.0.sdk"
+        //self.target = "arm64-apple-ios12.1"
+        self.target = "arm64-apple-ios13.0"
+        
+        self.dependencyController = DependencyController(homeURL: dependencyURL)
+        
+        self.fileQueue = FolderUtility.getFileQueue(for: homeURL, ignore: ["Carthage", "Pods"])
+        self.allPaths = self.fileQueue.map() { url in return url.path }
+        
+        self.appName = homeURL.lastPathComponent
+        self.appKey = appName
+    }
+    
+    
     
     func analyseAllFiles() -> App {
         var allObjects : [FirstLevel] = []
@@ -82,6 +125,7 @@ class SourceFileIndexAnalysisController {
         app.calculateCouplingBetweenClasses()
         
         self.addCommentsToApp(app: app)
+        self.calculateSize(app: app)
         
         print("modules: \(self.allModules.keys)")
         
@@ -107,7 +151,7 @@ class SourceFileIndexAnalysisController {
             finished()
         }
     }
-    
+
     func makeStructureRequest(at path: String, filePaths: [String]) -> [String: SourceKitRepresentable] {
         if let file = File(path: path) {
             do {
@@ -677,20 +721,17 @@ extension SourceFileIndexAnalysisController {
     
     
     func translateEntitiesToApp(objects: [FirstLevel]) -> App {
-        let appName = homeURL.lastPathComponent
-        let appKey = appName
-        
         //TODO: fix this with correct app info
         let app = App(
             name: appName,
-            targetSdk: "sdk1",
+            targetSdk: self.sdk,
             dateDownload: "2019-04-18 14:35:10",
             package: appName,
             versionCode: 1,
             versionName: "1",
             appKey: appKey,
             developer: "Me",
-            sdk: "11",
+            sdk: self.sdk,
             categroy: "PRODUCTIVITY",
             language: "Swift",
             languageMixed: false
@@ -1016,6 +1057,27 @@ extension SourceFileIndexAnalysisController {
                     }
                 } else if usr.contains("c:objc(cs)") {
                     classInstance.parentName = usr.replacingOccurrences(of: "c:objc(cs)", with: "")
+                }
+            }
+        }
+    }
+}
+
+// Handle app size stuff
+extension SourceFileIndexAnalysisController {
+    func calculateSize(app: App) {
+        var analysedFiles: [String] = []
+        
+        for classInstance in app.allClasses {
+            if !analysedFiles.contains(classInstance.path) {
+                do {
+                    let attr = try FileManager.default.attributesOfItem(atPath: classInstance.path)
+                    let fileSize = attr[FileAttributeKey.size] as! UInt64
+                    app.size += Int(fileSize)
+                    
+                    analysedFiles.append(classInstance.path)
+                } catch {
+                    print("Error: \(error.localizedDescription)")
                 }
             }
         }
