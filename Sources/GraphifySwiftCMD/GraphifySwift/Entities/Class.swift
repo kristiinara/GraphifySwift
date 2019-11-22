@@ -243,6 +243,11 @@ extension Class: Node4jInsertable {
         var dataString = self.dataString.replacingOccurrences(of: "\"", with: "'")
         dataString = dataString.replacingOccurrences(of: "\\", with: "\\\\")
         
+        var optionalProperties = ""
+        if let usr = self.usr {
+            optionalProperties = ", usr:'\(usr)'"
+        }
+        
         return """
         {
         name:'\(self.name)',
@@ -272,7 +277,7 @@ extension Class: Node4jInsertable {
         number_of_weighted_methods:\(self.numberOfWeightedMethods),
         depth_of_inheritance:\(self.depthOfInheritance),
         number_of_comments:\(self.numberOfComments),
-        data_string:\"\(dataString)\"
+        data_string:\"\(dataString)\"\(optionalProperties)
         }
         """
     }

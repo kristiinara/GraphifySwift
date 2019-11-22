@@ -8,7 +8,7 @@
 
 class Function: Kind {
     var id: Int?
-    var usr: String? = "?"
+    var usr: String?
     var name: String
     var appKey: String = "Default"
     var instructions: [Instruction] = []
@@ -204,6 +204,11 @@ extension Function: Node4jInsertable {
         var dataString = self.dataString.replacingOccurrences(of: "\"", with: "'")
         dataString = dataString.replacingOccurrences(of: "\\", with: "\\\\")
         
+        var optionalProperties = ""
+        if let usr = self.usr {
+            optionalProperties = ", usr:'\(usr)'"
+        }
+        
         return """
         {
             name:'\(self.name)',
@@ -226,7 +231,7 @@ extension Function: Node4jInsertable {
             number_of_switch_statements:\(self.numberOfSwitchStatements),
             max_number_of_chaned_message_calls:\(self.maxNumberOfChanedMessageCalls),
             max_nesting_depth:\(self.maxNestingDepth),
-            data_string:\"\(dataString)\"
+            data_string:\"\(dataString)\"\(optionalProperties)
         }
         """
     }

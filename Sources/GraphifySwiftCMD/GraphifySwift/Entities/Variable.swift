@@ -8,7 +8,7 @@
 
 class Variable : Kind {
     var id: Int?
-    var usr: String? = "?"
+    var usr: String?
     var name: String
     var appKey: String = "Default"
     var modifier: String = ""
@@ -59,6 +59,11 @@ extension Variable: Node4jInsertable {
         var dataString = self.dataString.replacingOccurrences(of: "\"", with: "'")
         dataString = dataString.replacingOccurrences(of: "\\", with: "\\\\")
         
+        var optionalProperties = ""
+        if let usr = self.usr {
+            optionalProperties = ", usr:'\(usr)'"
+        }
+        
         return """
         {
         name:'\(self.name)',
@@ -67,7 +72,7 @@ extension Variable: Node4jInsertable {
         type:'\(self.type)',
         is_static:\(self.isStatic),
         is_final:\(self.isFinal),
-        data_string:\"\(dataString)\"
+        data_string:\"\(dataString)\"\(optionalProperties)
         }
         """
     }
