@@ -10,7 +10,7 @@ import Foundation
 class GodClassQuery: Query {
     let name = "GodClass"
     let fewAccessToForeignData = 2
-    let veryHighWeightedMethodCount = 40
+    let veryHighClassComplexity = 40
     let tightClassCohesionFraction = 0.3
     
     var result: String?
@@ -30,12 +30,12 @@ class GodClassQuery: Query {
         where variable_count >= 1
         with class, pair_count, count(distinct [method, other_method]) as connected_method_count
         with class, connected_method_count*0.1/pair_count as class_cohesion, connected_method_count, pair_count
-        where class_cohesion < \(self.tightClassCohesionFraction) and class.number_of_weighted_methods >= \(self.veryHighWeightedMethodCount)
+        where class_cohesion < \(self.tightClassCohesionFraction) and class.class_complexity >= \(self.veryHighClassComplexity)
         optional match (class)-[:CLASS_OWNS_METHOD]->(m:Method)-[:USES]->(variable:Variable)<-[:CLASS_OWNS_VARIABLE]-(other_class:Class)
         where class <> other_class
         with class, class_cohesion, connected_method_count, pair_count, count(distinct variable) as foreign_variable_count
         where foreign_variable_count >= \(self.fewAccessToForeignData)
-        return class.app_key as app_key, class.name as class_name, pair_count, connected_method_count, class_cohesion, class.number_of_weighted_methods as number_of_weighted_method, foreign_variable_count, class.data_string as main_text
+        return class.app_key as app_key, class.name as class_name, pair_count, connected_method_count, class_cohesion, class.class_complexity as class_complexity, foreign_variable_count, class.data_string as main_text
         """
     }
     

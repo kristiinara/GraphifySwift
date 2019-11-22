@@ -172,13 +172,6 @@ class Class : Kind {
         }
     }
     
-    //TODO: remove --> we already have classComplexity --> does the same thing!
-    var numberOfWeightedMethods: Int {
-        return self.allMethods.reduce(0) { res, method in
-            return res + method.cyclomaticComplexity
-        }
-    }
-    
     var numberOfComments: Int {
         return self.comments.count
     }
@@ -274,7 +267,6 @@ extension Class: Node4jInsertable {
         is_interface:\(self.isInterface),
         is_view_controller:\(self.isViewController),
         number_of_instructions:\(self.numberOfInstructions),
-        number_of_weighted_methods:\(self.numberOfWeightedMethods),
         depth_of_inheritance:\(self.depthOfInheritance),
         number_of_comments:\(self.numberOfComments),
         data_string:\"\(dataString)\"\(optionalProperties)

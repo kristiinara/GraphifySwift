@@ -18,7 +18,7 @@ class LazyClass: Query {
     var json: [String : Any]?
     
     var string: String {
-        return "MATCH (c:Class) where c.number_of_methods = 0 or (c.number_of_instructions < \(self.mediumNumberOfInstructions) and  c.number_of_weighted_methods/c.number_of_methods <= \(self.lowComplexityMethodRatio)) or (c.coupling_between_object_classes < \(self.mediumCouplingBetweenObjectClasses) and c.depth_of_inheritance > \(self.numberOfSomeDepthOfInheritance)) return c.app_key as app_key, c.name as class_name, c.data_string as main_text"
+        return "MATCH (c:Class) where c.number_of_methods = 0 or (c.number_of_instructions < \(self.mediumNumberOfInstructions) and  c.class_complexity/c.number_of_methods <= \(self.lowComplexityMethodRatio)) or (c.coupling_between_object_classes < \(self.mediumCouplingBetweenObjectClasses) and c.depth_of_inheritance > \(self.numberOfSomeDepthOfInheritance)) return c.app_key as app_key, c.name as class_name, c.data_string as main_text"
     }
     
     var notes: String {
