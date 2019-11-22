@@ -313,6 +313,8 @@ class Project: Codable {
     
     var size: Int?
     
+    var errorDescriptions: [String] = []
+    
     init(name: String, repoPath: String, description: String, tags: [String]) {
         self.name = name
         self.repoPath = repoPath

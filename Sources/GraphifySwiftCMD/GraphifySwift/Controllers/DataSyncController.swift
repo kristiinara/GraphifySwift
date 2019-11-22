@@ -11,7 +11,7 @@
 class DataSyncController {
     let databaseController = DatabaseController()
     var classes : [Class] = []
-    var finished : (() -> Void)?
+    var finished : (([String]) -> ())?
     var addingAdditionalStuff = false
     var addingDuplications = false
     
@@ -171,7 +171,7 @@ class DataSyncController {
                     self.addingDuplications = true
                     self.addDuplications(app: app) {
                         if let finished = self.finished {
-                            finished()
+                            finished(self.databaseController.errorDescription)
                             self.finished = nil
                         }
                     }
@@ -395,7 +395,7 @@ class DataSyncController {
                 }
             } else {
                 if let finished = self.finished {
-                    finished()
+                    finished(self.databaseController.errorDescription)
                 }
             }
         }

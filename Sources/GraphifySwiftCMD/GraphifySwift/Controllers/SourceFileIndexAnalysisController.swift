@@ -15,6 +15,7 @@ class SourceFileIndexAnalysisController {
     let target: String
     let appKey: String
     let appName: String
+    var project: Project?
     
     let dependencyController: DependencyController
     let dataSyncController = DataSyncController()
@@ -38,6 +39,8 @@ class SourceFileIndexAnalysisController {
     
     var classesWithEmptyType: [Class] = []
     
+    var errorDesctiptions: [String] = []
+    
     struct AnalysisError: Error {
         let message: String
         public var errorDescription: String? { return self.message }
@@ -48,6 +51,8 @@ class SourceFileIndexAnalysisController {
     }
     
     init(project:Project) throws {
+        self.project = project
+        
         guard let homeURL = project.localUrl else {
             throw AnalysisError(message: "Missing localURL for \(project.name)")
         }
@@ -132,7 +137,7 @@ class SourceFileIndexAnalysisController {
         return app
     }
     
-    func analyseAllFilesAndAddToDatabase(finished: @escaping () -> Void) {
+    func analyseAllFilesAndAddToDatabase(finished: @escaping () -> ()) {
         let app = analyseAllFiles()
         
 //        let reportPath = self.homeURL.appendingPathComponent("jscpd-report/jscpd-report.json")
@@ -145,7 +150,11 @@ class SourceFileIndexAnalysisController {
         ObjectPrinter.printApp(app)
         
         if insertToDatabase == true {
-            self.dataSyncController.finished = finished
+            self.dataSyncController.finished = { descriptions in
+                self.errorDesctiptions.append(contentsOf: descriptions)
+                self.project?.errorDescriptions = self.errorDesctiptions
+                finished()
+            }
             self.dataSyncController.sync(app: app)
         } else {
             finished()
@@ -157,7 +166,8 @@ class SourceFileIndexAnalysisController {
             do {
                 let structure = try Structure(file: file)
                 return structure.dictionary
-            } catch {
+            } catch let error {
+                self.errorDesctiptions.append(error.localizedDescription)
                 print("Could not get structure of file \(path)")
             }
         }
@@ -219,7 +229,8 @@ class SourceFileIndexAnalysisController {
                 //self.fileContents[path] = lines
                 
                 return (structure: result, dataString: fileContents)
-            } catch {
+            } catch let error {
+                self.errorDesctiptions.append(error.localizedDescription)
                 print("Could not index file: \(path)")
             }
         }
@@ -237,7 +248,8 @@ class SourceFileIndexAnalysisController {
                     print("Resolving dependency successful")
                     return true
                     
-                } catch {
+                } catch let error {
+                    self.errorDesctiptions.append(error.localizedDescription)
                     print("Resolving dependency failed")
                     return false
                 }
@@ -1076,7 +1088,8 @@ extension SourceFileIndexAnalysisController {
                     app.size += Int(fileSize)
                     
                     analysedFiles.append(classInstance.path)
-                } catch {
+                } catch let error {
+                    self.errorDesctiptions.append(error.localizedDescription)
                     print("Error: \(error.localizedDescription)")
                 }
             }
