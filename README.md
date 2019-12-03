@@ -244,7 +244,7 @@ Martin Fowlers book: "One of the most obvious symptoms of object-oriented code i
     WHERE 
     	c.number_of_methods = 0 OR 
     	(c.number_of_instructions < mediumNumberOfInstructions AND  
-    		c.number_of_weighted_methods/c.number_of_methods <= lowComplexityMethodRatio) OR 
+    		c.class_complexity/c.number_of_methods <= lowComplexityMethodRatio) OR 
     	(c.coupling_between_object_classes < mediumCouplingBetweenObjectClasses AND 
     		c.depth_of_inheritance > numberOfSomeDepthOfInheritance) 
     RETURN 
@@ -260,9 +260,9 @@ Medium number of instructions and medium coupling between objects is determined 
 Currently medium number of instructions is 50, low complexity method ratio is 2, medium coupling between object classes is 20 and number of some depth of inheritance is 1.
 
 ##### Implementation details
-Number of weighted methods is calculated as follows
+Class complecity is calculated as follows
 
-    var numberOfWeightedMethods: Int {
+    var classComplexity: Int {
         return self.allMethods.reduce(0) { res, method in
             return res + method.cyclomaticComplexity
         }
@@ -1604,7 +1604,7 @@ Def. from https://www.simpleorientedarchitecture.com/how-to-identify-brain-metho
     	pair_count
    	WHERE 
     	class_cohesion < tightClassCohesionFraction and
-    	class.number_of_weighted_methods >= veryHighWeightedMethodCount
+    	class.class_complexity >= veryHighWeightedMethodCount
    	OPTIONAL MATCH 
    		(class)-[:CLASS_OWNS_METHOD]->(m:Method)-[:USES]
    			->(variable:Variable)<-[:CLASS_OWNS_VARIABLE]-(other_class:Class)
@@ -1622,7 +1622,7 @@ Def. from https://www.simpleorientedarchitecture.com/how-to-identify-brain-metho
     	pair_count, 
     	connected_method_count, 
     	class_cohesion, 
-    	class.number_of_weighted_methods as number_of_weighted_method, 
+    	class.class_complexity as class_complexity, 
     	foreign_variable_count, 
     	class.data_string as main_text
   
