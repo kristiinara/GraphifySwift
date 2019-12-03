@@ -11,13 +11,14 @@ class AnalysisController {
     let dispatchGroup = DispatchGroup()
     var totalQueries = 0
     var currentQuery = 0
+    let dbController = DatabaseController()
     
     func analyse(queryString: String, completition: @escaping (String, [[String]]?, [String]?, Int, Int) -> Void) {
         var queries: [Query]
         
         switch queryString {
         case "all":
-            queries = [InfoQuery(), LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery(), TraditionBreakerQuery(), SiblingDuplicationQuery(), InternalDuplicationQuery(), ExternalDuplicationQuery(), DivergentChangeQuery(), LongParameterListQuery(), FeatureEnvyQuery(), DataClumpArgumentsQuery(), DataClumpFieldsQuery(), SpeculativeGeneralityProtocolQuery(), MiddleManQuery(), ParallelInheritanceHierarchiesQuery(), SpeculativeGeneralityMethodQuery(), InappropriateIntimacyQuery(), BrainMethodQuery(), SAPBreakerQuery(), SAPBreakerModuleQuery(), UnstableDependenciesQuery(), PrimitiveObsessionQuery(), AlternativeClassesWithDifferentInterfacesQuery(), MissingTemplateMethodQuery(), SwissArmyKnifeQuery()]
+            queries = [InfoQuery(), LongMethodQuery(), BlobClassQuery(), ShotgunSurgeryQuery(), SwitchStatementsQuery(), LazyClass(), MessageChainsQuery(), DataClassQuery(), CommentsQuery(), CyclicClassDependenciesQuery(), IntensiveCouplingQuery(), DistortedHierarchyQuery(), TraditionBreakerQuery(), SiblingDuplicationQuery(), InternalDuplicationQuery(), ExternalDuplicationQuery(), DivergentChangeQuery(), LongParameterListQuery(), FeatureEnvyQuery(), DataClumpArgumentsQuery(), DataClumpFieldsQuery(), SpeculativeGeneralityProtocolQuery(), MiddleManQuery(), ParallelInheritanceHierarchiesQuery(), SpeculativeGeneralityMethodQuery(), InappropriateIntimacyQuery(), BrainMethodQuery(), SAPBreakerQuery(), SAPBreakerModuleQuery(), UnstableDependenciesQuery(), PrimitiveObsessionQuery(), AlternativeClassesWithDifferentInterfacesQuery(), MissingTemplateMethodQuery(), SwissArmyKnifeQuery(), ComplexClassPaprikaQuery(), IgnoringLowMemoryWarningQuery(), MassiveViewControllerQuery()]
         case "Info":
             queries = [InfoQuery()]
         case "LM":
@@ -88,6 +89,12 @@ class AnalysisController {
             queries = [MissingTemplateMethodQuery()]
         case "SwissArmyKnife":
             queries = [SwissArmyKnifeQuery()]
+        case "ComplexClassPaprika":
+            queries = [ComplexClassPaprikaQuery()]
+        case "IgnoringLowMemoryWarning":
+            queries = [IgnoringLowMemoryWarningQuery()]
+        case "MassiveViewController":
+            queries = [MassiveViewControllerQuery()]
         default:
             queries = [CustomQuery(queryString: queryString)]
         }
@@ -113,7 +120,7 @@ class AnalysisController {
         if let query = queries.popLast() {
              dispatchGroup.enter()
             
-            runquery(query: query) { queryName, results, headers, totalQueries, currentQuery in
+            runquery(query: query) { [unowned self] queryName, results, headers, totalQueries, currentQuery in
                 completition(queryName, results, headers, totalQueries, currentQuery)
                 
                 self.nextQuery(queries: queries, completition: completition)
@@ -125,9 +132,8 @@ class AnalysisController {
     
     func runquery(query: Query, completition: @escaping (String, [[String]]?, [String]?, Int, Int) -> Void) {
         var query = query
-        let dbController = DatabaseController()
-        print("Running query: \(query.string)")
-        dbController.runQueryReturnDataString(transaction: query.string) { json in
+        print("Running query: \(query.appString)")
+        dbController.runQueryReturnDataString(transaction: query.appString) { [unowned self] json in
             self.currentQuery += 1
                     
             print(" --- Query: \(query.name) ---")

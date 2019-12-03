@@ -20,6 +20,21 @@ class DependencyController {
         self.dependencyQueue = FolderUtility.getSubfolders(for: homeURL, suffix: "Sources")
     }
     
+    init(dependencyPaths: [String], homePath: String) {
+        for path in dependencyPaths {
+            if let url = URL(string: path) {
+                if path.contains("Carthage") {
+                    let carthageDependencies = FolderUtility.getSubfolders(for: url, suffix: "Sources")
+                    self.dependencyQueue.append(contentsOf: carthageDependencies)
+                } else {
+                    let cocoaPodDependencies = FolderUtility.getSubfolders(for: url, suffix: "")
+                    self.dependencyQueue.append(contentsOf: cocoaPodDependencies)
+                }
+            }
+        }
+        self.homePath = homePath
+    }
+    
     var resolved: Bool {
         return self.dependencyQueue.isEmpty
     }

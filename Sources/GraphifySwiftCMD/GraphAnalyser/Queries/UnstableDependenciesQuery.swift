@@ -14,7 +14,7 @@ class UnstableDependenciesQuery: Query {
     var json: [String : Any]?
     
     var string: String {
-        return """
+        return  ""/*"""
             match (class:Class)
                 match (other_class:Class)
                 where (other_class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(class) and class <> other_class
@@ -44,7 +44,11 @@ class UnstableDependenciesQuery: Query {
                 where instability_number2 < instability_number
 
                 return comparison_class.app_key as app_key, comparison_class.name as class_name, class.name as referenced_class_name, instability_number2 as instability_number, instability_number as referenced_instability_number
-        """
+        """*/
+    }
+    
+    var appString: String {
+        return ""
     }
     
     var notes: String {

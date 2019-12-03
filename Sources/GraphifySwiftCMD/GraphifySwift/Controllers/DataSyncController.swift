@@ -31,39 +31,43 @@ class DataSyncController {
     func newModule(_ newModule: Module, to app: App, completition: @escaping (Module, Bool) -> Void) {
         var toAdd = 1
         
-        self.databaseController.runQueryReturnId(transaction: newModule.createQuery) { id in
-            guard let id = id else {
-                print("Error: could not add module \(newModule.name)")
-                completition(newModule, false)
-                return
-            }
-            
-            newModule.id = id
-            
-            self.databaseController.runQueryReturnId(transaction: app.ownsModuleQuery(newModule)) { relId in
-                print("AppOwnsModule relationship added")
-            }
-            
-            toAdd -= 1
-            toAdd += newModule.allClasses.count
-            print("classes to be added \(newModule.allClasses.map() {module in module.name})")
-            
-            for classInstance in newModule.allClasses {
-                self.newClass(classInstance, to: newModule) { (newClass, success) in
-                    print("NewClass finished \(classInstance.name)")
-                    toAdd -= 1
-                    print("toAdd \(toAdd)")
-                    
-                    if toAdd == 0 {
-                        completition(newModule, true)
-                        return
+        self.databaseController.runQueryReturnId(transaction: newModule.createQuery) { [weak self] id in
+            if let self = self {
+                guard let id = id else {
+                    print("Error: could not add module \(newModule.name)")
+                    completition(newModule, false)
+                    return
+                }
+                
+                newModule.id = id
+                
+                self.databaseController.runQueryReturnId(transaction: app.ownsModuleQuery(newModule)) { relId in
+                    print("AppOwnsModule relationship added")
+                }
+                
+                toAdd -= 1
+                toAdd += newModule.allClasses.count
+                print("classes to be added \(newModule.allClasses.map() {module in module.name})")
+                
+                for classInstance in newModule.allClasses {
+                    self.newClass(classInstance, to: newModule) { (newClass, success) in
+                        print("NewClass finished \(classInstance.name)")
+                        toAdd -= 1
+                        print("toAdd \(toAdd)")
+                        
+                        if toAdd == 0 {
+                            completition(newModule, true)
+                            return
+                        }
                     }
                 }
-            }
-            
-            if toAdd == 0 {
-                completition(newModule, true)
-                return
+                
+                if toAdd == 0 {
+                    completition(newModule, true)
+                    return
+                }
+            } else {
+                completition(newModule, false)
             }
         }
     }
@@ -73,7 +77,12 @@ class DataSyncController {
         print("+")
         var toAdd = 1
         
-        self.databaseController.runQueryReturnId(transaction: newClass.createQuery) { id in
+        self.databaseController.runQueryReturnId(transaction: newClass.createQuery) { [weak self] id in
+            guard let self = self else {
+                completition(newClass, false)
+                return
+            }
+            
             guard let id = id else {
                 print("Error: could not add class \(newClass.name)")
                 completition(newClass, false)
@@ -166,13 +175,15 @@ class DataSyncController {
         print("doAdditionalStuffAfterAppAdded")
         if addingAdditionalStuff == false {
             addingAdditionalStuff = true
-            addMethodRelationships(app: app) {
-                if self.addingDuplications == false {
-                    self.addingDuplications = true
-                    self.addDuplications(app: app) {
-                        if let finished = self.finished {
-                            finished(self.databaseController.errorDescription)
-                            self.finished = nil
+            addMethodRelationships(app: app) { [weak self] in
+                if let self = self {
+                    if self.addingDuplications == false {
+                        self.addingDuplications = true
+                        self.addDuplications(app: app) {
+                            if let finished = self.finished {
+                                finished(self.databaseController.errorDescription)
+                                self.finished = nil
+                            }
                         }
                     }
                 }
@@ -372,7 +383,11 @@ class DataSyncController {
         
         var toAdd = 1
         
-        self.newApp(app) { app, success in
+        self.newApp(app) { [weak self] app, success in
+            guard let self = self else {
+                return
+            }
+            
             //print("Adding app: \(app.name), success? \(success)")
             //self.nextClassFor(app: app)
             

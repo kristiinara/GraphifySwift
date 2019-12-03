@@ -9,13 +9,17 @@ import Foundation
 
 class CommentsQuery: Query {
     var name = "Comments"
-    var highNumberOfComments = 10
+    var highNumberOfComments = Metrics.veryHighNumberOfComments
 
     var result: String?
     var json: [String : Any]?
     
     var string: String {
         return "match (c:Class) where c.number_of_comments > \(self.highNumberOfComments) return c.app_key as app_key, c.name as class_name, c.number_of_comments as number_of_comments, c.data_string as main_text"
+    }
+    
+    var appString: String {
+        return "match (c:Class) where c.number_of_comments > \(self.highNumberOfComments) return distinct(c.app_key) as app_key, count(distinct c) as number_of_smells"
     }
     
     var notes: String {

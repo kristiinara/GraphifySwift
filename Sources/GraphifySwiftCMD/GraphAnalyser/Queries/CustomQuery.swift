@@ -10,11 +10,13 @@ import Foundation
 class CustomQuery: Query {
     let name = "Custom"
     var string: String
+    var appString: String
     var result: String?
     var json: [String : Any]?
     
     init(queryString: String) {
         self.string = queryString
+        self.appString = queryString
     }
     
     var notes: String {

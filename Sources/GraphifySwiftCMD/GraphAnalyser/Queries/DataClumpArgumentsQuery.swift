@@ -18,7 +18,7 @@ class DataClumpArgumentsQuery: Query {
         return """
         match (app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(class:Class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)
         match
-        (app)-[:APP_OWNS_MODULE]->(other_module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)-[:CLASS_OWNS_VARIABLE]->(other_variable:Variable)
+        (app)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)-[:CLASS_OWNS_VARIABLE]->(other_variable:Variable)
         where class <> other_class and variable.type = other_variable.type and variable.name = other_variable.name
         with app, class, other_class, variable order by variable.name with app, class, other_class, collect(distinct variable.name) as variable_names, count(DISTINCT variable) as variable_count
         with app, class, other_class, variable_names, variable_count order by id(class)
@@ -30,6 +30,21 @@ class DataClumpArgumentsQuery: Query {
         with app, class, collect(distinct variable.name) as new_variable_names, variable_count, variable_names
         with app, collect(distinct class.name) as new_class_names, new_variable_names, variable_count
         return distinct app.app_key as app_key,  new_class_names as class_names, new_variable_names as variable_names, variable_count
+        """
+    }
+    
+    var appString: String {
+        return """
+            match (app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(class:Class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)
+            match
+            (app)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)-[:CLASS_OWNS_VARIABLE]->(other_variable:Variable)
+            where class <> other_class and variable.type = other_variable.type and variable.name = other_variable.name
+            with app, class, other_class, variable order by variable.name
+            with app, class, other_class, collect(distinct variable.name) as variable_names, count(DISTINCT variable) as variable_count
+            with app, class, other_class, variable_names, variable_count order by id(class)
+            with app, collect(distinct class.name) as class_names, variable_names, variable_count
+            where variable_count >= \(highNumberOfRepeatingVariables)
+            return distinct(app.app_key) as app_key, count(distinct class_names) as number_of_smells
         """
     }
     

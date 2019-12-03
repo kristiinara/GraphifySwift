@@ -42,7 +42,12 @@ class DatabaseController {
                 "statement" : transaction
                 ]]
         ]
-        requestWithParameters(parameters) { json in
+        requestWithParameters(parameters) { [unowned self] json in
+//            guard let self = self else {
+//                completition(nil)
+//                return
+//            }
+            
             let success = self.defaultErrorHandling(json: json)
             
             print("----- JSON result (success? \(success)): -----")
@@ -62,7 +67,12 @@ class DatabaseController {
                 "statement" : transaction
                 ]]
         ]
-        requestWithParameters(parameters) { json in
+        requestWithParameters(parameters) { [unowned self] json in
+//            guard let self = self else {
+//                completition(nil)
+//                return
+//            }
+            
             let success = self.defaultErrorHandling(json: json)
             
             print("----- JSON result (success? \(success)): -----")
@@ -83,7 +93,12 @@ class DatabaseController {
                 "statement" : transaction
                 ]]
         ]
-        requestWithParameters(parameters) { json in
+        requestWithParameters(parameters) { [unowned self] json in
+//            guard let self = self else {
+//                completition(nil)
+//                return
+//            }
+            
             print("request finished")
             let success = self.defaultErrorHandling(json: json)
             
@@ -218,9 +233,15 @@ class DatabaseController {
         
         //print("Starting request!")
         //create dataTask using the session object to send data to the server
-        let task = session.dataTask(with: request as URLRequest, completionHandler: { data, response, error in
+        let task = session.dataTask(with: request as URLRequest, completionHandler: { [unowned self] data, response, error in
+            
+//            guard let self = self else {
+//                completition(nil)
+//                return
+//            }
             
             //print("response: \(String(describing: response))")
+            
             
             guard error == nil else {
                 self.errorDescription.append("Networkerror: \(error?.localizedDescription ?? "")")

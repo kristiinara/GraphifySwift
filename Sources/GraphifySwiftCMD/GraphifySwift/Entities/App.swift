@@ -19,6 +19,7 @@ class App : Kind {
     var languageMixed: Bool
     var platform: String
     
+    var numberOfExtensions: Int = 0
     var modules: [Module] = []
     var duplicates: [Duplication] = []
     
@@ -121,6 +122,7 @@ class App : Kind {
     
     var stars: Int = 0
     
+    var inAppStore = false
     //Obscure variables?
     //let numberOfArgb8888 = 0 // what is this? argb8888 means alpha, red, green, blue 32bit
     
@@ -221,6 +223,9 @@ class App : Kind {
         
         return classes
     }
+    
+    var numberOfTests = 0
+    var numberOfUITests = 0
 }
 
 extension App: Node4jInsertable {
@@ -252,7 +257,11 @@ extension App: Node4jInsertable {
         language:'\(self.language)',
         language_mixed:\(self.languageMixed),
         stars:\(self.stars),
-        platform:'\(self.platform)'
+        platform:'\(self.platform)',
+        number_of_extensions:\(self.numberOfExtensions),
+        in_app_store:\(self.inAppStore),
+        number_of_tests:\(self.numberOfTests),
+        number_of_ui_tests:\(self.numberOfUITests)
         }
         """
     }

@@ -9,9 +9,9 @@ import Foundation
 
 class BlobClassQuery : Query {
     let name = "BlobClass"
-    let veryHighLackOfCohesienInMethods = 40
-    let veryHighNumberOfAttributes = 13
-    let veryHighNumberOfMethods = 22
+    let veryHighLackOfCohesienInMethods = Metrics.veryHighLackOfCohesionInMethods
+    let veryHighNumberOfAttributes = Metrics.veryHighNumberOfAttributes
+    let veryHighNumberOfMethods = Metrics.veryHighNumberOfMethods
     
     var string: String {
         return """
@@ -20,6 +20,16 @@ class BlobClassQuery : Query {
             cl.number_of_methods >  \(self.veryHighNumberOfMethods) AND
             cl.number_of_attributes > \(self.veryHighNumberOfMethods)
         RETURN cl.app_key as app_key, cl.name as class_name, cl.lack_of_cohesion_in_methods as lack_of_cohesion_in_methods, cl.number_of_methods as number_of_methods, cl.number_of_attributes as number_of_attributes, cl.data_string as main_text
+        """
+    }
+    
+    var appString: String {
+        return """
+        MATCH (cl:Class) WHERE
+            cl.lack_of_cohesion_in_methods > \(self.veryHighLackOfCohesienInMethods) AND
+            cl.number_of_methods >  \(self.veryHighNumberOfMethods) AND
+            cl.number_of_attributes > \(self.veryHighNumberOfMethods)
+        RETURN distinct cl.app_key as app_key, count(distinct cl) as number_of_smells
         """
     }
     

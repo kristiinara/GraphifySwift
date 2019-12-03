@@ -9,9 +9,9 @@ import Foundation
 
 class LazyClass: Query {
     var name = "LazyClass"
-    let mediumNumberOfInstructions = 50
-    let lowComplexityMethodRatio = 2
-    let mediumCouplingBetweenObjectClasses = 20
+    let mediumNumberOfInstructions = Metrics.medianNumberOfInstructionsClass
+    let lowComplexityMethodRatio = Metrics.LowComplexityMethodRatio
+    let mediumCouplingBetweenObjectClasses = Metrics.medianCouplingBetweenObjectClasses
     let numberOfSomeDepthOfInheritance = 1
     
     var result: String?
@@ -19,6 +19,10 @@ class LazyClass: Query {
     
     var string: String {
         return "MATCH (c:Class) where c.number_of_methods = 0 or (c.number_of_instructions < \(self.mediumNumberOfInstructions) and  c.class_complexity/c.number_of_methods <= \(self.lowComplexityMethodRatio)) or (c.coupling_between_object_classes < \(self.mediumCouplingBetweenObjectClasses) and c.depth_of_inheritance > \(self.numberOfSomeDepthOfInheritance)) return c.app_key as app_key, c.name as class_name, c.data_string as main_text"
+    }
+    
+    var appString: String {
+        return "MATCH (c:Class) where c.number_of_methods = 0 or (c.number_of_instructions < 50 and  c.class_complexity/c.number_of_methods <= 2) or (c.coupling_between_object_classes < 20 and c.depth_of_inheritance > 1) return distinct(c.app_key) as app_key, count(distinct c) as number_of_smells"
     }
     
     var notes: String {

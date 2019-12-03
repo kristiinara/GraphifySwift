@@ -9,14 +9,18 @@ import Foundation
 
 class TraditionBreakerQuery: Query {
     var name = "TraditionBreaker"
-    let highNumberOfMethodsAndAttributes = 20
-    let lowNumberOfmethodsAndAttributes = 5
+    let highNumberOfMethodsAndAttributes = Metrics.veryHighNumberOfMethodsAndAttributes
+    let lowNumberOfmethodsAndAttributes = Metrics.lowNumberOfMethodsAndAttributes
     
     var result: String?
     var json: [String : Any]?
     
     var string: String {
         return "match (c:Class)-[r:EXTENDS]->(parent:Class) where not ()-[:EXTENDS]->(c) and c.number_of_methods+c.number_of_attributes < \(self.lowNumberOfmethodsAndAttributes) and parent.number_of_methods + parent.number_of_attributes >= \(self.highNumberOfMethodsAndAttributes) return c.app_key as app_key, c.name as class_name, parent.name as parent_class_name"
+    }
+    
+    var appString: String {
+        return "match (c:Class)-[r:EXTENDS]->(parent:Class) where not ()-[:EXTENDS]->(c) and c.number_of_methods+c.number_of_attributes < \(self.lowNumberOfmethodsAndAttributes) and parent.number_of_methods + parent.number_of_attributes >= \(self.highNumberOfMethodsAndAttributes) return distinct(c.app_key) as app_key, count(distinct c) as number_of_smells"
     }
     
     var notes: String {

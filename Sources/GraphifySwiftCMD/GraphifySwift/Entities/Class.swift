@@ -167,9 +167,10 @@ class Class : Kind {
     // Added variables:
     //TODO: add instrutions from variables as well
     var numberOfInstructions: Int {
-        return self.allMethods.reduce(0) { res, method in
+        var methodInstructions = self.allMethods.reduce(0) { res, method in
             return res + method.numberOfInstructions
         }
+        return methodInstructions + self.allVariables.count
     }
     
     var numberOfComments: Int {

@@ -23,7 +23,8 @@ class SourceFileIndexAnalysisController {
     var project: Project?
     
     let dependencyController: DependencyController
-    let dataSyncController = DataSyncController()
+    //let dataSyncController = DataSyncController()
+    var dataSyncController = DataSyncController()
     
     var fileQueue: [URL]
     var allPaths: [String]
@@ -41,8 +42,6 @@ class SourceFileIndexAnalysisController {
     var allVariables: [String: Variable] = [:]
     
     var allModules: [String: Module] = [:]
-    
-    var classesWithEmptyType: [Class] = []
     
     var errorDesctiptions: [String] = []
     
@@ -82,7 +81,7 @@ class SourceFileIndexAnalysisController {
         
         self.dependencyController = DependencyController(homeURL: dependencyURL)
         
-        self.fileQueue = FolderUtility.getFileQueue(for: homeURL, ignore: ["Carthage", "Pods"])
+        self.fileQueue = FolderUtility.getFileQueue(for: homeURL, ignore: ["Carthage", "Pods", "Frameworks"])
         self.allPaths = self.fileQueue.map() { url in return url.path }
     }
     
@@ -97,7 +96,7 @@ class SourceFileIndexAnalysisController {
         
         self.dependencyController = DependencyController(homeURL: dependencyURL)
         
-        self.fileQueue = FolderUtility.getFileQueue(for: homeURL, ignore: ["Carthage", "Pods"])
+        self.fileQueue = FolderUtility.getFileQueue(for: homeURL, ignore: ["Carthage", "Pods", "Frameworks"])
         self.allPaths = self.fileQueue.map() { url in return url.path }
         
         self.appName = homeURL.lastPathComponent
@@ -117,6 +116,7 @@ class SourceFileIndexAnalysisController {
         while self.fileQueue.count > 0 {
             let fileUrl = self.fileQueue.remove(at: 0)
             if fileUrl.path.hasSuffix(".swift") {
+                var path = fileUrl.path
                 let result = indexFile(at: fileUrl.path)
                 
                 let objects = analyseResult(result: result.structure, dataString: result.dataString)
@@ -156,15 +156,17 @@ class SourceFileIndexAnalysisController {
 //        print("jscpd report: \(reportPath)")
 //        let duplicationParser = DuplicationParser(path: reportPath.path) //TODO: maybe pass url instead of String?
         
-        let duplicationParser = DuplicationParser(homePath: homeURL.path, ignore: [".build/**","**/Carthage/**", "**/Pods/**"])
-        duplicationParser.addDuplicatesToApp(app: app)
+        //let duplicationParser = DuplicationParser(homePath: homeURL.path, ignore: [".build/**","**/Carthage/**", "**/Pods/**"])
+        //duplicationParser.addDuplicatesToApp(app: app)
         
         ObjectPrinter.printApp(app)
         
         if insertToDatabase == true {
-            self.dataSyncController.finished = { descriptions in
-                self.errorDesctiptions.append(contentsOf: descriptions)
-                self.project?.errorDescriptions = self.errorDesctiptions
+            self.dataSyncController.finished = { [weak self] descriptions in
+                if let this = self {
+                    this.errorDesctiptions.append(contentsOf: descriptions)
+                    this.project?.errorDescriptions = this.errorDesctiptions
+                }
                 finished()
             }
             self.dataSyncController.sync(app: app)
@@ -243,7 +245,7 @@ class SourceFileIndexAnalysisController {
                 return (structure: result, dataString: fileContents)
             } catch let error {
                 self.errorDesctiptions.append(error.localizedDescription)
-                print("Could not index file: \(path)")
+                print("Could not index file: \(path), error: \(error.localizedDescription)")
             }
         }
         return (structure: [:], dataString: "")
@@ -251,20 +253,23 @@ class SourceFileIndexAnalysisController {
     
     func resolveDependencies(with filePath: String) {
         while dependencyController.resolved == false {
-            dependencyController.tryNextDependency() { dependencyPaths in
-                do {
-                    var paths = self.allPaths
-                    paths.append(contentsOf: dependencyPaths)
-                    
-                    let _ = try makeIndexRequest(at: filePath, filePaths: paths)
-                    print("Resolving dependency successful")
-                    return true
-                    
-                } catch let error {
-                    self.errorDesctiptions.append(error.localizedDescription)
-                    print("Resolving dependency failed")
-                    return false
+            dependencyController.tryNextDependency() { [weak self] dependencyPaths in
+                if let self = self {
+                    do {
+                        var paths = self.allPaths
+                        paths.append(contentsOf: dependencyPaths)
+                        
+                        let _ = try makeIndexRequest(at: filePath, filePaths: paths)
+                        print("Resolving dependency successful")
+                        return true
+                        
+                    } catch let error {
+                        self.errorDesctiptions.append(error.localizedDescription)
+                        print("Resolving dependency failed")
+                        return false
+                    }
                 }
+                return false
             }
         }
     }
@@ -549,11 +554,11 @@ private extension SourceFileIndexAnalysisController {
             let kind = structure["key.kind"] as? String
             let name = structure["key.name"] as? String
             
-            print("First level: \(kind) - \(name)")
+            //print("First level: \(kind) - \(name)")
             
             //we found the correct object
             if kind == object.kind && name == object.name {
-                print("-- match with object!")
+                //print("-- match with object!")
                 if let children = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
                     for child in children {
                         let childName = child["key.name"] as? String
@@ -774,6 +779,15 @@ extension SourceFileIndexAnalysisController {
             app.stars = stars
         }
         
+        if let project = self.project {
+            if project.appstoreLink != nil {
+                app.inAppStore = true
+            }
+        }
+        
+        let tests = FolderUtility.getNumberOfTests(for: homeURL, ignore: ["Carthage", "Pods", "Frameworks"])
+        app.numberOfTests = tests.tests
+        app.numberOfUITests = tests.uitests
         
         let floatingExtensions = self.addObjectsToApp(objects: objects, app: app)
         // try to add floating extensions again, in the hope that corresponding classes were already added
@@ -782,12 +796,16 @@ extension SourceFileIndexAnalysisController {
         print("floatingExtensions: \(floatingExtensions.map() { object in object.name } )")
         print("stillFloating: \(stillFloating.map() { object in object.name } )")
         
+        let names = stillFloating.map() { object in object.name }
+        
+        app.numberOfExtensions = (Set(names)).count
+        
         return app
     }
     
     func addObjectsToApp(objects: [FirstLevel], app: App) -> [FirstLevel] {
         var floatingExtensions: [FirstLevel] = []
-        var classesWithEmptyType: [Class] = []
+        var classesWithEmptyType: [String: Class] = [:]
         
         for object in objects {
             var classInstance: Class?
@@ -883,7 +901,7 @@ extension SourceFileIndexAnalysisController {
                 
                 //TODO: should we also somehow add stuff about extensions?
                 if let dataString = object.dataString {
-                    print("Class entity.dataString: \(dataString)")
+                    //print("Class entity.dataString: \(dataString)")
                     classInstance?.dataString = dataString
                 }
             }
@@ -898,7 +916,6 @@ extension SourceFileIndexAnalysisController {
                     }
                 }
                 
-                //TODO: make distinction between instance, class, static
                 var methods: [Function] = []
                 var variables: [Variable] = []
                 
@@ -945,7 +962,7 @@ extension SourceFileIndexAnalysisController {
                                 if let type = entity.type {
                                     method.returnType = type
                                 } else {
-                                    classesWithEmptyType.append(classInstance)
+                                    classesWithEmptyType[classInstance.name] = classInstance
                                 }
                             }
                         }
@@ -964,7 +981,7 @@ extension SourceFileIndexAnalysisController {
                                 if let type = entity.type {
                                     variable.type = type
                                 } else {
-                                    classesWithEmptyType.append(classInstance)
+                                    classesWithEmptyType[classInstance.name] = classInstance
                                 }
                                 
                                 variables.append(variable) //TODO: add stuff into constructor
@@ -992,8 +1009,9 @@ extension SourceFileIndexAnalysisController {
             }
         }
         
-        for classInstance in classesWithEmptyType {
-            print("emtpy type in \(classInstance.name)")
+        for classInstancePair in classesWithEmptyType {
+            let classInstance = classInstancePair.value
+            //print("emtpy type in \(classInstance.name)")
             //TODO: make doc request --> extract type info (maybe something additional as well?
             var paths = self.allPaths
             paths.append(contentsOf: self.dependencyController.successfullPaths)
@@ -1025,18 +1043,18 @@ extension SourceFileIndexAnalysisController {
     func addInfoFromDocResult(classInstance: Class, result: [String: SourceKitRepresentable]) {
         if let children = result["key.substructure"] as? [[String: SourceKitRepresentable]] {
             for substructure in children {
-                print("substructure")
+                //print("substructure")
                 //let kind = substructure["key.kind"] as? String
                 if let name = substructure["key.name"] as? String {
-                    print("name: \(name)")
+                    //print("name: \(name)")
                     if name == classInstance.name {
                         if let entities = substructure["key.substructure"] as? [[String: SourceKitRepresentable]] {
                             outerloop: for entity in entities {
                                 if let entityName = entity["key.name"] as? String,
                                     let kind = entity["key.kind"] as? String,
                                     let entityType = entity["key.typename"] as? String {
-                                    print("entityName: \(entityName)")
-                                    print("entityType: \(entityType)")
+                                    //print("entityName: \(entityName)")
+                                    //print("entityType: \(entityType)")
                                     
                                     let variableKinds = [ClassVariable.kittenKey,
                                         LocalVariable.kittenKey,
@@ -1052,7 +1070,7 @@ extension SourceFileIndexAnalysisController {
                                         for variable in classInstance.allVariables {
                                             if variable.name == entityName && variable.type == "" {
                                                 variable.type = entityType
-                                                print("found variable")
+                                                //print("found variable")
                                                 continue outerloop
                                             }
                                         }
@@ -1062,7 +1080,7 @@ extension SourceFileIndexAnalysisController {
                                         for method in classInstance.allMethods {
                                             if method.name == entityName && method.returnType == "" {
                                                 method.returnType = entityType
-                                                print("found variable")
+                                                //print("found variable")
                                                 continue outerloop
                                             }
                                         }
@@ -1078,40 +1096,40 @@ extension SourceFileIndexAnalysisController {
     
     func findReferences(app: App) {
         //TODO: do this also for structs and class and static methods
-        print("findReferences for \(app.name)")
-        print("Allclasses: \(app.classes)")
+        //print("findReferences for \(app.name)")
+        //print("Allclasses: \(app.classes)")
         for classInstance in app.allClasses {
-            print("References for class: \(classInstance.name)")
+            //print("References for class: \(classInstance.name)")
             for instanceMethod in classInstance.allMethods {
-                print("References for method: \(instanceMethod.name)")
+                //print("References for method: \(instanceMethod.name)")
                 for reference in instanceMethod.references {
                     if let method = self.allMethods[reference] {
                         instanceMethod.referencedMethods.append(method)
                         method.methodReferences.append(instanceMethod)
-                        print("Found method: \(method.name) - usr: \(reference)")
+                        //print("Found method: \(method.name) - usr: \(reference)")
                     }
                     
                     if let variable = self.allVariables[reference] {
                         instanceMethod.referencedVariables.append(variable)
                         variable.methodReferences.append(instanceMethod)
-                        print("Found variable: \(variable.name) - usr: \(reference)")
+                        //print("Found variable: \(variable.name) - usr: \(reference)")
                     }
                 }
             }
             
             //Add parents and extendedInterfaces
-            print("Fiding references for parentUsrs: \(classInstance.parentUsrs)")
-            print("AllClasses: \(self.allClasses)")
+            //print("Fiding references for parentUsrs: \(classInstance.parentUsrs)")
+            //print("AllClasses: \(self.allClasses)")
             for usr in classInstance.parentUsrs {
                 if let object = self.allClasses[usr] {
                     if let parentClass = object as? ClassInstance {
-                        print("class \(parentClass.name) is classInstance")
+                        //print("class \(parentClass.name) is classInstance")
                         classInstance.inheritedClasses.append(parentClass)
                     } else if let parentProtocol = object as? Protocol {
-                        print("class \(parentProtocol.name) is protocol")
+                        //print("class \(parentProtocol.name) is protocol")
                         classInstance.extendedInterfaces.append(parentProtocol)
                     } else if let parentStruct = object as? Struct {
-                        print("class \(parentStruct.name) is struct")
+                        //print("class \(parentStruct.name) is struct")
                         classInstance.inheritedClasses.append(parentStruct)
                     }
                 } else if usr.contains("c:objc(cs)") {
