@@ -45,7 +45,7 @@ class DataClumpFieldsQuery: Query {
             with app, class, other_class, method, other_method, argument order by other_method.name
             with app, class, other_class, method, other_method, argument  order by argument.name
             with collect(argument.name) as argument_names, count(argument.name) as argument_count, method, other_method, app, class
-            where argument_count >= 3
+            where argument_count >= \(self.highNumberOfRepeatingArguments)
             with collect(other_method.name)+ method.name as method_names, collect(id(other_method)) + id(method) as method_ids, count(distinct other_method) as method_count,  method, app, argument_names, argument_count, class
             with collect(class.name) as class_names, method_names, app, argument_names, argument_count, method_ids, method_count
             match

@@ -30,7 +30,7 @@ class PrimitiveObsessionQuery: Query {
         match (class:Class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)<-[use:USES]-(method:Method)
         where not (variable)-[:IS_OF_TYPE]->()
         with collect(distinct method.name) as uses, count(distinct method) as use_count, variable, class
-        where use_count > 3
+        where use_count > \(self.primitiveVariableUsedTooManyTimes)
 
         return distinct(class.app_key) as app_key, count(distinct variable) as number_of_smells
         """

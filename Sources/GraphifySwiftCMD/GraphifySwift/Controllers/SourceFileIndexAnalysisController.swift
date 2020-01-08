@@ -156,8 +156,8 @@ class SourceFileIndexAnalysisController {
 //        print("jscpd report: \(reportPath)")
 //        let duplicationParser = DuplicationParser(path: reportPath.path) //TODO: maybe pass url instead of String?
         
-        //let duplicationParser = DuplicationParser(homePath: homeURL.path, ignore: [".build/**","**/Carthage/**", "**/Pods/**"])
-        //duplicationParser.addDuplicatesToApp(app: app)
+        let duplicationParser = DuplicationParser(homePath: homeURL.path, ignore: [".build/**","**/Carthage/**", "**/Pods/**"])
+        duplicationParser.addDuplicatesToApp(app: app)
         
         ObjectPrinter.printApp(app)
         

@@ -8,7 +8,7 @@
 import Foundation
 
 struct Metrics {
-    
+    /*
     // ALL old apps
     // class related
     static let veryHighNumberOfAttributes = 11
@@ -39,7 +39,7 @@ struct Metrics {
     
     // interface related
     static let veryHighNumberOfMethodsInterface = 3.5
-    
+    */
     
     /*
     // MATCHING old apps
@@ -139,6 +139,73 @@ struct Metrics {
     // interface related
     static let veryHighNumberOfMethodsInterface = 5
      
+    */
+    
+    
+    // all + actual metrics from article
+    // MATCHING old apps
+    // class related
+    static let veryHighNumberOfAttributes = 15 // article code
+    static let veryLowNumberOfAttributes = 0
+    static let veryHighNumberOfMethods = 18.5 // article code
+    static let veryLowNumberOfMethods = 0
+    static let veryHighNumberOfInstructionsClass = 375 // article code
+    static let medianNumberOfInstructionsClass = 22
+    static let veryHighNumberOfComments = 29.5
+    static let veryHighClassComplexity = 41.5 // article code
+    static let LowComplexityMethodRatio = 1
+    static let medianCouplingBetweenObjectClasses = 0
+    static let veryHighNumberOfMethodsAndAttributes = 24.5
+    static let lowNumberOfMethodsAndAttributes = 2
+    static let veryHighLackOfCohesionInMethods = 22.5
+    
+    // method related
+    static let veryHighCyclomaticComplexity = 6
+    static let highCyclomaticComplexity = 3
+    static let veryHighNumberOfCalledMethods = 2.5
+    static let veryHighNumberOfCallers = 0
+    static let veryHighNumberOfInstructionsMethod = 30.5 // article code
+     static let lowNumberOfInstructionsMethod = 3
+    static let highNumberOfInstructionsMethod = 15
+    static let veryHighNumberOfParameters = 2.5
+    static let veryHighNumberOfChainedMessages = 5
+    static let veryHighNumberOfSwitchStatements = 0
+       
+    // interface related
+    static let veryHighNumberOfMethodsInterface = 6 // article code
+    
+    
+    /*
+    // Metrics new apps
+    // class related
+    static let veryHighNumberOfAttributes = 13.5 //higher
+    static let veryLowNumberOfAttributes = 0
+    static let veryHighNumberOfMethods = 13.5
+    static let veryLowNumberOfMethods = 0
+    static let veryHighNumberOfInstructionsClass = 152.5 //slightly lower
+    static let medianNumberOfInstructionsClass = 20 //slighly lower
+    static let veryHighNumberOfComments = 29.5 // slightly lower
+    static let veryHighClassComplexity = 33.5 //slighly lower
+    static let LowComplexityMethodRatio = 1
+    static let medianCouplingBetweenObjectClasses = 0
+    static let veryHighNumberOfMethodsAndAttributes = 24.5 // higher
+    static let lowNumberOfMethodsAndAttributes = 2
+    static let veryHighLackOfCohesionInMethods = 14.5 //lower
+    
+    // method related
+    static let veryHighCyclomaticComplexity = 6
+    static let highCyclomaticComplexity = 3
+    static let veryHighNumberOfCalledMethods = 2.5
+    static let veryHighNumberOfCallers = 2.5 //higher
+    static let veryHighNumberOfInstructionsMethod = 30.5 //slighly lower
+    static let highNumberOfInstructionsMethod = 14 //slighly lower
+    static let lowNumberOfInstructionsMethod = 3
+    static let veryHighNumberOfParameters = 2.5
+    static let veryHighNumberOfChainedMessages = 2.5 // higher
+    static let veryHighNumberOfSwitchStatements = 0 // will not work!
+    
+    // interface related
+    static let veryHighNumberOfMethodsInterface = 5 //higher
     */
     
     // other metrics

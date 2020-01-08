@@ -15,6 +15,14 @@ class DataSyncController {
     var addingAdditionalStuff = false
     var addingDuplications = false
     
+    func reset() {
+        self.classes = []
+        self.finished = nil
+        self.addingAdditionalStuff = false
+        self.addingDuplications = false
+        self.databaseController.errorDescription = []
+    }
+    
     func newApp(_ app: App, completition: @escaping (App, Bool) -> Void) {
         databaseController.runQueryReturnId(transaction: app.createQuery) { id in
             print("Added new app")

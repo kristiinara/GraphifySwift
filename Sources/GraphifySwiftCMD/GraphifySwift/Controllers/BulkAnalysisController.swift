@@ -99,12 +99,12 @@ class BulkAnalysisController {
             print("Analyse: ")
             print("    \(nextProject.name)")
             print("    \(nextProject.repoPath)")
-            let listOfApps = ["ABU", "AlzPrevent", "Analog Synth X", "Aozora", "AppLove", "Awesome Swift iOS App", "Brave", "Calculator by mukeshthawani", "Chats", "Chess", "DeckRocket", "Dono", "Ello", "EmotionNote Diary", "EventBlankApp", "Firefox", "Furni", "Google Feud", "GrandCentralBoard", "Gulps", "Hack Cancer Hackathon", "HomeKit-Demo", "Keinex tech blog", "Lister", "LogU", "Meme Maker", "NumberPad", "Paws", "Post Manager", "Potatso", "Protocol-Oriented MVVM Examples", "RWDevCon", "Reusable Code", "Review Time", "Rocket.Chat", "Savings Assistant", "SceneKitFrogger", "Siesta GitHub Browser", "Soon", "SoundCloudSwift", "Swift-Demos", "SwiftTextClock", "Tweetometer", "WWDC Students", "WatchKit-Apps", "Wire", "Yep", "iCepa", "iOS 10 Day by Day", "iOS 9 Sampler", "tpg offline", "try!"]
-            
-            if !listOfApps.contains(nextProject.name) {
-                analyseNext()
-                dispatchGroup.leave()
-            } else  {
+//            let listOfApps = ["ABU", "AlzPrevent", "Analog Synth X", "Aozora", "AppLove", "Awesome Swift iOS App", "Brave", "Calculator by mukeshthawani", "Chats", "Chess", "DeckRocket", "Dono", "Ello", "EmotionNote Diary", "EventBlankApp", "Firefox", "Furni", "Google Feud", "GrandCentralBoard", "Gulps", "Hack Cancer Hackathon", "HomeKit-Demo", "Keinex tech blog", "Lister", "LogU", "Meme Maker", "NumberPad", "Paws", "Post Manager", "Potatso", "Protocol-Oriented MVVM Examples", "RWDevCon", "Reusable Code", "Review Time", "Rocket.Chat", "Savings Assistant", "SceneKitFrogger", "Siesta GitHub Browser", "Soon", "SoundCloudSwift", "Swift-Demos", "SwiftTextClock", "Tweetometer", "WWDC Students", "WatchKit-Apps", "Wire", "Yep", "iCepa", "iOS 10 Day by Day", "iOS 9 Sampler", "tpg offline", "try!"]
+//
+//            if !listOfApps.contains(nextProject.name) {
+//                analyseNext()
+//                dispatchGroup.leave()
+//            } else  {
             
             
             let success = cloneIfNotAvailable(project: nextProject) { success, project in
@@ -124,6 +124,8 @@ class BulkAnalysisController {
                         nextProject.appKey = appKey
 
                         do {
+                            self.dataSyncController.reset()
+                            
                             let controller = try SourceFileIndexAnalysisController(project: nextProject)
                             controller.useModules = true
                             controller.dataSyncController = self.dataSyncController
@@ -156,9 +158,9 @@ class BulkAnalysisController {
             //}
             }
             
-        } else {
-            self.dispatchGroup.leave()
-        }
+//        } else {
+//            self.dispatchGroup.leave()
+//        }
     }
     
     func parseDictionary(json: [String:Any]?) -> [Project] {

@@ -18,7 +18,7 @@ class IgnoringLowMemoryWarningQuery: Query {
     }
     
     var appString: String {
-        return "match (class:Class) where class.name contains 'ViewController' and (class)-[:CLASS_OWNS_METHOD]->(:Method{name:'didReceiveMemoryWarning()'}) return distinct(class.app_key) as app_key,count(distinct class) as number_of_smells"
+        return "match (class:Class) where class.name contains 'ViewController' and not (class)-[:CLASS_OWNS_METHOD]->(:Method{name:'didReceiveMemoryWarning()'}) return distinct(class.app_key) as app_key,count(distinct class) as number_of_smells"
     }
     
     var notes: String {

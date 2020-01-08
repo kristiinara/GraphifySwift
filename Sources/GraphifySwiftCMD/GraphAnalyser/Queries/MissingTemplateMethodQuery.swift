@@ -89,7 +89,7 @@ class MissingTemplateMethodQuery: Query {
                     count(distinct common) as common_count,
                     class, other_class, method, other_method
                where
-                    common_count >= 5
+                    common_count >= \(self.minimalCommonMethodAndVariableCount)
                with
                     [common in commons | class.name+"."+common.name] as common_names,
                     class, other_class, method, other_method, common_count
@@ -100,7 +100,7 @@ class MissingTemplateMethodQuery: Query {
                     class.app_key as app_key,
                     common_names, common_count
             where
-                method_count >= 2
+                method_count >= \(self.minimalMethodCount)
         return distinct(app_key), count(distinct common_names) as number_of_smells
         """
     }

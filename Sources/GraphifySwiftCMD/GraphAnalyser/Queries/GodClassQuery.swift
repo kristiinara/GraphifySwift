@@ -53,11 +53,11 @@ class GodClassQuery: Query {
         where variable_count >= 1
         with class, pair_count, count(distinct [method, other_method]) as connected_method_count
         with class, connected_method_count*0.1/pair_count as class_cohesion, connected_method_count, pair_count
-        where class_cohesion < 0.3 and class.class_complexity >= 40
+        where class_cohesion < \(self.tightClassCohesionFraction) and class.class_complexity >= \(self.veryHighClassComplexity)
         optional match (class)-[:CLASS_OWNS_METHOD]->(m:Method)-[:USES]->(variable:Variable)<-[:CLASS_OWNS_VARIABLE]-(other_class:Class)
         where class <> other_class
         with class, class_cohesion, connected_method_count, pair_count, count(distinct variable) as foreign_variable_count
-        where foreign_variable_count >= 2
+        where foreign_variable_count >= \(self.fewAccessToForeignData)
         return distinct(class.app_key) as app_key, count(distinct class) as number_of_smells
         """
     }

@@ -19,7 +19,7 @@ class SwissArmyKnifeQuery: Query {
     }
     
     var appString: String {
-        return "MATCH (cl:Class) WHERE cl.is_interface AND cl.number_of_methods > 13 RETURN distinct(cl.app_key) as app_key, count(distinct cl) as number_of_smells"
+        return "MATCH (cl:Class) WHERE cl.is_interface AND cl.number_of_methods > \(veryHighNumberOfMethods) RETURN distinct(cl.app_key) as app_key, count(distinct cl) as number_of_smells"
     }
     
     var notes: String {
