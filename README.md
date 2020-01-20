@@ -1774,10 +1774,7 @@ From "understanding code smells in android applications": "Stable Abstraction Br
 
    	RETURN 
    		comparison_class.app_key as app_key, 
-   		comparison_class.name as class_name, 
-   		class.name as referenced_class_name, 
-   		instability_number2 as instability_number, 
-   		instability_number as referenced_instability_number
+   		count(distinct comparison_class) as number_of_smells
   
 ##### Parameters  
 \-
