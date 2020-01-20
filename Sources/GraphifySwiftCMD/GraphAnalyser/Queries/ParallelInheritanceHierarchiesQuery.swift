@@ -9,7 +9,7 @@ import Foundation
 
 class ParallelInheritanceHierarchiesQuery: Query {
     var name = "ParallelInheritanceHierarchies"
-    var prefixLength = 1
+    var prefixLength = 3
     var minimumNumberOfClassesInHierarcy = 5
     
     var result: String?

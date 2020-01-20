@@ -1335,38 +1335,38 @@ definition for data clumps:
 
 ##### Query string
 
-    MATCH 
-    	(parent:Class)<-[:MODULE_OWNS_CLASS]-(:Module)<-[:APP_OWNS_MODULE]-(app:App)
-    MATCH 
-    	(other_app:App)-[:APP_OWNS_MODULE]->(:Module)-[:MODULE_OWNS_CLASS]->(other_parent:Class)
-	WHERE 
-		app = other_app
+   	MATCH 
+   		(parent:Class)<-[:MODULE_OWNS_CLASS]-(:Module)<-[:APP_OWNS_MODULE]-(app:App)
+  	MATCH 
+  		(app)-[:APP_OWNS_MODULE]->(:Module)-[:MODULE_OWNS_CLASS]->(other_parent:Class)
+  	WHERE 
+  		parent <> other_parent
 	MATCH 
-		path = (class:Class)-[:EXTENDS*]->(parent) 
-	MATCH 
-		other_path = (other_class:Class)-[:EXTENDS*]->(other_parent)
-	WHERE 
-		parent <> other_parent and 
-		length(path) = length(other_path) and 
-		length(path) > 0 and 
-		class.name starts with substring(other_class.name, 0, prefixLength) and 
-		parent.name starts with substring(other_parent.name, 0, prefixLength) 
-	WITH 
-		collect(distinct [n in nodes(path) | n.name ]) as first, 
-		collect(distinct [n in nodes(other_path) | n.name]) as second, 
-		parent, 
-		other_parent
-	WITH 
-		REDUCE(output = [], r IN first | output + r) as first_names, 
-		REDUCE(output = [], r IN second | output + r) as second_names, 
-		parent, 
-		other_parent
-	UNWIND first_names as first_name
-	WITH 
-		collect(distinct first_name) as first_names, 
-		second_names, 
-		parent, 
-		other_parent
+		path = (class:Class)-[:EXTENDS*]->(parent)
+  	MATCH 
+  		other_path = (other_class:Class)-[:EXTENDS*]->(other_parent)
+   	WHERE 
+   		length(path) = length(other_path) and 
+   		length(path) > 0 and 
+   		class.name starts with substring(other_class.name, 0, \(self.prefixLength)) 
+   		and parent.name starts with substring(other_parent.name, 0, \(self.prefixLength))
+ 	WITH 
+ 		collect(distinct [n in nodes(path) | n.name ]) as first, 
+ 		collect(distinct [n in nodes(other_path) | n.name]) as second, 
+ 		parent, 
+ 		other_parent
+ 	WITH 
+ 		REDUCE(output = [], r IN first | output + r) as first_names, 
+ 		REDUCE(output = [], r IN second | output + r) AS second_names, 
+ 		parent, 
+ 		other_parent
+ 	UNWIND 
+ 		first_names as first_name
+  	WITH 
+  		collect(distinct first_name) as first_names, 
+  		second_names, 
+  		parent, 
+  		other_parent
 	UNWIND 
 		second_names as second_name
 	WITH 
@@ -1374,22 +1374,18 @@ definition for data clumps:
 		first_names, 
 		parent, 
 		other_parent
-	WHERE 
-		size(first_names) >= minimumNumberOfClassesInHierarchy
-		size(second_names) >= minimumNumberOfClassesInHierarcy
-	RETURN 
-		parent.app_key as app_key, 
-		parent.name as parent_class_name, 
-		other_parent.name as other_parent_class_name , 
-		first_names as first_class_names, 
-		second_names as second_class_names, 
-		size(first_names) as number_of_classes
+  	WHERE 
+  		size(first_names) >= minimumNumberOfClassesInHierarcy and 
+  		size(second_names) >= minimumNumberOfClassesInHierarcy
+  	RETURN 
+  		distinct(parent.app_key) as app_key, 
+  		count(parent)/2 as number_of_smells
   
 ##### Parameters  
-Queries parallel hierarchy trees for classes that start with the same prefixes. Prefix length currently set to 1, minimumNumberOfClassesInHierarchy set to 5.
+Queries parallel hierarchy trees for classes that start with the same prefixes. Prefix length currently set to 3, minimumNumberOfClassesInHierarchy set to 5.
 
 ##### How are parameters determined
-For prefix length we should try this query out on a big number of projects and check for false positives, 1 might be an acceptable number. Minimum number of classes in hierarchy is currently set to 5, we should follow the same process as for prefix length. 
+For prefix length we tried this query out on a big number of projects and checked for false positives, 3 seemed be an acceptable number. Minimum number of classes in hierarchy is currently set to 5. 
 
 ##### Implementation details 
 It is mostly a historical smell, meaning that it relies on how the code evolves, but it has been suggested that detection should also be possible without historical data if we also look at class prefixes. 
