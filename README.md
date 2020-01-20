@@ -1983,15 +1983,14 @@ Fowler: "Use Rename Method on any methods that do the same thing but have differ
 		cl.is_interface AND 
 		cl.number_of_methods > veryHighNumberOfMethods 
 	RETURN 
-		cl.app_key as app_key, 
-		cl.name as class_name, 
-		cl.number_of_methods as number_of_methods
+		distinct(cl.app_key) as app_key, 
+		count(distinct cl) as number_of_smells
   
 ##### Parameters  
 Queries classes that are interfaces (i.e. protocols) that have a very high number of methods. 
 
 ##### How are parameters determined
-Very high number of methods should be determined statistically using the box-plot technique. Currently value set to 13.
+Very high number of methods should be determined statistically using the box-plot technique. Currently value set to 5.
 
 ##### Implementation details 
 \-
