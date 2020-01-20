@@ -672,15 +672,14 @@ This definition for intensive coupling comes from https://www.simpleorientedarch
     MATCH (c:Class) 
     WHERE c.depth_of_inheritance > shortTermMemoryCap  
     RETURN 
-    	c.app_key as app_key, 
-    	c.name as class_name, 
-    	c.depth_of_inheritance as dept_of_inheritance
+    	distinct(c.app_key) as app_key, 
+    	count(distinct c) as number_of_smells
   
 ##### Parameters  
 Queries classes that have an unusually deep inheritance tree. Finds classes with depth of inheritance larger than the short term memory cap.
 
 ##### How are parameters determined
-Short term memory cap is currently set to 6. Referenced article says that this is commonly agreed on. Probably needs additional investigation or trying out different values. 
+Short term memory cap is currently set to 7. Referenced article says that this is commonly agreed on. Probably needs additional investigation or trying out different values. 
 
 ##### Implementation details 
 
