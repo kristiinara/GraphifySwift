@@ -9,7 +9,7 @@ import Foundation
 
 class ShotgunSurgeryQuery: Query {
     var name = "ShotgunSurgery"
-    let veryHighNumberOfCallers = Metrics.veryHighNumberOfCallers //TODO: find an appropriate number
+    let veryHighNumberOfCallers = Metrics.veryHighNumberOfCallers 
     
     var result: String?
     var json: [String : Any]?

@@ -155,10 +155,8 @@ Definition taken from Paprika.
     	COUNT(r) as number_of_callers 
     WHERE number_of_callers > veryHighNumberOfCallers
     RETURN 
-    	m.app_key as app_key, 
-    	c.name as class_name, 
-    	m.name as method_name, 
-    	number_of_callers as number_of_callers
+    	distinct(m.app_key) as app_key,
+    	count(distinct m) as number_of_smells
   
 ##### Parameters  
 Queries all methods that are called by more than a very high number of callers.
@@ -166,7 +164,7 @@ Queries all methods that are called by more than a very high number of callers.
 ##### How are parameters determined
 All parameters will be determined statistically by the box-blot technique once a big number of applications is analysed. 
 
-Currently thresholds for very high number of callers is set to 2.
+Currently thresholds for very high number of callers is set to 2.5.
 
 ##### Implementation details
 Number of callers is calculated as follows: 
