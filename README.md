@@ -1257,12 +1257,8 @@ definition for data clumps:
     	NOT m.data_string contains (\", \" + p.name + \",\") and
     	class.is_interface = false 
     RETURN 
-    	class.app_key as app_key, 
-    	class.name as class_name, 
-    	m.name as method_name, 
-    	p.name as argument_name, 
-    	m.data_string as main_text, 
-    	p.name as affected_text
+    	distinct(class.app_key) as app_key, 
+    	count(distinct m) as number_of_smells
   
 ##### Parameters  
 Query methods that have unused parameters. Unused paramater is defined by there being no relationship of USES or CALLS between the origin class and the type class of the parameter. Parameters are also excluded if they are cointained in the method text as "= parameter\_name" or ": parameter\_name". The idea behing this is to exclude methods where a parameter is used to set antoher parameter all used as a parameter in a function call. 
