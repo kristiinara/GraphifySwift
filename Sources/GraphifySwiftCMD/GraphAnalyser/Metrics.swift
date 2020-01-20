@@ -205,6 +205,9 @@ struct Metrics {
     static let veryHighNumberOfChainedMessages = 2.5
     static let veryHighNumberOfSwitchStatements = 0 // will not work!
     
+    // variable related
+    static let veryHighPrimitiveVariableUse = 6
+    
     // interface related
     static let veryHighNumberOfMethodsInterface = 5 
     

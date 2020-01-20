@@ -1804,37 +1804,26 @@ Used instability definition from here: https://javadepend.com/Blog/?p=585
 
 ##### Query string
 
-   	MATCH 
-   		(class:Class)
-   	MATCH 
-   		(class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)
-   	MATCH 
-   		(method:Method)-[use:USES]->(variable)
-   	WHERE 
-   		not (variable)-[:IS_OF_TYPE]->()
-   	WITH 
-   		collect(distinct method.name) as uses, 
-   		count(distinct method) as use_count, 
-   		variable, 
-   		class
-   	WHERE 
-   		use_count > primitiveVariableUsedTooManyTimes
-
-  	RETURN 
-  		class.app_key as app_key, 
-  		class.name as class_name, 
-  		variable.name as variable_name, 
-  		variable.type as variable_type, 
-  		uses, 
-  		use_count, 
-  		class.data_string as main_text, 
-  		variable.data_string as affected_text
+  	MATCH 
+  		(class:Class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)<-[use:USES]-(method:Method)
+ 	where 
+ 		not (variable)-[:IS_OF_TYPE]->()
+  	WITH 
+  		collect(distinct method.name) as uses, 
+  		count(distinct use) as use_count, 
+  		variable, 
+  		class
+ 	WHERE 
+ 		use_count > veryHighPrimitiveVariableUse
+	RETURN 
+		distinct(class.app_key) as app_key, 
+		count(distinct variable) as number_of_smells
   
 ##### Parameters  
 Queries variables whoese type is not a type defined in this application and that are used by multiple methods. 
 
 ##### How are parameters determined
-primitiveVariableUsedTooManyTimes should probably be determined statistically. Currently set to 3. 
+VeryHighPrimitiveVariableUse is determined statistically. Currently set to 6. 
 
 ##### Implementation details 
 \-
