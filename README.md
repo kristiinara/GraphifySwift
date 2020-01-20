@@ -1169,86 +1169,45 @@ definition for data clumps:
 
 ##### Query string
 
-    MATCH        
-    	(app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)-[:METHOD_OWNS_ARGUMENT]->(argument:Argument)
-    MATCH
-        (app)-[:APP_OWNS_MODULE]->(other_module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)-[:CLASS_OWNS_METHOD]->(other_method:Method)-[:METHOD_OWNS_ARGUMENT]->(other_argument:Argument)
-    WHERE 
-    	method <> other_method and 
-    	argument.name = other_argument.name and 
-    	argument.type = other_argument.type
-    WITH 
-    	app, 
-    	class, 
-    	other_class, 
-    	method, 
-    	other_method, 
-    	argument order by other_method.name
-    WITH 
-    	app, 
-    	class, 
-    	other_class, 
-    	method, 
-    	other_method, 
-    	argument  order by argument.name
-    WITH 
-    	collect(argument.name) as argument_names, 
-    	count(argument.name) as argument_count, 
-    	method, 
-    	other_method, 
-    	app, 
-    	class
-    WHERE 
-    	argument_count >= highNumberOfRepeatingArguments
-    WITH 
-    	collect(other_method.name) + method.name as method_names,
-    	collect(id(other_method)) + id(method) as method_ids, 
-    	count(distinct other_method) as method_count,  
-    	method, 
-    	app, 
-    	argument_names, 
-    	argument_count, 
-    	class
-    WITH 
-    	collect(class.name) as class_names, 
-    	method_names, 
-    	app, 
-    	argument_names, 
-    	argument_count, 
-    	method_ids, 
-    	method_count
-    MATCH        
-        (app)-[:APP_OWNS_MODULE]->(:Module)-[:MODULE_OWNS_CLASS]->(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)-[:METHOD_OWNS_ARGUMENT]->(argument:Argument)
-    WHERE 
-    	id(method) in method_ids and 
-    	argument.name in argument_names
-    WITH 
-    	argument, 
-    	app, 
-    	method, 
-    	argument_names, 
-    	argument_count, 
-    	class order by argument.name
-    WITH 
-    	collect(distinct argument.name) as new_argument_names, 
-    	app, 
-    	method, 
-    	argument_names, 
-    	argument_count, 
-    	class
-    WITH 
-    	collect(method.name) as new_method_names, 
-    	collect(class.name) as class_names, 
-    	new_argument_names, 
-    	app, 
-    	argument_names, 
-    	argument_count
-    RETURN 
-    	app.app_key as app_key, 
-    	class_names, 
-    	new_method_names as method_names, 
-    	new_argument_names as argument_names, 
-    	argument_count
+  	MATCH 
+  		(app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]
+  						->(class:Class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)
+  	MATCH
+  		(app)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]
+  						->(other_class:Class)-[:CLASS_OWNS_VARIABLE]->(other_variable:Variable)
+ 	WHERE 
+ 		class <> other_class and 
+ 		variable.type = other_variable.type and 
+ 		variable.name = other_variable.name
+  	WITH 
+  		app, 
+  		class, 
+  		other_class, 
+  		variable 
+  		order by variable.name
+  	WITH 
+  		app, 
+  		class, 
+  		other_class, 
+  		collect(distinct variable.name) as variable_names, 
+  		count(DISTINCT variable) as variable_count
+	WITH 
+		app, 
+		class, 
+		other_class, 
+		variable_names, 
+		variable_count 
+		order by id(class)
+	WITH 
+		app, 
+		collect(distinct class.name) as class_names, 
+		variable_names, 
+		variable_count
+  	WHERE 
+  		variable_count >= highNumberOfRepeatingVariables
+  	RETURN 
+  		distinct(app.app_key) as app_key, 
+  		count(distinct class_names) as number_of_smells
   
 ##### Parameters  
 Query methods that have at least a high number of arguments with the same name and type. Second part of query gets rid of duplicates in results. 
