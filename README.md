@@ -110,7 +110,7 @@ Query matches all classes where lack of cohesion in methods is very high, number
 ##### How are parameters determined
 All parameters will be determined statistically by the box-blot technique once a big number of applications is analysed. 
 
-Currently thresholds for very high lack of cohesion is set to 14.5, very high number of attributes is set to 13.5 and very high number of methods is set to 13.5.
+Currently thresholds for very high lack of cohesion is set to 17.5, very high number of attributes is set to 13.5 and very high number of methods is set to 13.5.
 
 ##### Implementation details
 
