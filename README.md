@@ -1960,43 +1960,44 @@ This literature review claims that primitive obsession cannot be detected with a
 ##### Query string
 
    	MATCH 
-   		(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)-
-   			[:METHOD_OWNS_ARGUMENT]->(argument:Argument)
+   		(app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(class:Class)
+   			-[:CLASS_OWNS_METHOD]->(method:Method)-[:METHOD_OWNS_ARGUMENT]->(argument:Argument)
   	MATCH 
-  		(other_class:Class)-[:CLASS_OWNS_METHOD]->(other_method:Method)
-  			-[:METHOD_OWNS_ARGUMENT]->(other_argument:Argument)
+  		(app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)
+  			-[:CLASS_OWNS_METHOD]->(other_method:Method)-[:METHOD_OWNS_ARGUMENT]->(other_argument:Argument)
   	WHERE
-  		not (class)-[:IMPLEMENTS|:EXTENDS]->()
-  			<-[:IMPLEMENTS|:EXTENDS]-(other_class) and
-  		not (class)-[:IMPLEMENTS|:EXTENDS]-(other_class) and
-		class.app_key = other_class.app_key and 
-		class <> other_class and 
-		method.number_of_parameters = other_method.number_of_parameters and 
-		method.number_of_parameters >= minimumNumberOfParameters and 
-		argument.type = other_argument.type and
-    	method.return_type = other_method.return_type
+      	not (class)-[:IMPLEMENTS|:EXTENDS]->()<-[:IMPLEMENTS|:EXTENDS]-(other_class) and
+     	not (class)-[:IMPLEMENTS|:EXTENDS]-(other_class) and
+    	class.app_key = other_class.app_key and 
+    	class <> other_class and 
+    	method.number_of_parameters = other_method.number_of_parameters and 
+    	method.number_of_parameters >= minimumNumberOfParameters and 
+    	argument.type = other_argument.type and
+     	method.return_type = other_method.return_type
 	WITH 
 		class, 
 		other_class, 
 		method, 
 		other_method, 
-		argument order by argument.type
-  	WITH 
-  		collect(distinct argument) as arguments, 
-  		count(distinct argument) as number_of_arguments, 
-  		method, 
-  		other_method, 
-  		class, 
-  		other_class
-	WHERE 
-		number_of_arguments = method.number_of_parameters
-  	WITH 
-  		[argument in arguments | argument.type] as arguments, 
-  		number_of_arguments, 
-  		method, 
-  		other_method, 
-  		class, 
-  		other_class order by method.name
+		argument 
+		order by argument.type
+	WITH 
+		collect(distinct argument) as arguments, 
+		count(distinct argument) as number_of_arguments, 
+		method, 
+		other_method, 
+		class, 
+		other_class
+ 	WHERE 
+ 		number_of_arguments = method.number_of_parameters
+ 	WITH 
+ 		[argument in arguments | argument.type] as arguments, 
+ 		number_of_arguments, 
+ 		method, 
+ 		other_method, 
+ 		class, 
+ 		other_class 
+ 		order by method.name
   	WITH 
   		collect(distinct class.name +"."+method.name) as method_names, 
   		count(distinct method) as method_count, 
@@ -2004,8 +2005,8 @@ This literature review claims that primitive obsession cannot be detected with a
   		other_class, 
   		collect(number_of_arguments) as number_of_arguments, 
   		collect(distinct arguments) as types
- 	WHERE 
- 		method_count >= minimumCommonMethodCount
+   	WHERE 
+   		method_count >= \(minimumCommonMethodCount)
   	WITH 
   		collect(distinct method_names) as method_names, 
   		collect(distinct class.name) as class_names, 
@@ -2014,11 +2015,9 @@ This literature review claims that primitive obsession cannot be detected with a
   		count(distinct class.name) as class_count
  	WHERE 
  		class_count >= 2
-	RETURN 
-		app_key, 
-		class_names, 
-		method_names, 
-		types
+	return 
+		distinct app_key, 
+		count(distinct class_names) as number_of_smells
   
 ##### Parameters  
 Queries classes that have at least minimumCommonMethodCount methods in common that have the same types of parameters, but where the classes do not extend/implement the same parent class/protocol and do not extend/implement eachother. Query considers methods that have more than minimumNumberOfParameters arguments. 
