@@ -863,12 +863,12 @@ From "Understanding Code Smells in Android Applications": "Sibling Duplication m
     	(firstClass:Class)-[r:DUPLICATES]->(secondClass:Class), 
     	(module:Module)-[:MODULE_OWNS_CLASS]->(firstClass), 
     	(module:Module)-[:MODULE_OWNS_CLASS]->(secondClass) 
-    RETURN 
-    	firstClass.app_key as app_key, 
-    	firstClass.name as class_name, 
-    	secondClass.name as second_class_name, 
-    	module.name as module_name, 
-    	r.fragment as text_fragment
+  	WHERE 
+  		firstClass.data_string contains r.fragment or 
+  		secondClass.data_string contains r.fragment 
+  	RETURN 
+  		distinct(firstClass.app_key) as app_key, 
+  		count(distinct r) as number_of_smells
   
 ##### Parameters  
 Query classes that belong to the same module and that share duplicated code. 
