@@ -954,16 +954,14 @@ Very high number of methods has to be determined statistically using the box-plo
     	count(a) as argument_count 
     WHERE argument_count > veryHighNumberOfParameters 
     RETURN 
-    	m.app_key as app_key, 
-    	c.name as class_name, 
-    	m.name as method_name, 
-    	argument_count as argument_count
+    	distinct(m.app_key) as app_key, 
+    	count(distinct m) as number_of_smells
   
 ##### Parameters  
 Query methods that have a very long parameter list. 
 
 ##### How are parameters determined
-Very high number of parameters either has to be determined statistically using the box-plot technique or it should be the threshold that a person can reasonably handle when reading the function description. 
+Very high number of parameters has to be determined statistically using the box-plot technique or it should be the threshold that a person can reasonably handle when reading the function description. Currently determined statistically and set to 2.5.
 
 ##### Implementation details 
 \-
