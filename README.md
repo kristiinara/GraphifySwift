@@ -60,10 +60,8 @@ Our goal is to analyse 31 code smells in total. We combined the code smells defi
     MATCH (c:Class)-[r:CLASS_OWNS_METHOD]->(m:Method) 
     WHERE m.number_of_instructions > veryHighNumberOfInstructions 
     RETURN 
-      	m.app_key as app_key, 
-      	c.name as class_name,
-      	m.name as method_name, 
-      	m.number_of_instructions as number_of_instructions
+      	distinct(m.app_key) as app_key, 
+      	count(distinct m) as number_of_smells
   
 ##### Parameters  
 Query matches all methods where the number of instructions is bigger than a very high number of instructions. 
@@ -71,7 +69,7 @@ Query matches all methods where the number of instructions is bigger than a very
 ##### How are parameters determined
 All parameters will be determined statistically by the box-blot technique once a big number of applications is analysed. 
 
-Threshold is currently set to 26.
+Threshold is currently set to 30.5.
 
 ##### Implementation details
 Number of instructions is calculated as follows in the Function class
