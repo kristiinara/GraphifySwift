@@ -478,20 +478,19 @@ Definition taken from https://www.simpleorientedarchitecture.com/how-to-identify
 
 ##### Query string
 
-    MATCH (c:Class) 
-    WHERE c.number_of_comments highNumberOfComments 
-    RETURN 
-    	c.app_key as app_key, 
-    	c.name as class_name, 
-    	c.number_of_comments as number_of_comments
+  	MATCH 
+  		(c:Class) where c.number_of_comments > veryHighNumberOfComments 
+  	RETURN 
+  		distinct(c.app_key) as app_key, 
+  		count(distinct c) as number_of_smells
   
 ##### Parameters  
 Queries all classes where number of comments is high. 
 
 ##### How are parameters determined
-High number of comments will either be determined statistically using the box-plot technique or will be set to 1.
+Very high number of comments will be determined statistically using the box-plot technique
 
-Currently high number of comments is set to 20.
+Currently very high number of comments is set to 29.5.
 
 ##### Implementation details 
 
