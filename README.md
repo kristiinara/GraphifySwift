@@ -351,10 +351,8 @@ weighted\_methods\_per\_class = sum of all method complexities in a class
     MATCH (c:Class)-[CLASS_OWNS_METHOD]-(m:Method) 
     WHERE m.max_number_of_chaned_message_calls > veryHighNumberOfChainedMessages 
     RETURN 
-    	m.app_key as app_key, 
-    	c.name as class_name, 
-    	m.name as method_name, 
-    	m.max_number_of_chaned_message_calls as max_number_of_chaned_message_calls
+    	distinct(m.app_key) as app_key, 
+    	count(distinct m) as number_of_smells
   
 ##### Parameters  
 Queries all methods, where the maximum number of chained message calls is larger than very high. 
@@ -362,7 +360,7 @@ Queries all methods, where the maximum number of chained message calls is larger
 ##### How are parameters determined
 All parameters will be determined statistically by the box-blot technique once a big number of applications is analysed. 
 
-Currently very high number of chained messages is set to 3. 
+Currently very high number of chained messages is set to 2.5. 
 
 ##### Implementation details
 SourceKitten: methods consist of a lot of instructions. There can be instructions inside instructions (for example if there is a method call inside a method call). One type of instructions are method calls. We define message chains as chains of method calls inside each other.
