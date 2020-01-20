@@ -254,7 +254,7 @@ Queries all methods, where the number of switch statements is higher than high n
 ##### How are parameters determined
 Medium number of instructions and medium coupling between objects is determined statistically. Low complexity method ratio is determined statistically using the box-plot technique. Number of some depth of inheritance is set to be one by definition. 
 
-Currently medium number of instructions is 50, low complexity method ratio is 2, medium coupling between object classes is 20 and number of some depth of inheritance is 1.
+Currently medium number of instructions is 20, low complexity method ratio is 1, medium coupling between object classes is 0 and number of some depth of inheritance is 1.
 
 ##### Implementation details
 Class complecity is calculated as follows
