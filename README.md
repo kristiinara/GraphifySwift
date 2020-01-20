@@ -1547,61 +1547,68 @@ Def. from https://www.simpleorientedarchitecture.com/how-to-identify-god-class-u
 
 ##### Query string
 
-    MATCH (class:Class)
-    MATCH (other_class:Class)
-    WHERE 
-    	(other_class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
-    		<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(class)
-    WITH 
-    	count(distinct other_class) as number_of_dependant_classes, class
-    WITH 
-    class, number_of_dependant_classes as efferent_coupling_number
+    MATCH 
+    	(app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(class:Class)
+	MATCH 
+		(app:App)-[:APP_OWNS_MODULE]->(other_module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)
+	WHERE 
+		(other_class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
+				<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(class) and 
+		class <> other_class
+ 	WITH 
+ 		count(distinct other_class) as number_of_dependant_classes, 
+ 		class,
+ 		app
+	WITH 
+		class, 
+		number_of_dependant_classes as efferent_coupling_number, 
+		app
 
-    MATCH (class:Class)
-    MATCH (other_class:Class)
-    WHERE 
-    	(class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
-    		<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(other_class)
-    WITH 
-    	count(distinct other_class) as afferent_coupling_number, 
-    	class, efferent_coupling_number
-    WITH 
-    	efferent_coupling_number*1.0/(efferent_coupling_number + afferent_coupling_number) as instability_number, 
-    	class, 
-    	afferent_coupling_number, 
-    	efferent_coupling_number
+ 	MATCH 
+ 		(app)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)
+  	WHERE 
+  		(class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
+  				<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(other_class) and 
+  		class <> other_class
+	WITH 
+		count(distinct other_class) as afferent_coupling_number, 
+		class, 
+		efferent_coupling_number
+	WITH 
+		efferent_coupling_number*1.0/(efferent_coupling_number + afferent_coupling_number) as instability_number, 
+		class, 
+		afferent_coupling_number, 
+		efferent_coupling_number
 
-    OPTIONAL MATCH 
-    	(class)-[:CLASS_OWNS_METHOD]->(method:Method)
-    WHERE 
-    	method.is_abstract
-    WITH 
-    	count(distinct method)/class.number_of_methods as abstractness_number, 
-    	instability_number, 
-    	afferent_coupling_number, 
-    	efferent_coupling_number, 
-    	class
-    WITH 
-    	1 - (abstractness_number + instability_number)^2 as difference_from_main, 
-    	instability_number, 
-    	abstractness_number, 
-    	class
+	OPTIONAL MATCH 
+		(class)-[:CLASS_OWNS_METHOD]->(method:Method)
+ 	WHERE 
+ 		method.is_abstract
+	WITH 
+		count(distinct method)/class.number_of_methods as abstractness_number, 
+		instability_number, 
+		afferent_coupling_number, 
+		efferent_coupling_number, 
+		class
+  	WITH 
+  		1 - (abstractness_number + instability_number)^2 as difference_from_main, 
+  		instability_number, 
+  		abstractness_number, 
+  		class
 
-    WHERE 
-    	difference_from_main < - allowedDistanceFromMain or 
-    	difference_from_main > allowedDistanceFromMain
-    RETURN 
-    	class.app_key as app_key, 
-    	class.name as class_name, 
-    	instability_number, 
-    	abstractness_number, 
-    	difference_from_main
+	WHERE 
+		difference_from_main < - allowedDistanceFromMain or 
+		difference_from_main > allowedDistanceFromMain
+        
+  	RETURN 	
+  		distinct(class.app_key) as app_key, 
+  		count(distinct class) as number_of_smells
   
 ##### Parameters  
 Queries classes where class abstractness + instability is far from the 1-x mainline. AllowedDistanceFromMain is currently set to 0.5.
 
 ##### How are parameters determined
-
+Allowed distance from main is set to 0.5.
 
 ##### Implementation details 
 \-
