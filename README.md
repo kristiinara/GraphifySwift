@@ -1616,72 +1616,66 @@ From "understanding code smells in android applications": "Stable Abstraction Br
 
 ##### Query string
 
-    MATCH 
-    	(module:Module)
-    MATCH 
-    	(module)-[:MODULE_OWNS_CLASS]->(class:Class)
-    MATCH 
-    	(other_module)-[:MODULE_OWNS_CLASS]->(other_class:Class)
-    WHERE 
-    	(other_class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
-    		<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(class) and 
-    	module <> other_module
-    WITH 
-    	count(distinct other_class) as number_of_dependant_classes, 
-    	module
-    WITH 
-    	module, 
-    	number_of_dependant_classes as efferent_coupling_number
+  	MATCH 
+    	(app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(class:Class)
+	MATCH 
+		(app:App)-[:APP_OWNS_MODULE]->(other_module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)
+ 	WHERE 
+ 		(other_class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
+ 				<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(class) and 
+ 		module <> other_module
+	WITH 
+		count(distinct other_class) as number_of_dependant_classes, 
+		module
+  	WITH 
+  		module, 
+  		number_of_dependant_classes as efferent_coupling_number
+	
+	MATCH 
+		(module:Module)-[:MODULE_OWNS_CLASS]->(class:Class)
+	MATCH 
+		(other_module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)
+	WHERE 
+		(class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
+			<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(other_class) and 
+		module <> other_module
+  	WITH 
+  		count(distinct other_class) as afferent_coupling_number, 
+  		module, 
+  		efferent_coupling_number
+	WITH 
+		efferent_coupling_number*1.0/(efferent_coupling_number + afferent_coupling_number) as instability_number, 
+		afferent_coupling_number, 
+		efferent_coupling_number, 
+		module
 
-    MATCH 
-    	(module:Module)-[:MODULE_OWNS_CLASS]->(class:Class)
-    MATCH 
-    	(other_module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)
-    WHERE 
-    	(class)-[:CLASS_OWNS_METHOD]->()-[:USES|:CALLS]->()
-    		<-[:CLASS_OWNS_METHOD|:CLASS_OWNS_VARIABLE]-(other_class) and 
-    	module <> other_module
-    WITH 
-    	count(distinct other_class) as afferent_coupling_number, 
-    	module, 
-    	efferent_coupling_number
-    WITH 
-    	efferent_coupling_number*1.0/(efferent_coupling_number + afferent_coupling_number) as instability_number, 
-    	afferent_coupling_number, 
-    	efferent_coupling_number, 
-    	module
-
-    OPTIONAL MATCH 
-    	(module)-[:MODULE_OWNS_CLASS]->(class:Class)
-    WHERE 
-    	class.is_interface
-    WITH 
-    	count(distinct class)/module.number_of_classes as abstractness_number, 
-    	instability_number, 
-    	afferent_coupling_number, 
-    	efferent_coupling_number, 
-    	module
-    WITH 
-    	1 - (abstractness_number + instability_number)^2 as difference_from_main, 
-    	instability_number, 
-    	abstractness_number, 
-    	module
-
-    WHERE 
-    	difference_from_main < - allowedDistanceFromMain or 
-    	difference_from_main > allowedDistanceFromMain
-   	RETURN 
-   		module.app_key as app_key, 
-   		module.name as module_name, 
-   		instability_number, 
-   		abstractness_number, 
-   		difference_from_main
+ 	OPTIONAL MATCH 
+ 		(module)-[:MODULE_OWNS_CLASS]->(class:Class)
+	WHERE 
+		class.is_interface
+	WITH 
+		count(distinct class)/module.number_of_classes as abstractness_number, 
+		instability_number, 
+		afferent_coupling_number, 
+		efferent_coupling_number, 
+		module
+	WITH 
+		1 - (abstractness_number + instability_number)^2 as difference_from_main, 
+		instability_number, 
+		abstractness_number, 
+		module
+	WHERE 
+		difference_from_main < - allowedDistanceFromMain or 
+		difference_from_main > allowedDistanceFromMain
+  	return 
+  		distinct(module.app_key) as app_key, 
+  		count(distinct module) as number_of_smells
   
 ##### Parameters  
 Queries modules where module abstractness + instability is far from the 1-x mainline. AllowedDistanceFromMain is currently set to 0.5.
 
 ##### How are parameters determined
-
+Allowed difference from main is set to 0.5.
 
 ##### Implementation details 
 \-
