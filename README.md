@@ -753,11 +753,12 @@ Another definition is given here (https://www.simpleorientedarchitecture.com/how
     MATCH 
     	(firstClass:Class)-[:EXTENDS*]-> (parent:Class) <-[:EXTENDS*]-(secondClass:Class), 
     	(firstClass:Class)-[:DUPLICATES]->(secondClass:Class) 
+    WHERE 
+    	firstClass.data_string contains d.fragment or 
+    	secondClass.data_string contains d.fragment 
     RETURN 
-    	firstClass.app_key as app_key, 
-    	firstClass.name as class_name, 
-    	secondClass.name as second_class_name, 
-    	parent.name as parent_class_name
+    	distinct(firstClass.app_key) as app_key, 
+    	count(distinct d) as number_of_smells
   
 ##### Parameters  
 Query classes that have a common parent class (somewhere in the hierarchy) and that share duplicated code. 
