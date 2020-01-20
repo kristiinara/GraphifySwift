@@ -1292,7 +1292,7 @@ definition for data clumps:
     	(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)-[:USES|CALLS]->(ref)<-[:CLASS_OWNS_VARIABLE|CLASS_OWNS_METHOD]-(other_class:Class) 
     WHERE 
     	class <> other_class and 
-    	method.number_of_instructions < smallNumberOfLines 
+    	method.number_of_instructions < lowNumberOfInstructionsMethod 
     WITH 
     	class, 
     	method, 
@@ -1310,18 +1310,14 @@ definition for data clumps:
     WHERE 
     	method_ratio > delegationToAllMethodsRatioHalf  
     return 
-    	class.app_key as app_key, 
-    	class.name as class_name, 
-    	method_names, 
-    	classes, 
-    	numbers_of_instructions, 
-    	method_ratio
+    	distinct(class.app_key) as app_key, 
+    	count(class) as number_of_smells
   
 ##### Parameters  
 Querying all classes where more than half of the methods are delegation methods.  Delegation methods are methods that have at least one reference (uses/calles) to another class but have less than a small number of lines.
 
 ##### How are parameters determined
-Small number of lines should be determined statistically using the box-plot technique, currently set to 5. Delegation to all methods ratio is set to 0.5.
+Small number of lines should be determined statistically using the box-plot technique, currently set to 3. Delegation to all methods ratio is set to 0.5.
 
 ##### Implementation details 
 \-
