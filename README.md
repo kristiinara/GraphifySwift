@@ -927,16 +927,14 @@ From "Understanding Code Smells in Android Applications": External Duplication m
     WHERE 
     	number_of_called_methods > veryHighNumberOfCalledMethods
     RETURN 
-    	m.app_key as app_key, 
-    	c.name as class_name, 
-    	m.name as method_name, 
-    	number_of_called_methods as number_of_called_methods
+    	distinct(m.app_key) as app_key, 
+    	count(distinct m) as number_of_smells
   
 ##### Parameters  
 Query methods that call a very high number of methods. 
 
 ##### How are parameters determined
-Very high number of methods has to be determined statistically using the box-plot technique. Value currently set to 20. 
+Very high number of methods has to be determined statistically using the box-plot technique. Value currently set to 2.5. 
 
 ##### Implementation details 
 \-
