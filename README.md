@@ -97,15 +97,12 @@ Definition is taken from Paprika.
 
     MATCH (cl:Class) 
     WHERE
-       cl.lack_of_cohesion_in_methods > veryHighLackOfCohesienInMethods AND
+       cl.lack_of_cohesion_in_methods > veryHighLackOfCohesionInMethods AND
        cl.number_of_methods >  veryHighNumberOfMethods AND
-       cl.number_of_attributes > veryHighNumberOfMethods
+       cl.number_of_attributes > veryHighNumberOfAttributes
     RETURN 
-      	cl.app_key as app_key, 
-      	cl.name as class_name, 
-      	cl.lack_of_cohesion_in_methods as lack_of_cohesion_in_methods, 
-      	cl.number_of_methods as number_of_methods, 
-      	cl.number_of_attributes as number_of_attributes
+      	distinct cl.app_key as app_key, 
+      	count(distinct cl) as number_of_smells
   
 ##### Parameters  
 Query matches all classes where lack of cohesion in methods is very high, number of methods is very high and number of attributes is very high. 
@@ -113,7 +110,7 @@ Query matches all classes where lack of cohesion in methods is very high, number
 ##### How are parameters determined
 All parameters will be determined statistically by the box-blot technique once a big number of applications is analysed. 
 
-Currently thresholds for very high lack of cohesion is set to 40, very high number of attributes is set to 13 and very high number of methods is set to 22.
+Currently thresholds for very high lack of cohesion is set to 14.5, very high number of attributes is set to 13.5 and very high number of methods is set to 13.5.
 
 ##### Implementation details
 
