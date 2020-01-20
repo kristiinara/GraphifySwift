@@ -2119,3 +2119,28 @@ Very high number of methods should be determined statistically using the box-plo
 ##### References 
 Definition from PAPRIKA https://github.com/GeoffreyHecht/paprika/blob/master/src/paprika/neo4j/SAKQuery.java.
 
+### Complex class
+
+##### Query string
+
+	MATCH 
+		(cl:Class) WHERE cl.class_complexity > veryHighClassComplexity 
+	RETURN 
+		distinct(cl.app_key) as app_key, 
+		count(distinct cl) as number_of_smells
+  
+##### Parameters  
+Queries classes that have very high class complexity. 
+
+##### How are parameters determined
+Very high class complexity is determined statistically. Currently set to 33.5.
+
+##### Implementation details 
+\-
+
+##### References 
+Definition from PAPRIKA https://github.com/GeoffreyHecht/paprika/blob/master/src/paprika/neo4j/CCQuery.java.
+
+
+
+
