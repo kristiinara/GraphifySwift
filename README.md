@@ -184,20 +184,18 @@ Martin Fowlers book: "Shotgun surgery is similar to divergent change but is the 
 ##### Query string
 
     MATCH (c:Class)-[r:CLASS_OWNS_METHOD]->(m:Method) 
-    WHERE m.number_of_switch_statements >= highNumberOfSwitchStatments
+    WHERE m.number_of_switch_statements > veryHighNumberOfSwitchStatements
     RETURN 
-    	m.app_key as app_key, 
-    	c.name as class_name, 
-    	m.name as method_name, 
-    	m.number_of_switch_statements as number_of_switch_statements
+    	distinct(m.app_key) as app_key, 
+    	count(distinct m) as number_of_smells
   
 ##### Parameters  
-Queries all methods, where the number of switch statements is higher than high number of switch statements.
+Queries all methods, where the number of switch statements is higher than very high number of switch statements.
 
 ##### How are parameters determined
-Parameter will either be determined statistically using the box-blot technique or we will go with the definition that all switch statements are considered smells and define it to be 1.
+Parameter will either be determined statistically using the box-blot technique or we will go with the definition that all switch statements are considered smells and define it to be 0.
 
-Currently threshold for high number of switch statements is set to 1.
+Currently threshold for high number of switch statements is set to 0. 
 
 ##### Implementation details
 
