@@ -1213,8 +1213,8 @@ definition for data clumps:
     	()-[:IMPLEMENTS|EXTENDS]->(class) and  
     	class.is_interface = true 
     RETURN 
-    	class.app_key as app_key, 
-    	class.name as class_name
+    	distinct(class.app_key) as app_key, 
+    	count(distinct class) as number_of_smells
   
 ##### Parameters  
 Query interfaces that are not implemented or extended. 
