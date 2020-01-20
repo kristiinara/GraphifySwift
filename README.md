@@ -2093,3 +2093,33 @@ Definition from PAPRIKA https://github.com/GeoffreyHecht/paprika/blob/master/src
 ##### References 
 Article "Code smells in iOS: How do they compare to Android?"
 
+
+### Massive view controller
+
+### Ignoring low memory warning
+
+##### Query string
+
+	MATCH 
+		(class:Class) 
+	WHERE 
+		class.name contains 'ViewController' and 
+		class.number_of_methods > veryHighNumberOfMethods and 
+		class.number_of_attributes > veryHighNumberOfAttributes and 
+		class.number_of_instructions > veryHighNumberOfInstructionsClass 
+	RETURN 
+		distinct(class.app_key) as app_key, 
+		count(distinct class) as number_of_smells
+  
+##### Parameters  
+Queries classes that are view controllers, that have a very high number of methods, very high number of attributes and a very high number of instructions.
+
+##### How are parameters determined
+Very high number of methods, very high number of attributes and very high number of instructions in class are determined statistically. Current values are 13.5, 13.5 and 147.5 respectively. 
+
+##### Implementation details 
+\-
+
+##### References 
+Article "Code smells in iOS: How do they compare to Android?"
+
