@@ -893,13 +893,12 @@ From "Understanding Code Smells in Android Applications": "Internal Duplication 
     	(module:Module)-[:MODULE_OWNS_CLASS]->(firstClass), 
     	(secondModule:Module)-[:MODULE_OWNS_CLASS]->(secondClass) 
     WHERE 
-    	id(module) <> id(secondModule) 
-    RETURN 
-    	firstClass.app_key as app_key, 
-    	firstClass.name as class_name, 
-    	secondClass.name as second_class_name, 
-    	module.name as module_name, 
-    	secondModule.name as second_module_name
+    	id(module) <> id(secondModule) and 
+    	firstClass.data_string contains d.fragment or 
+    	secondClass.data_string contains d.fragment 
+   	RETURN 
+   		distinct(firstClass.app_key) as app_key, 
+   		count(distinct d) as number_of_smells
   
 ##### Parameters  
 Query classes that belong to different modules and that share duplicated code. 
