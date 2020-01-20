@@ -709,19 +709,18 @@ Might make sense to also look into if inheritance hierarchy is narrow, but there
     WHERE 
     	NOT ()-[:EXTENDS]->(c) AND 	
     	c.number_of_methods + c.number_of_attributes < lowNumberOfmethodsAndAttributes AND 
-    	parent.number_of_methods + parent.number_of_attributes >= highNumberOfMethodsAndAttributes 
+    	parent.number_of_methods + parent.number_of_attributes >= veryHighNumberOfMethodsAndAttributes 
     RETURN 
-    	c.app_key as app_key, 
-    	c.name as class_name, 
-    	parent.name as parent_class_name
+    	distinct(c.app_key) as app_key, 
+    	count(distinct c) as number_of_smells
   
 ##### Parameters  
-Queries classes that do not have any subclasses, where number of methods and attributes is low and where they inherit from a class whose number of methods and attributes is high. 
+Queries classes that do not have any subclasses, where number of methods and attributes is low and where they inherit from a class whose number of methods and attributes is very high. 
 
 ##### How are parameters determined
-High number of methods and attributes and low number of methods and attributes both need to be determined statistically using the box-plot technique. 
+Very high number of methods and attributes and low number of methods and attributes both need to be determined statistically using the box-plot technique. 
 
-Currently high number of attributes and methods is set to 20 and low number of attributes and methods is set to 5.
+Currently high number of attributes and methods is set to 24.5 and low number of attributes and methods is set to 2.
 
 ##### Implementation details 
 \-
