@@ -1085,91 +1085,7 @@ Exact definition from: https://www.simpleorientedarchitecture.com/how-to-identif
 
 ##### Query string
 
-    MATCH 
-    	(app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(class:Class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)
-    MATCH
-        (app)-[:APP_OWNS_MODULE]->(other_module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)-[:CLASS_OWNS_VARIABLE]->(other_variable:Variable)
-    WHERE 
-    	class <> other_class and 
-    	variable.type = other_variable.type and 
-    	variable.name = other_variable.name
-    WITH 
-    	app, 
-    	class, 
-    	other_class, 
-    	variable order by variable.name 	WITH 
-		app, 
-		class, 
-		other_class, 
-		collect(distinct variable.name) as variable_names, 		count(DISTINCT variable) as variable_count
-    WITH 
-    	app, 
-    	class, 
-    	other_class, 
-    	variable_names, 
-    	variable_count order by id(class)
-    WITH 
-    	app, 
-    	collect(distinct id(other_class)) + id(class) as class_ids, 
-    	variable_names, 
-    	variable_count
-    WHERE 
-    	variable_count >= highNumberOfRepeatingVariables
-    MATCH 
-    	(app)-[:APP_OWNS_MODULE]->(:Module)-[:MODULE_OWNS_CLASS]->(class:Class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)
-    WHERE 
-    	id(class) in class_ids and 
-    	variable.name in variable_names
-    WITH 
-    	app, 
-    	class, 
-    	variable, 
-    	variable_count, 
-    	variable_names order by variable.name
-    WITH 
-    	app, 
-    	class, 
-    	collect(distinct variable.name) as new_variable_names, 
-    	variable_count, 
-    	variable_names
-    WITH 
-    	app, 
-    	collect(distinct class.name) as new_class_names, 
-    	new_variable_names, 
-    	variable_count
-    RETURN 
-    	distinct app.app_key as app_key,  
-    	new_class_names as class_names, 
-    	new_variable_names as variable_names, 
-    	variable_count
-  
-##### Parameters  
-Query classes that have at least a high number of variables with the same name and type. Second part of query gets rid of duplicates in results. 
-
-##### How are parameters determined
-High number of variables is set to 3 as given in the definition. 
-
-##### Implementation details 
-\-
-
-##### References 
-From article "Improving the Precision of Fowler’s Definitions of Bad Smells": 
-definition for data clumps: 
-            
-  - Situation 1: 
-      - 1. More than three data fields stay together in more than one class. 
-      - 2. These data fields should have same signatures (same names, same data types, and same access modifiers). 
-      - 3. These data fields may not group together in the same order. 
- - Situation 2: 
-      - 1. More than three input parameters stay together in more than one methods’ declaration. 
-      - 2. These parameters should have same signatures (same names, same data types). 
-      - 3. These parameters may not group together in the same order. 
-
-### Data clumps (function arguments)
-
-##### Query string
-
-  	MATCH 
+   MATCH 
   		(app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]
   						->(class:Class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)
   	MATCH
@@ -1209,6 +1125,115 @@ definition for data clumps:
   		distinct(app.app_key) as app_key, 
   		count(distinct class_names) as number_of_smells
   
+##### Parameters  
+Query classes that have at least a high number of variables with the same name and type. Second part of query gets rid of duplicates in results. 
+
+##### How are parameters determined
+High number of variables is set to 3 as given in the definition. 
+
+##### Implementation details 
+\-
+
+##### References 
+From article "Improving the Precision of Fowler’s Definitions of Bad Smells": 
+definition for data clumps: 
+            
+  - Situation 1: 
+      - 1. More than three data fields stay together in more than one class. 
+      - 2. These data fields should have same signatures (same names, same data types, and same access modifiers). 
+      - 3. These data fields may not group together in the same order. 
+ - Situation 2: 
+      - 1. More than three input parameters stay together in more than one methods’ declaration. 
+      - 2. These parameters should have same signatures (same names, same data types). 
+      - 3. These parameters may not group together in the same order. 
+
+### Data clumps (function arguments)
+
+##### Query string
+
+	MATCH
+		(app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(class:Class)
+					-[:CLASS_OWNS_METHOD]->(method:Method)-[:METHOD_OWNS_ARGUMENT]->(argument:Argument)
+  	MATCH
+ 		(app)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(other_class:Class)
+ 					-[:CLASS_OWNS_METHOD]->(other_method:Method)-[:METHOD_OWNS_ARGUMENT]->(other_argument:Argument)
+  	WHERE 
+  		method <> other_method and 
+  		argument.name = other_argument.name and 
+  		argument.type = other_argument.type
+	WITH 
+		app, 
+		class, 
+		other_class, 
+		method, 
+		other_method, 
+		argument 
+		order by other_method.name
+ 	WITH 
+ 		app, 
+ 		class, 
+ 		other_class, 
+ 		method, 
+ 		other_method, 
+ 		argument  
+ 		order by argument.name
+  	WITH 
+  		collect(argument.name) as argument_names, 
+  		count(argument.name) as argument_count, 
+  		method, 
+  		other_method, 
+  		app, 
+  		class
+	WHERE 
+		argument_count >= highNumberOfRepeatingArguments
+	WITH 
+		collect(other_method.name) + method.name as method_names, 
+		collect(id(other_method)) + id(method) as method_ids, 
+		count(distinct other_method) as method_count,  
+		method, 
+		app, 
+		argument_names, 
+		argument_count, 
+		class
+  	WITH 
+  		collect(class.name) as class_names, 
+  		method_names, 
+  		app, 
+  		argument_names, 
+  		argument_count, 
+  		method_ids, 
+  		method_count
+ 	MATCH
+     	(app)-[:APP_OWNS_MODULE]->(:Module)-[:MODULE_OWNS_CLASS]->(class:Class)
+     			-[:CLASS_OWNS_METHOD]->(method:Method)-[:METHOD_OWNS_ARGUMENT]->(argument:Argument)
+	WHERE 
+		id(method) in method_ids and 
+		argument.name in argument_names
+	WITH 
+		argument, 
+		app, 
+		method, 
+		argument_names, 
+		argument_count, 
+		class order by argument.name
+	WITH 
+		collect(distinct argument.name) as new_argument_names, 
+		app, 
+		method, 
+		argument_names, 
+		argument_count, 
+		class
+ 	WITH 
+ 		collect(method.name) as new_method_names, 
+ 		collect(class.name) as class_names, 
+ 		new_argument_names, 
+ 		app, 
+ 		argument_names, 
+ 		argument_count
+	RETURN 
+		distinct(app.app_key) as app_key, 
+		count(distinct class_names) as number_of_smells
+  	  
 ##### Parameters  
 Query methods that have at least a high number of arguments with the same name and type. Second part of query gets rid of duplicates in results. 
 
