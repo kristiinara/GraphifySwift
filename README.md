@@ -1534,8 +1534,10 @@ Def. from https://www.simpleorientedarchitecture.com/how-to-identify-brain-metho
    	OPTIONAL MATCH 
    		(class)-[:CLASS_OWNS_METHOD]->(m:Method)-[:USES]
    			->(variable:Variable)<-[:CLASS_OWNS_VARIABLE]-(other_class:Class)
-    WHERE class <> other_class
-        with class, 
+    WHERE 
+    	class <> other_class
+   	WITH 
+   		class, 
         class_cohesion, 
         connected_method_count, 
         pair_count, 
@@ -1543,20 +1545,14 @@ Def. from https://www.simpleorientedarchitecture.com/how-to-identify-brain-metho
     WHERE 
     	foreign_variable_count >= fewAccessToForeignData
     RETURN 
-    	class.app_key as app_key, 
-    	class.name as class_name, 
-    	pair_count, 
-    	connected_method_count, 
-    	class_cohesion, 
-    	class.class_complexity as class_complexity, 
-    	foreign_variable_count, 
-    	class.data_string as main_text
+    	distinct(class.app_key) as app_key, 
+    	count(distinct class) as number_of_smells
   
 ##### Parameters  
 Queries classes whose tight class cohesion is lower than 0.3, number of weighted mehtods is very high ad access to foreign data is at least view.
 
 ##### How are parameters determined
-Fraction for tight class cohesion is set to 0.3. Very high number of weighted mehtods should be determined statistically using the box-plot technique. At least view access to foreign data variables is a generally accepted threshold 2-5.
+Fraction for tight class cohesion is set to 0.3. Very high number of weighted mehtods should be determined statistically using the box-plot technique, currently set to 33.5. At least view access to foreign data variables is a generally accepted threshold 2-5.
 
 ##### Implementation details 
 \-
