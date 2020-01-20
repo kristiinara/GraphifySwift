@@ -417,9 +417,8 @@ Chained method calls is determined in the Instruction class as follows
     MATCH (c:Class) 
     WHERE c.number_of_methods = 0 
     RETURN 
-    	c.app_key as app_key, 
-    	c.name as class_name, 
-    	c.number_of_attributes as number_of_attributes
+    	distinct(c.app_key) as app_key, 
+    	count(distinct c) as number_of_smells
   
 ##### Parameters  
 Queries all classes where number of methods is 0.
