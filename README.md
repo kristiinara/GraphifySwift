@@ -979,89 +979,48 @@ This is good because long parameter lists are hard to understand, because they b
 
 ##### Query string
 
-    MATCH 
-    	(c:Class)-[:CLASS_OWNS_METHOD]->(m:Method)-[r:CALLS]->(other_method:Method) 
-    WITH 
-    	c,
-    	m, 
-    	COUNT(r) as number_of_called_methods 
-    WHERE 
-    	number_of_called_methods > veryHighNumberOfCalledMethods
-    RETURN 
-    	m.app_key as app_key, 
-    	c.name as class_name, 
-    	m.name as method_name, 
-    	number_of_called_methods as number_of_called_methods
-  
-##### Parameters  
-Query methods that call a very high number of methods. 
-
-##### How are parameters determined
-Very high number of methods has to be determined statistically using the box-plot technique. Value currently set to 20. 
-
-##### Implementation details 
-\-
-
-##### References 
-- "Understanding code smells in android applications": ""A "schizophrenic class" is a class that captures two or more key abstractions. It negatively affects the ability to understand and change in isolation the individual abstractions that it captures. [12,37]"
-- "Towards a Principle-based Classification of Structural Design Smells": "This design smell arises when an abstraction has more than one responsibility assigned to it"
-- Fowler's book: "We structure our software to make change easier; after all, software is meant to be soft. When we make a change we want to be able to jump to a single clear point in the system and make the change. When you can't do this you are smelling one of two closely related pungencies. Divergent change occurs when one class is commonly changed in different ways for different reasons. If you look at a class and say, "Well, I will have to change these three methods every time I get a new database; I have to change these four methods every time there is a new financial instrument," you likely have a situation in which two objects are better than one. That way each object is changed only as a result of one kind of change. Of course, you often discover this only after you've added a few databases or financial instruments. Any change to handle a variation should change a single class, and all the typing in the new class should express the variation. To clean this up you identify everything that changes for a particular cause and use Extract Class to put them all together."
-- opposite of shotgun surgery (based on Fowler's book)
-- shotgun surgery: methods that are called from more than n other methods
-
-### Long parameter list
-
-##### Query string
-
     MATCH  
-    	(class:Class)-[:CLASS_OWNS_METHOD]->(m:Method)-[:USES]->(v:Variable)<-[:CLASS_OWNS_VARIABLE]-(other_class:Class)
-    WHERE 
-    	class <> other_class
-    WITH
-       class, 
-       m,
-       count(distinct v) as variable_count,
-       collect(distinct v.name) as names,
-       collect(distinct other_class.name) as class_names,
-       count(distinct other_class) as class_count
-    MATCH 
-    	(class)-[:CLASS_OWNS_METHOD]->(m)-[:USES]->(v:Variable)<-[:CLASS_OWNS_VARIABLE]-(class)
-    WITH
-        class, 
-        m, 
-        variable_count, 
-        class_names, 
-        names,
-        count(distinct v) as local_variable_count,
-        collect(distinct v.name) as local_names,
-        class_count
-    WHERE
-    	local_variable_count + variable_count > 0
-    WITH 
-    	class, 
-    	m, 
-    	variable_count, 
-    	class_names, 
-    	names, 
-    	local_variable_count, 
-    	local_names, 
-    	class_count,
-    	local_variable_count*1.0/(local_variable_count+variable_count) as locality
-    WHERE
-       variable_count > fewAccessToForeignVariables and 
-       locality < localityFraction and 
-       class_count <= fewAccessToForeignClasses
-    RETURN
-       class.app_key as app_key, 
-       class.name as class_name, 
-       m.name as method_name, 
-       variable_count,
-       class_count,
-       names as foreign_variable_names, 
-       class_names, 
-       local_variable_count, 
-       local_names as local_variable_names, 
-       locality
+    	(class:Class)-[:CLASS_OWNS_METHOD]->(m:Method)-[:USES]->(v:Variable)
+    											<-[:CLASS_OWNS_VARIABLE]-(other_class:Class)
+ 	WHERE 
+ 		class <> other_class
+	WITH
+   		class, 
+   		m,
+		count(distinct v) as variable_count,
+		collect(distinct v.name) as names,
+ 		collect(distinct other_class.name) as class_names,
+		count(distinct other_class) as class_count
+ 	MATCH 
+		(class)-[:CLASS_OWNS_METHOD]->(m)-[:USES]->(v:Variable)<-[:CLASS_OWNS_VARIABLE]-(class)
+ 	WITH
+  		class, 
+  		m, 
+  		variable_count, 
+  		class_names, 
+  		names,
+   		count(distinct v) as local_variable_count,
+     	collect(distinct v.name) as local_names,
+ 		class_count
+	WHERE
+   		local_variable_count + variable_count > 0
+ 	WITH
+		class, 
+ 		m, 
+  		variable_count, 
+   		class_names, 
+  		names, 
+   		local_variable_count, 
+      	local_names, 
+ 		class_count,
+   		local_variable_count*1.0/(local_variable_count+variable_count) as locality
+   	WHERE
+		variable_count > fewAccessToForeignVariables and 
+		locality < localityFraction and 
+  		class_count <= fewAccessToForeignClasses
+   	RETURN
+		distinct(class.app_key) as app_key, 
+		count(distinct m) as number_of_smells
   
 ##### Parameters  
 Query methods that access more variables outside of the class than inside of the class. 
