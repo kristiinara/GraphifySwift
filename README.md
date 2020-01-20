@@ -560,21 +560,19 @@ A good time to use a comment is when you don't know what to do. In addition to d
 
 ##### Query string
 
-    MATCH 
-    	(c:Class)-[:CLASS_OWNS_VARIABLE]->(v:Variable)-[:IS_OF_TYPE]->(c2:Class), 
-    	cyclePath=shortestPath((c2)-[*]->(c)) 
-    WITH 
-    	c, 
-    	v, 
-    	[n in nodes(cyclePath) | n.name ] as names, 
-    	filter(n in nodes(cyclePath) where not n:Variable) as classes 
-    UNWIND classes as node 
-    WITH max(id(node)) as max 
-    MATCH (c:Class) 
-    WHERE id(c)=max 
-    RETURN 
-    	c.app_key as app_key, 
-    	c.name as class_name
+   	MATCH 
+   		(c:Class)-[:CLASS_OWNS_VARIABLE]->(v:Variable)-[:IS_OF_TYPE]->(c2:Class) 
+   	WHERE 
+   		c <> c2 
+   	MATCH 
+   		cyclePath=shortestPath((c2)-[:CLASS_OWNS_VARIABLE|:IS_OF_TYPE*]->(c)) 
+   	WITH 
+   		c, 
+   		v, 
+   		[n in nodes(cyclePath) | n.name ] as names  
+   	RETURN 
+   		distinct(c.app_key) as app_key, 
+   		count(distinct c) as number_of_smells
   
 ##### Parameters  
 Queries all cycles between Class-Variable-Class, finds the shortest cycle and returns the name of the class and app_key with the biggest id in this cycle as the beginning point.
