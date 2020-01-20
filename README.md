@@ -245,8 +245,8 @@ Martin Fowlers book: "One of the most obvious symptoms of object-oriented code i
     	(c.coupling_between_object_classes < mediumCouplingBetweenObjectClasses AND 
     		c.depth_of_inheritance > numberOfSomeDepthOfInheritance) 
     RETURN 
-    	c.app_key as app_key, 
-    	c.name as class_name
+    	distinct(c.app_key) as app_key, 
+    	count(distinct c) as number_of_smells"
   
 ##### Parameters  
 Queries all methods, where the number of switch statements is higher than high number of switch statements.
