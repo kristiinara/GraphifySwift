@@ -624,9 +624,8 @@ Article "Architectural Smells Detected by Tools: a Catalogue Proposal": "Detecti
     		and class_count/method_count <= quarterCouplingDispersion)) and 
     	m1.max_nesting_depth >= shallowMaximumNestingDepth
     RETURN 
-    	m1.app_key as app_key, 
-    	c.name as class_name, 
-    	m1.name as method_name
+    	distinct(m1.app_key) as app_key, 
+    	count(m1) as number_of_smells
   
 ##### Parameters  
 Queries methods that are intensively coupled with methods in other classes. A method is defined as intensely coupled if the number of methods it calls is larger than the short memory cap and coupling dispersion is lower than half or if the number of methods it calls is larger than few and coupling dispersion is smaller than few and the maximum nesting depth of the method is larger than shallow. 
