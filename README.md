@@ -2073,6 +2073,30 @@ Very high class complexity is determined statistically. Currently set to 33.5.
 ##### References 
 Definition from PAPRIKA https://github.com/GeoffreyHecht/paprika/blob/master/src/paprika/neo4j/CCQuery.java.
 
+## iOS specific code smells
 
+### Ignoring low memory warning
 
+##### Query string
+
+	MATCH 
+		(class:Class) 
+	WHERE 
+		class.name contains 'ViewController' and 
+		not (class)-[:CLASS_OWNS_METHOD]->(:Method{name:'didReceiveMemoryWarning()'}) 
+	RETURN 
+		distinct(class.app_key) as app_key,
+		count(distinct class) as number_of_smells
+  
+##### Parameters  
+\-
+
+##### How are parameters determined
+\-
+
+##### Implementation details 
+\-
+
+##### References 
+Article "Code smells in iOS: How do they compare to Android?"
 
