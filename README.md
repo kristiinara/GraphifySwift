@@ -1415,34 +1415,32 @@ Fowler: "Making a new subclass of one class means that we need to make the same 
 ##### Query string
 
     MATCH 
-    	(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)
-	MATCH 
-		(other_class:Class)-[:CLASS_OWNS_METHOD]->(other_method:Method)
-	MATCH 
-		(method)-[r:CALLS]-(other_method)
+    	(app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->
+    								(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)
+  	MATCH 
+  		(app:App)-[:APP_OWNS_MODULE]->(other_module:Module)-[:MODULE_OWNS_CLASS]->
+  									(other_class:Class)-[:CLASS_OWNS_METHOD]->(other_method:Method)
 	WHERE  
 		class <> other_class
-	WITH 
-		count(distinct r) as number_of_calls, 
-		collect(distinct method.name) as method_names, 
-		collect(distinct other_method.name) as other_method_names, 
-		class, 
-		other_class
-	WHERE 
-		number_of_calls > highNumberOfCallsBetweenClasses
-	RETURN 
-		class.app_key as app_key, 
-		class.name as class_name, 
-		other_class.name as other_class_name, 
-		method_names, 
-		other_method_names, 
-		number_of_calls
+	MATCH 
+		path = (method)-[r:CALLS]-(other_method)
+  	WITH 
+  		count(distinct r) as number_of_calls, 
+  		collect(distinct method.name) as method_names, 
+  		collect(distinct other_method.name) as other_method_names, 
+  		class, 
+  		other_class
+  	WHERE 
+  		number_of_calls > highNumberOfCallsBetweenClasses
+  	RETURN 
+  		distinct(class.app_key) as app_key, 
+  		count(class)/2 as number_of_smells
   
 ##### Parameters  
 Queries pairs of classes that have more method calls between them than a high number of calls between classes.
 
 ##### How are parameters determined
-High number of calls between classes needs to be determined statistically using the box-plot technique. Currently set to 4.
+High number of calls between classes needs to be determined statistically using the box-plot technique. Currently set to 5.
 
 ##### Implementation details 
 \-

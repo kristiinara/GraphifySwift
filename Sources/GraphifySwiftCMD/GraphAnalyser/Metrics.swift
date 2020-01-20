@@ -191,6 +191,7 @@ struct Metrics {
     static let veryHighNumberOfMethodsAndAttributes = 24.5
     static let lowNumberOfMethodsAndAttributes = 2
     static let veryHighLackOfCohesionInMethods = 17.5
+    static let highNumberOfCallsBetweenClasses = 5
     
     // method related
     static let veryHighCyclomaticComplexity = 6

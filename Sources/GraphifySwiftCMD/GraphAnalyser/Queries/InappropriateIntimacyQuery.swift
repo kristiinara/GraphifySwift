@@ -9,7 +9,7 @@ import Foundation
 
 class InappropriateIntimacyQuery: Query {
     var name = "InappropriateIntimacy"
-    let highNumberOfCallsBetweenClasses = 4
+    let highNumberOfCallsBetweenClasses = Metrics.highNumberOfCallsBetweenClasses
     
     var result: String?
     var json: [String : Any]?
