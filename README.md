@@ -6,11 +6,25 @@ GraphifySwiftCMD is a command line tool that makes it possible to analyse a lot 
 
 Analyse an application:
       
-    GraphifySwiftCMD analyse --appkey <applicationKey> <pathToRepository> -m 
+    GraphifySwiftCMD analyse --appkey <applicationKey> <pathToRepository>
+    
+additional options: 
+		
+	--includModules -m
+	--noDatabase -n
+	--resultOutput -o
+	
+Bulk analysis (downloading projects is currently commented out): 
+
+	GraphifySwiftCMD analyseBulk --fileName <pathToJsonFile> <folderToSaveFilesTo>
 
 Query code smells:
 
     GraphifySwiftCMD query -q all
+    
+Query code smells and generate csv folder:
+	
+	GraphifySwiftCMD query -q all --csvFolder <pathToFolder>
     
 Display prototype of architecture analysis:
 
