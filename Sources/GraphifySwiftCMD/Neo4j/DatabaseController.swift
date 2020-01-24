@@ -12,6 +12,8 @@ class DatabaseController {
     private let dataURL: URL
     private let authorizationToken: String
     
+    var errorDescription: [String] = []
+    
     init(dbURL: URL, authorizationToken: String) {
         self.dataURL = dbURL
         self.authorizationToken = authorizationToken
@@ -24,10 +26,38 @@ class DatabaseController {
     
     //TODO: check if we need this method at all, currently added so we can easily change behaviour for all queries made
     func runQueryReturnId(transaction: String?, completition: @escaping (Int?) -> Void) {
+        print("runQueryReturnId")
         if let transaction = transaction {
             requestWithDefaultCompletition(transaction: transaction, completition: completition)
         } else {
+            self.errorDescription.append("No transaction")
+            print("No transaction")
             completition(nil)
+        }
+    }
+    
+    func runQueryReturnDataString(transaction: String, completition: @escaping ([String: Any]?) -> Void) {
+        let parameters = [
+            "statements": [[
+                "statement" : transaction
+                ]]
+        ]
+        requestWithParameters(parameters) { [unowned self] json in
+//            guard let self = self else {
+//                completition(nil)
+//                return
+//            }
+            
+            let success = self.defaultErrorHandling(json: json)
+            
+            print("----- JSON result (success? \(success)): -----")
+            //print(json ?? "Empty response")
+            
+            if success {
+                completition(json)
+            } else {
+                completition(nil)
+            }
         }
     }
     
@@ -37,11 +67,16 @@ class DatabaseController {
                 "statement" : transaction
                 ]]
         ]
-        requestWithParameters(parameters) { json in
+        requestWithParameters(parameters) { [unowned self] json in
+//            guard let self = self else {
+//                completition(nil)
+//                return
+//            }
+            
             let success = self.defaultErrorHandling(json: json)
             
             print("----- JSON result (success? \(success)): -----")
-            print(json ?? "Empty response")
+            //print(json ?? "Empty response")
             
             if success {
                 completition(self.getRows(json))
@@ -52,12 +87,19 @@ class DatabaseController {
     }
     
     private func requestWithDefaultCompletition(transaction: String, completition: @escaping (Int?) -> Void) {
+        print("requestWithDefaultCompletition")
         let parameters = [
             "statements": [[
                 "statement" : transaction
                 ]]
         ]
-        requestWithParameters(parameters) { json in
+        requestWithParameters(parameters) { [unowned self] json in
+//            guard let self = self else {
+//                completition(nil)
+//                return
+//            }
+            
+            print("request finished")
             let success = self.defaultErrorHandling(json: json)
             
 //            print("----- JSON result (success? \(success)): -----")
@@ -116,11 +158,13 @@ class DatabaseController {
         guard let json = json else { return nil }
         
         guard let results = json["results"] as? [[String:Any]] else {
+            self.errorDescription.append("No results")
             print("no results: \(json)")
             return nil
         }
         
         guard results.count > 0 else {
+            self.errorDescription.append("Json length 0")
             print("Results length 0: \(json)")
             return nil
         }
@@ -130,21 +174,31 @@ class DatabaseController {
         }
         
         guard let data = results[0]["data"] as? [[String: Any]] else {
+            self.errorDescription.append("No data")
             print("no data: \(results[0])")
             return nil
         }
         
         guard data.count > 0 else {
+            self.errorDescription.append("Data length 0")
             print("Data length 0")
             return nil
         }
         
         guard let row = data[0]["row"] as? [Any] else {
+            self.errorDescription.append("No row")
             print("no row: \(data)")
             return nil
         }
         
+        guard row.count > 0 else {
+            self.errorDescription.append("Row length 0")
+            print("Row length 0")
+            return nil
+        }
+        
         guard let id = row[0] as? Int else {
+            self.errorDescription.append("No id")
             print("No id: \(row)")
             return nil
         }
@@ -153,6 +207,7 @@ class DatabaseController {
     }
     
     private func requestWithParameters(_ parameters: [String: Any], completition: @escaping ([String: Any]?) -> Void) {
+        print("requestWithParameters")
         //create the session object
         let session = URLSession.shared
         
@@ -163,6 +218,7 @@ class DatabaseController {
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: parameters, options: .prettyPrinted) // pass dictionary to nsdata object and set it as request body
         } catch let error {
+            self.errorDescription.append(error.localizedDescription)
             completition(["JsonError": error])
             print(error.localizedDescription)
             return
@@ -177,16 +233,24 @@ class DatabaseController {
         
         //print("Starting request!")
         //create dataTask using the session object to send data to the server
-        let task = session.dataTask(with: request as URLRequest, completionHandler: { data, response, error in
+        let task = session.dataTask(with: request as URLRequest, completionHandler: { [unowned self] data, response, error in
+            
+//            guard let self = self else {
+//                completition(nil)
+//                return
+//            }
             
             //print("response: \(String(describing: response))")
             
+            
             guard error == nil else {
+                self.errorDescription.append("Networkerror: \(error?.localizedDescription ?? "")")
                 completition(["NetworkError" : error!])
                 return
             }
             
             guard let data = data else {
+                self.errorDescription.append("Return data nil")
                 completition(nil)
                 return
             }

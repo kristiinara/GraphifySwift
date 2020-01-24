@@ -6,16 +6,30 @@
 //  Copyright © 2019 Kristiina Rahkema. All rights reserved.
 //
 
-//import Foundation
-
 class Variable : Kind {
     var id: Int?
+    var usr: String?
     var name: String
     var appKey: String = "Default"
     var modifier: String = ""
     var type: String
     var isStatic: Bool = false
     var isFinal: Bool = false
+    weak var classInstance: Class?
+    var typeClass: Class?
+    var dataString: String = ""
+    
+    var cleanedType: String {
+        var typeString = self.type
+        typeString = typeString.replacingOccurrences(of: "?", with: "")
+        typeString = typeString.replacingOccurrences(of: "!", with: "")
+        return typeString
+    }
+    
+    var methodReferences: [Function] = []
+    var variableReferences: [Variable] = []
+    
+    var uses: [Int]?
     
     init(name: String, type: String) {
         self.name = name
@@ -42,6 +56,14 @@ extension Variable: Node4jInsertable {
     }
     
     var properties: String {
+        var dataString = self.dataString.replacingOccurrences(of: "\"", with: "'")
+        dataString = dataString.replacingOccurrences(of: "\\", with: "\\\\")
+        
+        var optionalProperties = ""
+        if let usr = self.usr {
+            optionalProperties = ", usr:'\(usr)'"
+        }
+        
         return """
         {
         name:'\(self.name)',
@@ -49,7 +71,8 @@ extension Variable: Node4jInsertable {
         modifier:'\(self.modifier)',
         type:'\(self.type)',
         is_static:\(self.isStatic),
-        is_final:\(self.isFinal)
+        is_final:\(self.isFinal),
+        data_string:\"\(dataString)\"\(optionalProperties)
         }
         """
     }
@@ -71,6 +94,17 @@ extension Variable: Node4jInsertable {
             match (n:\(self.nodeName)
             where id(n)=\(id) set n += \(self.properties)
             """
+        }
+        return nil
+    }
+    
+    var isTypeQuery: String? {
+        if let typeClass = self.typeClass {
+            print("isTypeQuery: match (v:Variable), (c:Class) where id(v) = \(self.id) and id(c) = \(typeClass.id) create (v)-[r:IS_OF_TYPE]->(c) return id(r)")
+            
+            if let selfid = self.id, let  classId = typeClass.id {
+                return "match (v:Variable), (c:Class) where id(v) = \(selfid) and id(c) = \(classId) create (v)-[r:IS_OF_TYPE]->(c) return id(r)"
+            }
         }
         return nil
     }

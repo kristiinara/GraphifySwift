@@ -11,9 +11,47 @@
 class App : Kind {
     var id: Int?
     var name: String
-    var classes: [ClassInstance] = []
-    var structures: [Struct] = []
-    var protocols: [Protocol] = []
+//    var classes: [ClassInstance] = []
+//    var structures: [Struct] = []
+//    var protocols: [Protocol] = []
+    
+    var language: String
+    var languageMixed: Bool
+    var platform: String
+    
+    var numberOfExtensions: Int = 0
+    var modules: [Module] = []
+    var duplicates: [Duplication] = []
+    
+    var classes: [ClassInstance] {
+        var allClasses: [ClassInstance] = []
+        
+        for module in self.modules {
+            allClasses.append(contentsOf: module.classes)
+        }
+        
+        return allClasses
+    }
+    
+    var structures: [Struct] {
+        var allStructs: [Struct] = []
+        
+        for module in self.modules {
+            allStructs.append(contentsOf: module.structures)
+        }
+        
+        return allStructs
+    }
+    
+    var protocols: [Protocol] {
+        var allProtocols: [Protocol] = []
+        
+        for module in self.modules {
+            allProtocols.append(contentsOf: module.protocols)
+        }
+        
+        return allProtocols
+    }
     
     //Variables that are automatically incremented
     //Can calculate when initiating new app:
@@ -76,16 +114,19 @@ class App : Kind {
     
     //Variables we should get from appStore
     var rating = 0 //rating from appStore? but as input to program! (application rating)
-    var nbDownload = "0+" //from appStore? but as input to program! (number of downloads for the app)
-    var price = "Free" //from appStore? but as input to program! (price of the application)
+    var nbDownload = "" //from appStore? but as input to program! (number of downloads for the app)
+    var price = "" //from appStore? but as input to program! (price of the application)
     
     //We still have to figure out:
     var size = 0 //APK size in bytes --> setting it after going through files (adding up size of each file)
     
+    var stars: Int = 0
+    
+    var inAppStore = false
     //Obscure variables?
     //let numberOfArgb8888 = 0 // what is this? argb8888 means alpha, red, green, blue 32bit
     
-    init(name: String, targetSdk: String, dateDownload: String, package: String, versionCode: Int, versionName: String, appKey: String, developer: String, sdk: String, categroy: String) {
+    init(name: String, targetSdk: String, dateDownload: String, package: String, versionCode: Int, versionName: String, appKey: String, developer: String, sdk: String, categroy: String, language: String, languageMixed: Bool, platform: String) {
         self.name = name
         self.targetSdk = targetSdk
         self.dateDownload = dateDownload
@@ -97,8 +138,9 @@ class App : Kind {
         self.sdk = sdk
         self.category = categroy
         
-        self.classes = []
-        self.structures = []
+        self.language = language
+        self.languageMixed = languageMixed
+        self.platform = platform
     }
     
     var numberOfClasses: Int {
@@ -141,6 +183,49 @@ class App : Kind {
         Struct: \(name)
         """
     }
+    
+    func calculateCouplingBetweenClasses() {
+        var allClasses: [Class] = []
+        allClasses.append(contentsOf: self.classes)
+        allClasses.append(contentsOf: self.structures)
+        let classCount = allClasses.count
+        
+        if classCount >= 2 {
+            for i in 0...(classCount - 2) {
+                let classInstance = allClasses[i]
+                var numberOfCoupledClasses = 0
+                
+                for j in (i+1)...(classCount - 1) {
+                    let otherClassInstance = allClasses[j]
+                    
+                    let allMethods = classInstance.allMethods
+                    let allOtherClassMethodUsrs = otherClassInstance.allMethods.map() {method in return method.usr}
+                    
+                    outerloop: for method in allMethods {
+                        for referencedMethod in method.referencedMethods {
+                            if allOtherClassMethodUsrs.contains(referencedMethod.usr) {
+                                numberOfCoupledClasses += 1
+                                break outerloop
+                            }
+                        }
+                    }
+                }
+                classInstance.couplingBetweenObjectClasses = numberOfCoupledClasses
+            }
+        }
+    }
+    
+    var allClasses: [Class] {
+        var classes: [Class] = []
+        classes.append(contentsOf: self.classes)
+        classes.append(contentsOf: self.structures)
+        classes.append(contentsOf: self.protocols)
+        
+        return classes
+    }
+    
+    var numberOfTests = 0
+    var numberOfUITests = 0
 }
 
 extension App: Node4jInsertable {
@@ -168,7 +253,15 @@ extension App: Node4jInsertable {
         number_of_view_controllers:\(self.numberOfViewControllers),
         number_of_broadcast_receivers:\(self.numberOfBroadcastReceivers),
         number_of_content_providers:\(self.numberOfContentProviders),
-        number_of_services:\(self.numberOfServices)
+        number_of_services:\(self.numberOfServices),
+        language:'\(self.language)',
+        language_mixed:\(self.languageMixed),
+        stars:\(self.stars),
+        platform:'\(self.platform)',
+        number_of_extensions:\(self.numberOfExtensions),
+        in_app_store:\(self.inAppStore),
+        number_of_tests:\(self.numberOfTests),
+        number_of_ui_tests:\(self.numberOfUITests)
         }
         """
     }
@@ -194,17 +287,24 @@ extension App: Node4jInsertable {
         return nil
     }
     
-    func ownsClassQuery(_ someClass: Class) -> String? {
-        if let appId = self.id, let classId = someClass.id {
-            return "match (a:App), (c:Class) where id(a) = \(appId) and id(c) = \(classId) create (a)-[r:APP_OWNS_CLASS]->(c) return id(r)"
+    func ownsModuleQuery(_ someModule: Module) -> String? {
+        if let appId = self.id, let moduleId = someModule.id {
+            return "match (a:App), (c:Module) where id(a) = \(appId) and id(c) = \(moduleId) create (a)-[r:APP_OWNS_MODULE]->(c) return id(r)"
         }
         return nil
     }
     
-    func ownsStructQuery(_ someStruct: Struct) -> String? {
-        if let appId = self.id, let structId = someStruct.id {
-            return "match (a:App), (c:Struct) where id(a) = \(appId) and id(c) = \(structId) create (a)-[r:APP_OWNS_CLASS]->(c) return id(r)"
-        }
-        return nil
-    }
+//    func ownsClassQuery(_ someClass: Class) -> String? {
+//        if let appId = self.id, let classId = someClass.id {
+//            return "match (a:App), (c:Class) where id(a) = \(appId) and id(c) = \(classId) create (a)-[r:APP_OWNS_CLASS]->(c) return id(r)"
+//        }
+//        return nil
+//    }
+//
+//    func ownsStructQuery(_ someStruct: Struct) -> String? {
+//        if let appId = self.id, let structId = someStruct.id {
+//            return "match (a:App), (c:Struct) where id(a) = \(appId) and id(c) = \(structId) create (a)-[r:APP_OWNS_CLASS]->(c) return id(r)"
+//        }
+//        return nil
+//    }
 }

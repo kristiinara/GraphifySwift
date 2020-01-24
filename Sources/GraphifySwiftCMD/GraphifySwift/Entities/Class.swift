@@ -6,15 +6,23 @@
 //  Copyright © 2019 Kristiina Rahkema. All rights reserved.
 //
 
-//import Foundation
+import Foundation
 
 class Class : Kind {
+    weak var module: Module?
+    var dataString: String = ""
+    
     var id: Int?
+    var path: String = ""
+    var usr: String?
     var name: String
     var appKey: String = "Default"
     var modifier: String = "" // public, protected, private
     var parentName: String = ""
-    var parent: Class?
+    //var parent: Class?
+    var parentUsrs: [String] = []
+    var fileContents = ""
+    
     var extendedInterfaces: [Protocol] = []
     
     var instanceVariables: [Variable] = []
@@ -25,19 +33,52 @@ class Class : Kind {
     var staticMethods: [Function] = []
     var inheritedTypes: [String] = []
     
-    var depthOfInheritance : Int { // Integer Depth of Inheritance, starting at 1 since classes are at least java.lang.Object.
-        if let parent = self.parent {
-            return 1 + parent.depthOfInheritance
-        } else {
+    var inheritedClasses: [Class] = []
+    var comments: [Comment] = []
+    
+    var allMethods: [Function] {
+        var methods: [Function] = []
+        methods.append(contentsOf: self.classMethods)
+        methods.append(contentsOf: self.staticMethods)
+        methods.append(contentsOf: self.instanceMethods)
+        
+        return methods
+    }
+    
+    var allVariables: [Variable] {
+        var variables: [Variable] = []
+        variables.append(contentsOf: self.classVariables)
+        variables.append(contentsOf: self.staticVariables)
+        variables.append(contentsOf: self.instanceVariables)
+        
+        return variables
+    }
+    
+    var depthOfInheritance : Int { // Integer Depth of Inheritance, starting at 1 since classes are at least java.lang.Object. --> which is not true for swift!
+        
+        var depth = 0
+        
+        for parent in self.inheritedClasses {
+            if let parent = parent as? ClassInstance { //TODO: should we only use classInstances, theoretically implemnting protocols is or is not ineritance?
+                depth += 1
+                depth += parent.depthOfInheritance
+                
+            }
+        }
+        
+        // In case superclass is outside of application domain, make depth 1
+        if depth == 0 && (self.parentUsrs.count - self.numberOfImplementedInterfaces) > 0 {
             return 1
         }
+        
+        return depth
     }
     
     var numberOfImplementedInterfaces : Int { // number of protocols implemented
-        return self.inheritedTypes.count //TODO: make this more exact, currently it could include the parent class
+        return self.inheritedTypes.count
     }
     
-    var numberOfChildren = 0 // number of classes extending this class
+    var numberOfChildren = 0 // TODO: number of classes extending this class
     var classComplexity : Int { // sum of all methods complexity
         let allMethods = self.classMethods + self.instanceMethods
         return allMethods.reduce(0) { (result, method) in
@@ -45,11 +86,37 @@ class Class : Kind {
         }
     }
     
-    //TODO: implement couplingBetweenObjectClasses
+    //Set when calculateCouplingBetweenClasses is called in app
     var couplingBetweenObjectClasses = 0 // Type : Integer Also know as CBO. Defined by Chidamber & Kemerer. CBO represents the number of other classes a class is coupled to. This metrics is calculated from the callgraph and it counts the reference to methods, variables or types once for each class.
     
-    //TODO: implement lackOfCohesionInMethods
-    var lackOfCohesionInMethods = 0 // Type : Integer Also know as LCOM2. Defined by Chidamber & Kemerer. Determined how the methods of a class are related to each others.
+    var lackOfCohesionInMethods: Int {
+        var methods = self.classMethods
+        methods.append(contentsOf: self.instanceMethods)
+        methods.append(contentsOf: self.staticMethods)
+
+        let methodCount = methods.count
+        var haveVariableInCommon = 0
+        var noVariableInCommon = 0
+
+        if methodCount >= 2 {
+            for i in 0...(methodCount - 2) {
+                for j in (i+1)...(methodCount - 1) {
+                    let method = methods[i]
+                    let otherMethod = methods[j]
+
+                    if method.hasVariablesInCommon(otherMethod) {
+                        haveVariableInCommon += 1
+                    } else {
+                        noVariableInCommon += 1
+                    }
+                }
+            }
+        }
+
+        let lackOfCohesionInMethods = noVariableInCommon - haveVariableInCommon
+        return lackOfCohesionInMethods > 0 ? lackOfCohesionInMethods : 0
+    }
+    
     var isAbstract: Bool = false // Android specific, cannot be abstract
     var isActivity: Bool {
         return self.isViewController
@@ -64,35 +131,12 @@ class Class : Kind {
     var isInnerClass: Bool = false
     var isInterface: Bool = false // Seems that we don't need additional class for Protocol, but can just say that class is interface
     var isStruct: Bool = false
-    
-//    init(name: String) {
-//        self.name = name
-//        self.instanceVariables = []
-//        self.instanceMethods = []
-//        self.classMethods = []
-//        self.classVariables = []
-//    }
-//
-//    init(name: String, instanceVariables: [Variable], instanceMethods: [Function]) {
-//        self.name = name
-//
-//        self.instanceVariables = instanceVariables
-//        self.instanceMethods = instanceMethods
-//        self.classMethods = []
-//        self.classVariables = []
-//    }
-    
-    init(name: String, appKey: String, modifier: String) {
+
+    init(name: String, appKey: String, modifier: String, module: Module) {
         self.name = name
         self.appKey = appKey
         self.modifier = modifier
-        //self.parentName = parentName // use inheritedTypes instead
-//        self.inheritedTypes = inheritedTypes
-//
-//        self.instanceVariables = instanceVariables
-//        self.instanceMethods = instanceMethods
-//        self.classMethods = []
-//        self.classVariables = []
+        self.module = module
     }
     
     var instructionsCount: Int {
@@ -104,11 +148,11 @@ class Class : Kind {
     }
     
     var numberOfMethods: Int {
-        return self.instanceMethods.count + self.classMethods.count
+        return self.instanceMethods.count + self.classMethods.count + self.staticMethods.count
     }
     
     var numberOfAttributes: Int {
-        return self.instanceVariables.count + self.classVariables.count
+        return self.instanceVariables.count + self.classVariables.count + self.staticVariables.count
     }
     
     var description: String {
@@ -119,6 +163,69 @@ class Class : Kind {
         class methods: \(self.classMethods)
         """
     }
+    
+    // Added variables:
+    //TODO: add instrutions from variables as well
+    var numberOfInstructions: Int {
+        var methodInstructions = self.allMethods.reduce(0) { res, method in
+            return res + method.numberOfInstructions
+        }
+        return methodInstructions + self.allVariables.count
+    }
+    
+    var numberOfComments: Int {
+        return self.comments.count
+    }
+    
+    func calculateLines() {
+        var allMethods: [Function] = []
+        allMethods.append(contentsOf: self.classMethods)
+        allMethods.append(contentsOf: self.staticMethods)
+        allMethods.append(contentsOf: self.instanceMethods)
+        
+        let nsContent = NSString(string: self.fileContents)
+        
+        for method in allMethods {
+            if let offset = method.characterOffset {
+                let res = nsContent.lineAndCharacter(forCharacterOffset: offset)
+                method.lineNumber = res?.line
+                
+                if let length = method.length {
+                    let res = nsContent.lineAndCharacter(forCharacterOffset: offset + length)
+                    method.endLineNumber = res?.line
+                }
+            }
+        }
+    }
+    
+    func findMethodWithLineNumber(_ line: Int) -> Function? {
+        var allMethods: [Function] = []
+        allMethods.append(contentsOf: self.classMethods)
+        allMethods.append(contentsOf: self.staticMethods)
+        allMethods.append(contentsOf: self.instanceMethods)
+        
+        for method in allMethods {
+            if let isInMethod = method.lineInFunction(line) {
+                if isInMethod == true {
+                    return method
+                }
+            } else {
+                print("\(method.name) without lineNumber")
+            }
+        }
+        
+        return nil
+    }
+    
+    func setReverseRelationshipsToVariablesAndMethods() {
+        for variable in self.allVariables {
+            variable.classInstance = self
+        }
+        
+        for method in self.allMethods {
+            method.classInstance = self
+        }
+    }
 }
 
 extension Class: Node4jInsertable {
@@ -127,6 +234,14 @@ extension Class: Node4jInsertable {
     }
     
     var properties: String {
+        var dataString = self.dataString.replacingOccurrences(of: "\"", with: "'")
+        dataString = dataString.replacingOccurrences(of: "\\", with: "\\\\")
+        
+        var optionalProperties = ""
+        if let usr = self.usr {
+            optionalProperties = ", usr:'\(usr)'"
+        }
+        
         return """
         {
         name:'\(self.name)',
@@ -151,13 +266,19 @@ extension Class: Node4jInsertable {
         is_static:\(self.isStatic),
         is_inner_class:\(self.isInnerClass),
         is_interface:\(self.isInterface),
-        is_view_controller:\(self.isViewController)
+        is_view_controller:\(self.isViewController),
+        number_of_instructions:\(self.numberOfInstructions),
+        depth_of_inheritance:\(self.depthOfInheritance),
+        number_of_comments:\(self.numberOfComments),
+        data_string:\"\(dataString)\"\(optionalProperties)
         }
         """
     }
     
     var createQuery: String? {
-        return "create (n:\(self.nodeName) \(self.properties)) return id(n)"
+        let query = "create (n:\(self.nodeName) \(self.properties)) return id(n)"
+        print("query: \(query)")
+        return query
     }
     
     var deleteQuery: String? {
@@ -213,8 +334,8 @@ class ClassInstance: Class, SourceKittenMappable {
 }
 
 class Protocol: Class, SourceKittenMappable {
-    override init(name: String, appKey: String, modifier: String) {
-        super.init(name: name, appKey: appKey, modifier: modifier)
+    override init(name: String, appKey: String, modifier: String, module: Module) {
+        super.init(name: name, appKey: appKey, modifier: modifier, module: module)
         self.isInterface = true
     }
     

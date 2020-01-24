@@ -6,15 +6,26 @@
 //  Copyright © 2019 Kristiina Rahkema. All rights reserved.
 //
 
-//import Foundation
-
-//TODO:
-//  add to instruction class possibility to calculate method calls for a given method (maybe even a query for a given method name?) or get all method names and go from there to find where these mehods reside.
-
 class Instruction {
     let stringValue: String
     let kind: String
+    var offset: Int64?
+    
     var instructions: [Instruction] = []
+    
+    var numberOfSwitchStatements: Int {
+        var switchStatements = 0
+        
+        if let _ = self as? Switch {
+            switchStatements += 1
+        }
+        
+        switchStatements += self.instructions.reduce(0) { res, statement in
+            return res + statement.numberOfSwitchStatements
+        }
+        
+        return switchStatements
+    }
     
     var numberOfInstructions : Int {
         return self.instructions.reduce(1) { (result, instruction) -> Int in
@@ -33,14 +44,41 @@ class Instruction {
     }
     
     var methodCalls : [MethodCall] {
-        return self.instructions.reduce([]) { (result, instruction) -> [MethodCall] in
+        var calls: [MethodCall] = []
+        if let currentMethodCall = self as? MethodCall {
+            calls.append(currentMethodCall)
+        }
+            
+        let additionalCalls = self.instructions.reduce([]) { (result, instruction) -> [MethodCall] in
             if let methodCall = instruction as? MethodCall {
-                let newResult = result + [methodCall] + instruction.methodCalls
+                let newResult = result + methodCall.methodCalls
                 return newResult
             } else {
                 return result + instruction.methodCalls
             }
         }
+        calls.append(contentsOf: additionalCalls)
+        
+        return calls
+    }
+    
+    var localVariables : [LocalVariable] {
+        var variables: [LocalVariable] = []
+        if let currentLocalVariable = self as? LocalVariable {
+            variables.append(currentLocalVariable)
+        }
+        
+        let additionalVariables = self.instructions.reduce([]) { (result, instruction) -> [LocalVariable] in
+            if let localVariable = instruction as? LocalVariable {
+                let newResult = result + localVariable.localVariables
+                return newResult
+            } else {
+                return result + instruction.localVariables
+            }
+        }
+        variables.append(contentsOf: additionalVariables)
+        
+        return variables
     }
     
     var complexity: Int {
@@ -53,9 +91,45 @@ class Instruction {
         }
     }
     
-    //TODO: can we implement this here?
-    func callsMethod(_ method: Function) -> Bool {
-        return false
+    var maxNestingDepth: Int {
+        let nestingDepths = self.instructions.map() {instruction in instruction.maxNestingDepth}
+        var maxDepth = nestingDepths.max() ?? 0
+        
+        if let _ = self as? Branch {
+            maxDepth += 1
+        }
+        
+        return maxDepth
+    }
+    
+    var chainedMessageCalls: [[MethodCall]] {
+        var calls: [[MethodCall]] = []
+        
+        for instruction in instructions {
+            var chainedCalls = instruction.chainedMessageCalls
+            
+            if let instruction = instruction as? MethodCall {
+                if chainedCalls.count > 0 {
+                    chainedCalls = chainedCalls.map() { subCalls in
+                        var res = [instruction]
+                        res.append(contentsOf: subCalls)
+                        return res
+                    }
+                } else {
+                    chainedCalls.append([instruction])
+                }
+            }
+            calls.append(contentsOf: chainedCalls)
+        }
+        return calls
+    }
+    
+    var maxNumberOfChanedMessageCalls: Int {
+        let lengthOfMessageCalls = self.chainedMessageCalls.map() { chain in
+            return chain.count
+        }
+        
+        return lengthOfMessageCalls.max() ?? 0
     }
     
     init(stringValue: String, kind: String) {

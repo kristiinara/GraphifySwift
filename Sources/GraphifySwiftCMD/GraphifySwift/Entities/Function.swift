@@ -6,10 +6,9 @@
 //  Copyright © 2019 Kristiina Rahkema. All rights reserved.
 //
 
-//import Foundation
-
 class Function: Kind {
     var id: Int?
+    var usr: String?
     var name: String
     var appKey: String = "Default"
     var instructions: [Instruction] = []
@@ -17,6 +16,23 @@ class Function: Kind {
     var modifier: String = ""
     var returnType: String = ""
     var fullName: String = "" // "name#class_name"
+    var characterOffset: Int?
+    var length: Int?
+    var lineNumber: Int?
+    var endLineNumber: Int?
+    var dataString: String = ""
+    
+    weak var classInstance: Class?
+    
+    var uses: [Int]?
+    
+    var references: [String] = []
+    
+    var methodReferences: [Function] = [] // when called from other functions
+    var variableReferences: [Variable] = []
+    
+    var referencedMethods: [Function] = [] // when other functions are called
+    var referencedVariables: [Variable] = []
     
     //var numberOfDeclaredLocals = 0
     var numberOfDeclaredLocals : Int {
@@ -28,29 +44,52 @@ class Function: Kind {
     var isAbstract = false
     var isFinal = false
     var isStatic = false
-    var isGetter = false // android specific? or look how get, set is displayed for swift
+    var isGetter = false //TODO:  android specific? or look how get, set is displayed for swift
     var isSetter = false // same
     var isSyncronized = false // android specific?
     
-    //TODO: stuff that we cannot set at the beginning
-    var numberOfCallers = 0 // number of callers of this method
-    //var numberOfDirectCalls = 0 // number of calls to other methods
+    //stuff that we cannot set at the beginning
+    var numberOfCallers : Int {
+        return self.methodReferences.count + variableReferences.count
+    }
+    
     var numberOfDirectCalls : Int {
-        return self.instructions.reduce(0) { result, instruction in
-            return result + instruction.methodCalls.count
+        return self.referencedMethods.count
+    }
+    
+    //TODO: figure out if it's ok that we only list methods in the scope of the project (we could also add method calls to foundation, UIKit etc
+    var directCalls : [String] {
+        return self.referencedMethods.reduce([] as [String]) { result, method in
+            var methods = result
+            methods.append(method.name)
+            
+            return methods
         }
     }
     
-    //var cyclomaticComplexity = 0 // McCabe cyclomatic complexity. Represents the number of execution path inside a method. Minimum is one, the number is incremented for each branche detected in the body of a method. Type : Integer
+    var methodReferenceNames: [String] {
+        return self.methodReferences.map() { method in
+            return method.name
+        }
+    }
+    
+    var variableReferenceNames: [String] {
+        return self.referencedVariables.map() { variable in
+            return variable.name
+        }
+    }
+    
+    // McCabe cyclomatic complexity. Represents the number of execution path inside a method. Minimum is one, the number is incremented for each branche detected in the body of a method. Type : Integer
     var cyclomaticComplexity : Int {
         return self.instructions.reduce(1) { result, instruction in
             return result + instruction.complexity
         }
     }
     
-//    init(name: String) {
-//        self.name = name
-//    }
+    var maxNestingDepth: Int {
+        let nestingDepths = self.instructions.map() {instruction in instruction.maxNestingDepth}
+        return nestingDepths.max() ?? 0
+    }
     
     init(name: String, fullName: String, appKey: String, modifier: String, returnType: String) {
         self.name = name
@@ -89,6 +128,71 @@ class Function: Kind {
     var numberOfParameters: Int {
         return self.parameters.count
     }
+    
+    //TODO: implement + possibly change String to Variable
+    var usedVariables: [String] {
+        return self.referencedVariables.map() {variable in return variable.name}
+    }
+    
+    var localVariableNames: [String] {
+        let instructions = self.instructions.reduce([] as [LocalVariable]) { result, instruction in
+            var list: [LocalVariable] = []
+            list.append(contentsOf: result)
+            list.append(contentsOf: instruction.localVariables)
+            return list
+        }
+        
+        return instructions.map() { instruction in
+            return instruction.stringValue
+        }
+    }
+    
+    // Added variables:
+    var numberOfSwitchStatements: Int {
+        return self.instructions.reduce(0) { res, statement in
+            return res + statement.numberOfSwitchStatements
+        }
+    }
+    
+    var maxNumberOfChanedMessageCalls: Int {
+        var biggestChangedMessageCall = 0
+        
+        for instruction in self.instructions {
+            if instruction.maxNumberOfChanedMessageCalls > biggestChangedMessageCall {
+                biggestChangedMessageCall = instruction.maxNumberOfChanedMessageCalls
+            }
+        }
+        return biggestChangedMessageCall
+    }
+    
+    func variablesInCommon(_ otherMethod: Function) -> Set<String> {
+        let variableSet = Set(self.usedVariables)
+        return variableSet.intersection(otherMethod.usedVariables)
+    }
+    
+    func hasVariablesInCommon(_ otherMethod: Function) -> Bool {
+        return self.variablesInCommon(otherMethod).count > 0
+    }
+    
+    func lineInFunction(_ line: Int) -> Bool? {
+        guard let startLine = self.lineNumber else {
+            return nil
+        }
+        
+        guard let endLine = self.endLineNumber else {
+            return nil
+        }
+        
+        if line < startLine {
+            return false
+        }
+        
+        if line > endLine {
+            return false
+        }
+        
+        return true
+    }
 }
 
 extension Function: Node4jInsertable {
@@ -97,6 +201,14 @@ extension Function: Node4jInsertable {
     }
     
     var properties: String {
+        var dataString = self.dataString.replacingOccurrences(of: "\"", with: "'")
+        dataString = dataString.replacingOccurrences(of: "\\", with: "\\\\")
+        
+        var optionalProperties = ""
+        if let usr = self.usr {
+            optionalProperties = ", usr:'\(usr)'"
+        }
+        
         return """
         {
             name:'\(self.name)',
@@ -115,7 +227,11 @@ extension Function: Node4jInsertable {
             is_static:\(self.isStatic),
             is_getter:\(self.isGetter),
             is_setter:\(self.isSetter),
-            is_synchronized:\(self.isSyncronized)
+            is_synchronized:\(self.isSyncronized),
+            number_of_switch_statements:\(self.numberOfSwitchStatements),
+            max_number_of_chaned_message_calls:\(self.maxNumberOfChanedMessageCalls),
+            max_nesting_depth:\(self.maxNestingDepth),
+            data_string:\"\(dataString)\"\(optionalProperties)
         }
         """
     }
