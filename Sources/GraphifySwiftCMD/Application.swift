@@ -7,6 +7,7 @@
 
 import Foundation
 import Utility
+import SourceKit
 
 class Application {
     let dispatchGroup = DispatchGroup()
@@ -32,6 +33,7 @@ class Application {
             let clearParser = parser.add(subparser: "clearOutput", overview: "Clears .result files from folder")
             let diagramParser = parser.add(subparser: "classDiagram", overview: "Generates and displayes class diagram")
             let analyseBulkParaser = parser.add(subparser: "analyseBulk", overview: "Analyses multiple application at once")
+            let cppParser = parser.add(subparser: "analyseCpp", overview: "Analyse structure of c++ project")
             
             let appKey: OptionArgument<String> = analyseParser.add(option: "--appkey", shortName: "-a", kind: String.self, usage: "Appkey as unique identifier of the app.", completion: .none)
             let folderPath = analyseParser.add(positional: "foldername", kind: String.self)
@@ -54,6 +56,7 @@ class Application {
             let fileArgument: OptionArgument<String> = analyseBulkParaser.add(option: "--fileName", shortName: "-f", kind: String.self, usage: "Path to file with list of applications", completion: .filename)
             let outputFolder = analyseBulkParaser.add(positional: "foldername", kind: String.self)
             
+            let folderPathCpp = cppParser.add(positional: "foldername", kind: String.self, completion: .filename)
             
             let args = Array(CommandLine.arguments.dropFirst())
             let result = try parser.parse(args)
@@ -159,6 +162,17 @@ class Application {
                 } else {
                     print("Input or output url was nil: \(inputURL), \(outputURL)")
                 }
+            } else if subparser == "analyseCpp" {
+                guard let inputFilePath = result.get(folderPathCpp) else {
+                    throw ArgumentParserError.expectedArguments(parser, ["Folder"])
+                }
+                
+                if let inputFileURL = self.urlFromStirng(path: inputFilePath) {
+                    self.analyseCPPFiles(inputFileURL: inputFileURL)
+                } else {
+                    print("Input file url was nil: \(inputFilePath)")
+                }
+                
             } else {
                 print("Specify action as 'analyse', 'query', 'clearOutput' or 'classDiagram'")
                // throw ArgumentParserError.unknownOption(action)
@@ -174,6 +188,27 @@ class Application {
         } catch {
             print(error.localizedDescription)
         }
+    }
+    
+    func analyseCPPFiles(inputFileURL: Foundation.URL) {
+        let analysisController = SourceFileIndexAnalysisController(projectName: "C++ test", inputFileURL: inputFileURL)
+        
+        dispatchGroup.enter()
+        
+        analysisController.useModules = false
+        analysisController.printOutput = false
+        analysisController.insertToDatabase = true
+        
+        analysisController.analyseCPPFiles() {
+            print("finished")
+            
+            self.dispatchGroup.leave()
+        }
+
+        dispatchGroup.notify(queue: DispatchQueue.main) {
+            exit(EXIT_SUCCESS)
+        }
+        dispatchMain()
     }
     
     func analyseInBulk(inputFileURL: Foundation.URL, outputFolderURL: Foundation.URL) {

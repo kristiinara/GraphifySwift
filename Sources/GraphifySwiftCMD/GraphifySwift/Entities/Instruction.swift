@@ -156,7 +156,7 @@ class If: Branch, SourceKittenMappable {
 
 class ForEach: Branch, SourceKittenMappable {
     static var kittenKey: String {
-        return "source.lang.swift.stmt.if"
+        return "source.lang.swift.stmt.if" // TODO: check if this is correct??
     }
 }
 

@@ -132,8 +132,8 @@ class AnalysisController {
     
     func runquery(query: Query, completition: @escaping (String, [[String]]?, [String]?, Int, Int) -> Void) {
         var query = query
-        print("Running query: \(query.appString)")
-        dbController.runQueryReturnDataString(transaction: query.appString) { [unowned self] json in
+        print("Running query: \(query.string)")
+        dbController.runQueryReturnDataString(transaction: query.string) { [unowned self] json in
             self.currentQuery += 1
                     
             print(" --- Query: \(query.name) ---")

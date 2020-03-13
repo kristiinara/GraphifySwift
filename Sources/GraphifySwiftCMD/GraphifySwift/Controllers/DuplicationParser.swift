@@ -18,7 +18,11 @@ class DuplicationParser {
         self.json = self.jsonFromPath(path: path)
     }
     
-    init(homePath: String, ignore: [String]) {
+    convenience init(homePath: String, ignore: [String]) {
+        self.init(homePath: homePath, ignore: ignore, format: "swift")
+    }
+    
+    init(homePath: String, ignore: [String], format: String) {
         var path = homePath
         if !path.hasSuffix("/") {
             path = "\(path)/"
@@ -30,7 +34,7 @@ class DuplicationParser {
             "jscpd",
             homePath,
             "--min-tokens", "10",
-            "--format", "swift",
+            "--format", format,
             "--reporters", "json",
             "--absolute",
             "--output", "\(homePath)jscpd-report/",

@@ -22,7 +22,7 @@ class SourceFileIndexAnalysisController {
     
     var project: Project?
     
-    let dependencyController: DependencyController
+    var dependencyController: DependencyController? = nil
     //let dataSyncController = DataSyncController()
     var dataSyncController = DataSyncController()
     
@@ -106,7 +106,114 @@ class SourceFileIndexAnalysisController {
         self.language = "Swift"
     }
     
+    init(projectName: String, inputFileURL: URL) { // TODO: also probably need to indicate that this initializer does not work for other langugages than C++!
+        // TODO: probably not the best option - empty stuff that we have to set
+        self.homeURL = inputFileURL
+        self.dependencyURL = URL(fileURLWithPath: "")
+        self.sdk = ""
+        self.target = "C++"
+        self.fileQueue = []
+        self.allPaths = []
+        
+        self.appName = projectName
+        self.appKey = self.appName
+        self.developer = "Undefined"
+        self.category = "Undefined"
+        self.language = "C++"
+        
+        self.useModules = false
+    }
     
+    func analyseCPPFiles(finished: @escaping () -> ()) -> App? {
+        var json: [[String: Any]]? = nil
+        
+        var files: [String] = []
+        
+        do {
+            let data = try Data(contentsOf: self.homeURL)
+            var tryJson = try JSONSerialization.jsonObject(with: data, options: .mutableContainers)
+            json = tryJson as? [[String: Any]]
+            
+        } catch {
+            print("Could not load json: \(error.localizedDescription)")
+        }
+        
+        guard let structure = json else {
+            print("no structure! - file: \(self.homeURL)")
+            return nil
+        }
+        
+        var allObjects : [FirstLevel] = []
+        
+        for subStructure in structure {
+            print("subStrcture: \(subStructure["key.name"]) \(subStructure["key.kind"])")
+            print(subStructure.keys)
+            var dataString = ""
+            
+            if let path = subStructure["key.path"] as? String {
+                if let file = File(path: path)  {
+                    files.append(path)
+                    
+                    let fileContents = file.contents
+                    dataString = fileContents
+                }
+            }
+            
+            let objects = analyseResult(result: ["key.entities": [subStructure]], dataString: dataString)
+            
+            if let path = subStructure["key.path"] as? String {
+                for object in objects {
+                    object.path = path
+                    
+                    addStructureCpp(object: object, structure: ["key.entities": [subStructure]])
+                }
+            }
+            
+            allObjects.append(contentsOf: objects)
+        }
+        
+//        for object in allObjects {
+//            object.printout(filler: " -")
+//        }
+        
+        print("number of objects: \(allObjects.count)")
+        for object in allObjects {
+            print("\(object.name) - \(object.path)")
+            
+            for entity in object.entities {
+                print("   entity: \(entity.name) - \(entity.kind)")
+            }
+        }
+        
+//        let app = App(name: "", targetSdk: "", dateDownload: "", package: "", versionCode: 2, versionName: "", appKey: "", developer: "", sdk: "", categroy: "", language: "", languageMixed: false, platform: "")
+        
+        let app = translateEntitiesToApp(objects: allObjects, recordTests: false)
+        self.findReferences(app: app)
+        app.calculateCouplingBetweenClasses()
+
+        //self.addCommentsToApp(app: app)
+        self.calculateSize(app: app)
+        
+        var splitPath = files[0].split(separator: "/")
+        splitPath.removeLast()
+        
+        let basePath = "/" + splitPath.joined(separator: "/") + "/"
+        print("basePath: \(basePath)")
+        
+        let duplicationParser = DuplicationParser(homePath: basePath, ignore: [], format:"cpp")
+        duplicationParser.addDuplicatesToApp(app: app)
+
+        self.dataSyncController.finished = { descriptions in
+            print("error descriptions: \(descriptions)")
+
+            finished()
+        }
+        self.dataSyncController.sync(app: app)
+
+        ObjectPrinter.printApp(app)
+        
+        return app
+    }
     
     func analyseAllFiles() -> App {
         var allObjects : [FirstLevel] = []
@@ -135,7 +242,7 @@ class SourceFileIndexAnalysisController {
             object.printout(filler: " -")
         }
         
-        let app = translateEntitiesToApp(objects: allObjects)
+        let app = translateEntitiesToApp(objects: allObjects, recordTests: true)
         app.languageMixed = mixedLanguage
         
         self.findReferences(app: app)
@@ -175,7 +282,8 @@ class SourceFileIndexAnalysisController {
         }
     }
 
-    func makeStructureRequest(at path: String, filePaths: [String]) -> [String: SourceKitRepresentable] {
+    func makeStructureRequest(at path: String, filePaths: [String]) -> [String: Any] {
+        print("makeStructureRequest")
         if let file = File(path: path) {
             do {
                 let structure = try Structure(file: file)
@@ -188,7 +296,8 @@ class SourceFileIndexAnalysisController {
         return [:]
     }
     
-    func docRequest(at path: String, filePaths: [String]) -> [String: SourceKitRepresentable] {
+    func docRequest(at path: String, filePaths: [String]) -> [String: Any] {
+        print("docRequest")
         if let file = File(path: path) {
             var arguments = ["-target", self.target, "-sdk", self.sdk ,"-j4"]
             arguments.append(contentsOf: filePaths)
@@ -205,7 +314,8 @@ class SourceFileIndexAnalysisController {
         return [:]
     }
     
-    func makeIndexRequest(at path: String, filePaths: [String]) throws -> [String: SourceKitRepresentable] {
+    func makeIndexRequest(at path: String, filePaths: [String]) throws -> [String: Any] {
+        print("indexRequest: \(path)")
         var arguments = ["-target", self.target, "-sdk", self.sdk ,"-j4"]
         arguments.append(contentsOf: filePaths)
         
@@ -218,8 +328,8 @@ class SourceFileIndexAnalysisController {
         return result
     }
     
-    func indexFile(at path: String) -> (structure: [String: SourceKitRepresentable], dataString: String) {
-        if self.dependencyController.resolved == false {
+    func indexFile(at path: String) -> (structure: [String: Any], dataString: String) {
+        if self.dependencyController?.resolved == false {
             self.resolveDependencies(with: path)
         }
         
@@ -228,7 +338,7 @@ class SourceFileIndexAnalysisController {
                 let fileContents = file.contents
                 
                 var paths = self.allPaths
-                paths.append(contentsOf: self.dependencyController.successfullPaths)
+                paths.append(contentsOf: self.dependencyController?.successfullPaths ?? [])
                 
                 let result = try makeIndexRequest(at: path, filePaths: paths)
                 
@@ -252,8 +362,8 @@ class SourceFileIndexAnalysisController {
     }
     
     func resolveDependencies(with filePath: String) {
-        while dependencyController.resolved == false {
-            dependencyController.tryNextDependency() { [weak self] dependencyPaths in
+        while dependencyController?.resolved == false {
+            dependencyController?.tryNextDependency() { [weak self] dependencyPaths in
                 if let self = self {
                     do {
                         var paths = self.allPaths
@@ -277,8 +387,8 @@ class SourceFileIndexAnalysisController {
 
 //Analysis
 private extension SourceFileIndexAnalysisController {
-    func analyseResult(result: [String: SourceKitRepresentable], dataString: String) -> [FirstLevel] {
-        guard let entities = result["key.entities"] as? [[String: SourceKitRepresentable]] else {
+    func analyseResult(result: [String: Any], dataString: String) -> [FirstLevel] {
+        guard let entities = result["key.entities"] as? [[String: Any]] else {
             return []
         }
         
@@ -306,7 +416,7 @@ private extension SourceFileIndexAnalysisController {
         return objects
     }
     
-    func findMinLine(structure: [String:SourceKitRepresentable]) -> Int? {
+    func findMinLine(structure: [String:Any]) -> Int? {
         var minLine: Int? = nil
 //        print("findMinLIne form: \(structure)")
 //        print("key.line? \(structure["key.line"] as? Int64)")
@@ -319,7 +429,7 @@ private extension SourceFileIndexAnalysisController {
             }
         }
         
-        if let entities = structure["key.entities"] as? [[String: SourceKitRepresentable]] {
+        if let entities = structure["key.entities"] as? [[String: Any]] {
             for entity in entities {
                 if let line = findMinLine(structure: entity) {
                    // print("key.line: \(line)")
@@ -334,7 +444,7 @@ private extension SourceFileIndexAnalysisController {
         return minLine
     }
     
-    func findMaxLine(structure: [String:SourceKitRepresentable]) -> Int? {
+    func findMaxLine(structure: [String:Any]) -> Int? {
         var maxLine: Int? = nil
 //        print("findMaxLine form: \(structure)")
 //        print("key.line? \(structure["key.line"] as? Int64)")
@@ -347,7 +457,7 @@ private extension SourceFileIndexAnalysisController {
             }
         }
         
-        if let entities = structure["key.entities"] as? [[String: SourceKitRepresentable]] {
+        if let entities = structure["key.entities"] as? [[String: Any]] {
             for entity in entities {
                 if let line = findMaxLine(structure: entity) {
                    // print("key.line: \(line)")
@@ -361,20 +471,26 @@ private extension SourceFileIndexAnalysisController {
         return maxLine
     }
     
-    func handleFirstLevel(structure: [String: SourceKitRepresentable], dataString: String) -> FirstLevel {
+    func handleFirstLevel(structure: [String: Any], dataString: String) -> FirstLevel {
        // print("handle first level, dataString: \(dataString)")
         let kind = structure["key.kind"] as! String
         let name = structure["key.name"] as! String
         let usr = structure["key.usr"] as? String
         let line = structure["key.line"] as? Int
         let column = structure["key.column"] as? Int
-        let startLine = findMinLine(structure: structure)
-        let endLine = findMaxLine(structure: structure)
+        
+        var startLine = structure["key.startLine"] as? Int
+        var endLine = structure["key.endLine"] as? Int
+        
+        if startLine == nil && endLine == nil {
+            startLine = findMinLine(structure: structure)
+            endLine = findMaxLine(structure: structure)
+        }
         
         var relatedClasses: [(name: String, usr: String?)] = []
         var relatedStructures: [(name: String, usr: String?)] = []
         
-        if let related = structure["key.related"] as? [[String: SourceKitRepresentable]] {
+        if let related = structure["key.related"] as? [[String: Any]] {
             for relatedInstence in related {
                 let kind = relatedInstence["key.kind"] as? String
                 let name = relatedInstence["key.name"] as? String
@@ -409,7 +525,7 @@ private extension SourceFileIndexAnalysisController {
             object.dataString = dataStringBetweenLines(startLine: startLine, endLine: endLine, dataString: dataString)
         }
         
-        if let entities = structure["key.entities"] as? [[String: SourceKitRepresentable]] {
+        if let entities = structure["key.entities"] as? [[String: Any]] {
             for entity in entities {
                 if let handledEntity = handleEntity(structure: entity, dataString: dataString) {
                     object.entities.append(handledEntity)
@@ -435,6 +551,14 @@ private extension SourceFileIndexAnalysisController {
         var start = startLine
         var end = endLine
         
+        if start == 0 {
+            start = 1
+        }
+        
+        if end == 0 {
+            end = 1
+        }
+        
         //let allLines = dataString.split { char in char.isNewline }
         let allLines = dataString.components(separatedBy: CharacterSet.newlines)
         
@@ -443,7 +567,6 @@ private extension SourceFileIndexAnalysisController {
           //  print("\(count) - \(line)")
             count += 1
         }
-        
         
         if start >= allLines.count {
             print("startLine \(start) too big, set to \(allLines.count)")
@@ -464,10 +587,11 @@ private extension SourceFileIndexAnalysisController {
                 return "\(res)\n\(line)"
             }
         }
+        
         return newDataString
     }
     
-    func handleEntity(structure: [String: SourceKitRepresentable], dataString: String) -> Entity? {
+    func handleEntity(structure: [String: Any], dataString: String) -> Entity? {
         let name = structure["key.name"] as? String
         
         guard let kind = structure["key.kind"] as? String else {
@@ -478,8 +602,15 @@ private extension SourceFileIndexAnalysisController {
         
         //let object = (name != nil) ? Entity(name: name!, kind: kind, usr: usr, structure: structure) : Entity(kind: kind, usr: usr, structure: structure)
         let object = Entity(name: name, kind: kind, usr: usr, structure: structure)
-        let startLine = findMinLine(structure: structure)
-        let endLine = findMaxLine(structure: structure)
+        
+        var startLine = structure["key.startLine"] as? Int
+        var endLine = structure["key.endLine"] as? Int
+        
+        if startLine == nil && endLine == nil {
+            startLine = findMinLine(structure: structure)
+            endLine = findMaxLine(structure: structure)
+        }
+        
         object.startLine = startLine
         object.endLine = endLine
         
@@ -494,7 +625,7 @@ private extension SourceFileIndexAnalysisController {
             object.type = type
         }
         
-        if let attributes = structure["key.attributes"] as? [[String: SourceKitRepresentable]]{
+        if let attributes = structure["key.attributes"] as? [[String: Any]]{
             for attribute in attributes {
                 if let name = attribute["key.attribute"] as? String {
                     let handledAttribute = Attribute(name: name)
@@ -503,7 +634,7 @@ private extension SourceFileIndexAnalysisController {
             }
         }
         
-        if let entities = structure["key.entities"] as? [[String: SourceKitRepresentable]] {
+        if let entities = structure["key.entities"] as? [[String: Any]] {
             for entity in entities {
                 if let handledEntity = handleEntity(structure: entity, dataString: dataString) {
                     object.entities.append(handledEntity)
@@ -517,7 +648,7 @@ private extension SourceFileIndexAnalysisController {
             }
         }
         
-        if let related = structure["key.related"] as? [[String: SourceKitRepresentable]] {
+        if let related = structure["key.related"] as? [[String: Any]] {
             for relatedObject in related {
                 let kind = relatedObject["key.kind"] as? String
                 let name = relatedObject["key.name"] as? String
@@ -537,12 +668,12 @@ private extension SourceFileIndexAnalysisController {
 private extension SourceFileIndexAnalysisController {
     func addStructureAnalysis(object: FirstLevel, path: String) {
         var paths = self.allPaths
-        paths.append(contentsOf: self.dependencyController.successfullPaths)
+        paths.append(contentsOf: self.dependencyController?.successfullPaths ?? [])
         
         let result = makeStructureRequest(at: path, filePaths: paths)
 //        print("Structure analysis: \(result)")
         
-        guard let substructure = result["key.substructure"] as? [[String: SourceKitRepresentable]] else {
+        guard let substructure = result["key.substructure"] as? [[String: Any]] else {
             return
         }
         
@@ -559,7 +690,7 @@ private extension SourceFileIndexAnalysisController {
             //we found the correct object
             if kind == object.kind && name == object.name {
                 //print("-- match with object!")
-                if let children = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
+                if let children = structure["key.substructure"] as? [[String: Any]] {
                     for child in children {
                         let childName = child["key.name"] as? String
                         let childKind = child["key.kind"] as? String
@@ -575,7 +706,37 @@ private extension SourceFileIndexAnalysisController {
         }
     }
     
-    func handleSubstructure(structure: [String: SourceKitRepresentable], entity: Entity) {
+    func addStructureCpp(object: FirstLevel, structure: [String: Any]) {
+        guard let substructure = structure["key.entities"] as? [[String: Any]] else {
+            return
+        }
+        for structure in substructure {
+            let kind = structure["key.kind"] as? String
+            let name = structure["key.name"] as? String
+            
+            //print("First level: \(kind) - \(name)")
+            
+            //we found the correct object
+            if kind == object.kind && name == object.name {
+                //print("-- match with object!")
+                if let children = structure["key.entities"] as? [[String: Any]] {
+                    for child in children {
+                        let childName = child["key.name"] as? String
+                        let childKind = child["key.kind"] as? String
+                        
+                        for entity in object.entities {
+                            if childName == entity.name && childKind == entity.kind {
+                                handleSubstructure(structure: child, entity: entity, subStructureKey: "key.entities")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+    }
+    
+    func handleSubstructure(structure: [String: Any], entity: Entity, subStructureKey:String = "key.substructure") {
         let kind = structure["key.kind"] as? String
         let name = structure["key.name"] as? String
         let type = structure["key.typename"] as? String
@@ -604,7 +765,7 @@ private extension SourceFileIndexAnalysisController {
         }
         //TODO: change instructions to old instructions. Could we somehow add structure to each class and do the parsing there? Or add instructions to each method and do the parsing there?
         
-        if let substructures = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
+        if let substructures = structure[subStructureKey] as? [[String: Any]] {
             for substructure in substructures {
                 let kind = substructure["key.kind"] as? String
                 let name = substructure["key.name"] as? String
@@ -632,11 +793,11 @@ private extension SourceFileIndexAnalysisController {
             }
         }
         
-        let instruction = handleInstruction(structure)
+        let instruction = handleInstruction(structure, subStructureKey: subStructureKey)
         entity.instructions.append(instruction)
     }
     
-    func handleInstruction(_ structure: [String: SourceKitRepresentable]) -> Instruction {
+    func handleInstruction(_ structure: [String: Any], subStructureKey:String = "key.substructure") -> Instruction {
         let kind = structure["key.kind"] as! String
         let name = (structure["key.name"] as? String) ?? ""
         let offset = structure["key.offset"] as? Int64
@@ -670,7 +831,7 @@ private extension SourceFileIndexAnalysisController {
         
         instruction.offset = offset
         
-        if let models = structure["key.substructure"] as? [[String: SourceKitRepresentable]] {
+        if let models = structure[subStructureKey] as? [[String: Any]] {
             for model in models {
                 
                 
@@ -758,7 +919,7 @@ extension SourceFileIndexAnalysisController {
 //    }
     
     
-    func translateEntitiesToApp(objects: [FirstLevel]) -> App {
+    func translateEntitiesToApp(objects: [FirstLevel], recordTests: Bool) -> App {
         //TODO: fix this with correct app info
         let app = App(
             name: appName,
@@ -785,9 +946,11 @@ extension SourceFileIndexAnalysisController {
             }
         }
         
-        let tests = FolderUtility.getNumberOfTests(for: homeURL, ignore: ["Carthage", "Pods", "Frameworks"])
-        app.numberOfTests = tests.tests
-        app.numberOfUITests = tests.uitests
+        if(recordTests) {
+            let tests = FolderUtility.getNumberOfTests(for: homeURL, ignore: ["Carthage", "Pods", "Frameworks"])
+            app.numberOfTests = tests.tests
+            app.numberOfUITests = tests.uitests
+        }
         
         let floatingExtensions = self.addObjectsToApp(objects: objects, app: app)
         // try to add floating extensions again, in the hope that corresponding classes were already added
@@ -808,6 +971,8 @@ extension SourceFileIndexAnalysisController {
         var classesWithEmptyType: [String: Class] = [:]
         
         for object in objects {
+            print("addObjectsToApp \(object.name)")
+            
             var classInstance: Class?
             
             var module: Module?
@@ -1014,7 +1179,7 @@ extension SourceFileIndexAnalysisController {
             //print("emtpy type in \(classInstance.name)")
             //TODO: make doc request --> extract type info (maybe something additional as well?
             var paths = self.allPaths
-            paths.append(contentsOf: self.dependencyController.successfullPaths)
+            paths.append(contentsOf: self.dependencyController?.successfullPaths ?? [])
             
             let result = self.docRequest(at: classInstance.path, filePaths: paths)
             self.addInfoFromDocResult(classInstance: classInstance, result: result)
@@ -1040,15 +1205,15 @@ extension SourceFileIndexAnalysisController {
         return floatingExtensions
     }
     
-    func addInfoFromDocResult(classInstance: Class, result: [String: SourceKitRepresentable]) {
-        if let children = result["key.substructure"] as? [[String: SourceKitRepresentable]] {
+    func addInfoFromDocResult(classInstance: Class, result: [String: Any]) {
+        if let children = result["key.substructure"] as? [[String: Any]] {
             for substructure in children {
                 //print("substructure")
                 //let kind = substructure["key.kind"] as? String
                 if let name = substructure["key.name"] as? String {
                     //print("name: \(name)")
                     if name == classInstance.name {
-                        if let entities = substructure["key.substructure"] as? [[String: SourceKitRepresentable]] {
+                        if let entities = substructure["key.substructure"] as? [[String: Any]] {
                             outerloop: for entity in entities {
                                 if let entityName = entity["key.name"] as? String,
                                     let kind = entity["key.kind"] as? String,
@@ -1143,6 +1308,7 @@ extension SourceFileIndexAnalysisController {
 // Handle app size stuff
 extension SourceFileIndexAnalysisController {
     func calculateSize(app: App) {
+        print("calculateSize")
         var analysedFiles: [String] = []
         
         for classInstance in app.allClasses {
@@ -1203,7 +1369,7 @@ class Entity {
     let name: String?
     let kind: String
     let usr: String?
-    let structure: [String: SourceKitRepresentable]
+    let structure: [String: Any]
     
     var type: String?
     
@@ -1220,14 +1386,14 @@ class Entity {
     
     var relatedObjects:[(name: String, kind: String, usr: String?)] = []
     
-    init(name: String?, kind: String, usr: String?, structure: [String:SourceKitRepresentable]) {
+    init(name: String?, kind: String, usr: String?, structure: [String:Any]) {
         self.name = name
         self.kind = kind
         self.usr = usr
         self.structure = structure
     }
     
-//    init(kind: String, usr: String?, structure: [String:SourceKitRepresentable]) {
+//    init(kind: String, usr: String?, structure: [String:Any]) {
 //        self.name = "-- Undefined"
 //        self.kind = kind
 //        self.usr = usr
