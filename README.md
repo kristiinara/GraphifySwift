@@ -7,6 +7,8 @@ Thresholds used in study "Empirical Study on Code Smells in iOS Applications" ar
 
 ## Usage
 
+Neo4j community version needs to be installed and run before running GraphifySwift. Data url and authorization token for neo4j are currently hardcoded in DatabaseController and need to match the neo4j server configuration. 
+
 Analyse an application:
       
     GraphifySwiftCMD analyse --appkey <applicationKey> <pathToRepository>
