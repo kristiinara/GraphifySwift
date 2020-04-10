@@ -2,6 +2,9 @@
 
 GraphifySwiftCMD is a command line tool that makes it possible to analyse a lot of iOS applications at once. 
 
+##
+Thresholds used in study "Empirical Study on Code Smells in iOS Applications" are listed [here](thresholds.md). 
+
 ## Usage
 
 Analyse an application:
