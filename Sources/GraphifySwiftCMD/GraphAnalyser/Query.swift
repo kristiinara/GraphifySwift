@@ -11,6 +11,7 @@ protocol Query {
     var name: String {get}
     var string: String {get}
     var appString: String {get}
+    var classString: String {get}
     
     var result: String? {get set}
     var json: [String: Any]? {get set}

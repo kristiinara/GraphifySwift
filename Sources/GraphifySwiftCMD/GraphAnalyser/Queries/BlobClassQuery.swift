@@ -33,6 +33,16 @@ class BlobClassQuery : Query {
         """
     }
     
+    var classString: String {
+        return """
+        MATCH (cl:Class) WHERE
+            cl.lack_of_cohesion_in_methods > \(self.veryHighLackOfCohesienInMethods) AND
+            cl.number_of_methods >  \(self.veryHighNumberOfMethods) AND
+            cl.number_of_attributes > \(self.veryHighNumberOfAttributes)
+        RETURN distinct cl.app_key as app_key, cl.name as class_name
+        """
+    }
+    
     var result: String?
     var json: [String : Any]?
     

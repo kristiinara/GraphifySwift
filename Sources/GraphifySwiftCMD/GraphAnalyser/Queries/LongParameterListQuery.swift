@@ -22,6 +22,10 @@ class LongParameterListQuery: Query {
         return "match (c:Class)-[:CLASS_OWNS_METHOD]->(m:Method)-[r:METHOD_OWNS_ARGUMENT]->(a:Argument) with c, m, count(a) as argument_count where argument_count > \(self.veryHighNumberOfParameters) return distinct(m.app_key) as app_key, count(distinct m) as number_of_smells"
     }
     
+    var classString: String {
+        return "match (c:Class)-[:CLASS_OWNS_METHOD]->(m:Method)-[r:METHOD_OWNS_ARGUMENT]->(a:Argument) with c, m, count(a) as argument_count where argument_count > \(self.veryHighNumberOfParameters) return distinct(m.app_key) as app_key, c.name as class_name, count(distinct m) as number_of_smells"
+    }
+    
     var notes: String {
         return ""
     }

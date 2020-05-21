@@ -27,6 +27,16 @@ class InternalDuplicationQuery: Query {
         """
     }
     
+    var classString: String {
+        return """
+        MATCH
+        (firstClass:Class)-[r:DUPLICATES]->(secondClass:Class),
+        (module:Module)-[:MODULE_OWNS_CLASS]->(firstClass),
+        (module:Module)-[:MODULE_OWNS_CLASS]->(secondClass)
+        where firstClass.data_string contains r.fragment or secondClass.data_string contains r.fragment return distinct(firstClass.app_key) as app_key, firstClass.name as class_name, count(distinct r) as number_of_smells
+        """
+    }
+    
     var notes: String {
         return "Queries classes that duplicate each-other and belong to the same module."
     }

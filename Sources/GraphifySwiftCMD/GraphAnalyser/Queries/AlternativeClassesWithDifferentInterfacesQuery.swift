@@ -74,6 +74,10 @@ class AlternativeClassesWithDifferentInterfacesQuery: Query {
         """
     }
     
+    var classString: String {
+        return ""
+    }
+    
     var notes: String {
         return "Query classes/protocols that do not implement or extend each other or a common parent class/protocol, but have methods with the same argument types."
     }

@@ -22,6 +22,10 @@ class ComplexClassPaprikaQuery: Query {
         return "MATCH (cl:Class) WHERE cl.class_complexity > \(Metrics.veryHighClassComplexity) RETURN distinct(cl.app_key) as app_key, count(distinct cl) as number_of_smells"
     }
     
+    var classString: String {
+        return "MATCH (cl:Class) WHERE cl.class_complexity > \(Metrics.veryHighClassComplexity) RETURN distinct(cl.app_key) as app_key, cl.name as class_name"
+    }
+    
     var notes: String {
         return ""
     }

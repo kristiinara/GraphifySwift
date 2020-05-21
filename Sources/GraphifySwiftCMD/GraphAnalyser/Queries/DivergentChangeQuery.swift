@@ -22,6 +22,10 @@ class DivergentChangeQuery: Query {
         return "MATCH (c:Class)-[:CLASS_OWNS_METHOD]-> (m:Method)-[r:CALLS]->(other_method:Method) with c, m, COUNT(r) as number_of_called_methods where number_of_called_methods > \(self.veryHighNumberOfCalledMethods) RETURN distinct(m.app_key) as app_key, count(distinct m) as number_of_smells"
     }
     
+    var classString: String {
+        return "MATCH (c:Class)-[:CLASS_OWNS_METHOD]-> (m:Method)-[r:CALLS]->(other_method:Method) with c, m, COUNT(r) as number_of_called_methods where number_of_called_methods > \(self.veryHighNumberOfCalledMethods) RETURN distinct(m.app_key) as app_key, c.name as class_name, count(distinct m) as number_of_smells"
+    }
+    
     var notes: String {
         return "Queries all methods that call more than a very high number of methods. Very high number of methods currently set to 20."
     }

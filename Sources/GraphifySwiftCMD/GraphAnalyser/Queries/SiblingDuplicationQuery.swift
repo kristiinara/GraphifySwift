@@ -20,6 +20,10 @@ class SiblingDuplicationQuery: Query {
     var appString: String {
         return "MATCH (firstClass:Class)-[:EXTENDS*]->(parent:Class)<-[:EXTENDS*]-(secondClass:Class), (firstClass:Class)-[d:DUPLICATES]->(secondClass:Class) where firstClass.data_string contains d.fragment or secondClass.data_string contains d.fragment return distinct(firstClass.app_key) as app_key, count(distinct d) as number_of_smells"
     }
+    
+    var classString: String {
+        return "MATCH (firstClass:Class)-[:EXTENDS*]->(parent:Class)<-[:EXTENDS*]-(secondClass:Class), (firstClass:Class)-[d:DUPLICATES]->(secondClass:Class) where firstClass.data_string contains d.fragment or secondClass.data_string contains d.fragment return distinct(firstClass.app_key) as app_key,firstClass.name as class_name, count(distinct d) as number_of_smells"
+    }
 
     var notes: String {
         return "Queries classes that have a common ancestor and include duplicated code."

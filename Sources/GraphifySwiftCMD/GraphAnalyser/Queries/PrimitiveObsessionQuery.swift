@@ -36,6 +36,17 @@ class PrimitiveObsessionQuery: Query {
         """
     }
     
+    var classString: String {
+        return """
+        match (class:Class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)<-[use:USES]-(method:Method)
+        where not (variable)-[:IS_OF_TYPE]->()
+        with collect(distinct method.name) as uses, count(distinct use) as use_count, variable, class
+        where use_count > \(self.veryHighPrimitiveVariableUse)
+
+        return distinct(class.app_key) as app_key, class.name as class_name, count(distinct variable) as number_of_smells
+        """
+    }
+    
     var notes: String {
         return "Query variables whose types are not types of this application and that are used often by methods."
     }

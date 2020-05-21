@@ -22,6 +22,10 @@ class SwitchStatementsQuery: Query {
         return "MATCH (c:Class)-[r:CLASS_OWNS_METHOD]->(m:Method) where m.number_of_switch_statements > \(self.highNumberOfSwitchStatments)  return distinct(m.app_key) as app_key, count(distinct m) as number_of_smells"
     }
     
+    var classString: String {
+        return "MATCH (c:Class)-[r:CLASS_OWNS_METHOD]->(m:Method) where m.number_of_switch_statements > \(self.highNumberOfSwitchStatments)  return distinct(m.app_key) as app_key, c.name as class_name, count(distinct m) as number_of_smells"
+    }
+    
     var notes: String {
         return "Switch Statements code smell looks at methods, where number of switch statements is high. Currently set to 1. High number of switch statements needs to be defined statistically."
     }

@@ -63,6 +63,10 @@ class SAPBreakerModuleQuery: Query {
         """
     }
     
+    var classString: String {
+       return ""
+    }
+    
     var notes: String {
         return ""
     }

@@ -21,6 +21,10 @@ class SpeculativeGeneralityProtocolQuery: Query {
         return "match (class:Class) where not ()-[:IMPLEMENTS|EXTENDS]->(class) and  class.is_interface = true return distinct(class.app_key) as app_key, count(distinct class) as number_of_smells"
     }
     
+    var classString: String {
+        return "match (class:Class) where not ()-[:IMPLEMENTS|EXTENDS]->(class) and  class.is_interface = true return distinct(class.app_key) as app_key, class.name as class_name"
+    }
+    
     var notes: String {
         return "Queries interfaces that are not extended or implemented."
     }

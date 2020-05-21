@@ -138,6 +138,10 @@ class UnstableDependenciesQuery: Query {
     """*/
     }
     
+    var classString: String {
+        return ""
+    }
+    
     var notes: String {
         return "Query classes that depend on other classes that are less stable than themselves."
     }

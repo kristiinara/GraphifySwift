@@ -19,6 +19,10 @@ class LongMethodQuery : Query {
         return "MATCH (c:Class)-[r:CLASS_OWNS_METHOD]->(m:Method) WHERE m.number_of_instructions > \(self.veryHighNumberOfInstructions) RETURN distinct(m.app_key) as app_key, count(distinct m) as number_of_smells"
     }
     
+    var classString: String {
+        return "MATCH (c:Class)-[r:CLASS_OWNS_METHOD]->(m:Method) WHERE m.number_of_instructions > \(self.veryHighNumberOfInstructions) RETURN distinct(m.app_key) as app_key, c.name as class_name, count(distinct m) as number_of_smells"
+    }
+    
     var result: String?
     var json: [String : Any]?
     

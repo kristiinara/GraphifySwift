@@ -62,6 +62,29 @@ class GodClassQuery: Query {
         """
     }
     
+    var classString: String {
+        return """
+        match (class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)
+        match (class)-[:CLASS_OWNS_METHOD]->(other_method:Method)
+        where method <> other_method
+        with count(DISTINCT [method, other_method]) as pair_count, class
+        match (class)-[:CLASS_OWNS_METHOD]->(method:Method)
+        match (class)-[:CLASS_OWNS_METHOD]->(other_method:Method)
+        match (class)-[:CLASS_OWNS_VARIABLE]->(variable:Variable)
+        where method <> other_method and (method)-[:USES]->(variable)<-[:USES]-(other_method)
+        with class, pair_count, method, other_method, collect(distinct variable.name) as variable_names, count(distinct variable) as variable_count
+        where variable_count >= 1
+        with class, pair_count, count(distinct [method, other_method]) as connected_method_count
+        with class, connected_method_count*0.1/pair_count as class_cohesion, connected_method_count, pair_count
+        where class_cohesion < \(self.tightClassCohesionFraction) and class.class_complexity >= \(self.veryHighClassComplexity)
+        optional match (class)-[:CLASS_OWNS_METHOD]->(m:Method)-[:USES]->(variable:Variable)<-[:CLASS_OWNS_VARIABLE]-(other_class:Class)
+        where class <> other_class
+        with class, class_cohesion, connected_method_count, pair_count, count(distinct variable) as foreign_variable_count
+        where foreign_variable_count >= \(self.fewAccessToForeignData)
+        return distinct(class.app_key) as app_key, class.name as class_name
+        """
+    }
+    
     var notes: String {
         return "Query classes with a tight class cohesion of less than a third, very high number of weighted methods and at least few access to foreign data variables."
     }

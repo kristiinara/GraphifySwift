@@ -22,6 +22,10 @@ class ShotgunSurgeryQuery: Query {
         return "MATCH (other_m:Method)-[r:CALLS]->(m:Method)<-[:CLASS_OWNS_METHOD]-(c:Class) with c,m, COUNT(r) as number_of_callers where number_of_callers > \(self.veryHighNumberOfCallers) RETURN distinct(m.app_key) as app_key,count(distinct m) as number_of_smells"
     }
     
+    var classString: String {
+        return "MATCH (other_m:Method)-[r:CALLS]->(m:Method)<-[:CLASS_OWNS_METHOD]-(c:Class) with c,m, COUNT(r) as number_of_callers where number_of_callers > \(self.veryHighNumberOfCallers) RETURN distinct(m.app_key) as app_key,c.name as class_name, count(distinct m) as number_of_smells"
+    }
+    
     var notes: String {
         return "Shotgun surgery code smell looks at methods where the number of callers is bigger than very high. Very high number of callers needs to be defined statistically."
     }

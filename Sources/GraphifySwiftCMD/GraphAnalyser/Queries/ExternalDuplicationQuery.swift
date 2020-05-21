@@ -21,6 +21,10 @@ class ExternalDuplicationQuery: Query {
         return " MATCH (firstClass:Class)-[d:DUPLICATES]->(secondClass:Class), (module:Module)-[:MODULE_OWNS_CLASS]->(firstClass), (secondModule:Module)-[:MODULE_OWNS_CLASS]->(secondClass) where id(module) <> id(secondModule) and firstClass.data_string contains d.fragment or secondClass.data_string contains d.fragment return distinct(firstClass.app_key) as app_key, count(distinct d) as number_of_smells"
     }
     
+    var classString: String {
+        return " MATCH (firstClass:Class)-[d:DUPLICATES]->(secondClass:Class), (module:Module)-[:MODULE_OWNS_CLASS]->(firstClass), (secondModule:Module)-[:MODULE_OWNS_CLASS]->(secondClass) where id(module) <> id(secondModule) and firstClass.data_string contains d.fragment or secondClass.data_string contains d.fragment return distinct(firstClass.app_key) as app_key, firstClass.name as class_name, count(distinct d) as number_of_smells"
+    }
+    
     var notes: String {
         return "Queries classes that duplicate each-other and belong to different modules."
     }

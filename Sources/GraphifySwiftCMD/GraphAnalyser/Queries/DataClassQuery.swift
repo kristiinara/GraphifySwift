@@ -21,6 +21,10 @@ class DataClassQuery: Query {
         return "match (c:Class) where c.number_of_methods = 0 return distinct(c.app_key) as app_key, count(distinct c) as number_of_smells"
     }
     
+    var classString: String {
+        return "match (c:Class) where c.number_of_methods = 0 return distinct(c.app_key) as app_key,  c.name as class_name"
+    }
+    
     var notes: String {
         return "Data Class code smell checks for classes that have no methods."
     }

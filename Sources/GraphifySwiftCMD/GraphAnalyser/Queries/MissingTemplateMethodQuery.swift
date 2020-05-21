@@ -105,6 +105,33 @@ class MissingTemplateMethodQuery: Query {
         """
     }
     
+    var classString: String {
+        return """
+        match (app:App)-[:APP_OWNS_MODULE]->(module:Module)-[:MODULE_OWNS_CLASS]->(class:Class)-[:CLASS_OWNS_METHOD]->(method:Method)-[:USES|:CALLS]->(common)<-[:USES|:CALLS]-(other_method)<-[:CLASS_OWNS_METHOD]-(other_class:Class)
+        where
+                    method <> other_method
+                with
+                    collect(distinct common) as commons,
+                    count(distinct common) as common_count,
+                    class, other_class, method, other_method
+               where
+                    common_count >= \(self.minimalCommonMethodAndVariableCount)
+               with
+                    [common in commons | class.name+"."+common.name] as common_names,
+                    class, other_class, method, other_method, common_count
+               with
+                    collect(class.name) as class_names,
+                    collect(class.name + "." + method.name) as method_names,
+                    count(distinct method) as method_count,
+                    class.app_key as app_key,
+                    common_names, common_count
+            where
+                method_count >= \(self.minimalMethodCount)
+        unwind class_names as class_name
+        return distinct(app_key), class_name, count(distinct common_names) as number_of_smells
+        """
+    }
+    
     var notes: String {
         return ""
     }
