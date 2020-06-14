@@ -191,7 +191,7 @@ class Application {
     }
     
     func analyseCPPFiles(inputFileURL: Foundation.URL) {
-        let analysisController = SourceFileIndexAnalysisController(projectName: "C++ test", inputFileURL: inputFileURL)
+        let analysisController = SourceFileIndexAnalysisController(projectName: "Exercise 11", inputFileURL: inputFileURL)
         
         dispatchGroup.enter()
         
