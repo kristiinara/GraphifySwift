@@ -36,6 +36,10 @@ Display prototype of architecture analysis:
     GraphifySwiftCMD classDiagram <pathToRepository>
     
     
+## Database structure
+
+More on the database structure [here](db_structure.md).
+    
 ## Additional queries
 
 ### Information
