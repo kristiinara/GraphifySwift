@@ -112,20 +112,20 @@
 ## Relationships
 
 * App	
- * APP\_OWNS\_MODULE	Module
+   * APP\_OWNS\_MODULE	Module
 * Argument 
- * IS\_OF\_TYPE	Class
+   * IS\_OF\_TYPE	Class
 * Class	
- * CLASS\_OWNS\_VARIABLE	Variable
- * CLASS\_OWNS\_METHOD	Method
- * DUPLICATES	Class _(i.e. some parts of the class are duplicated in the other class)_
- * IMPLEMENTS	Class
- * EXTENDS	Class
+   * CLASS\_OWNS\_VARIABLE	Variable
+   * CLASS\_OWNS\_METHOD	Method
+   * DUPLICATES	Class _(i.e. some parts of the class are duplicated in the other class)_
+   * IMPLEMENTS	Class
+   * EXTENDS	Class
 * Method	
- * USES	Variable
- * CALLS	Method
- * METHOD\_OWNS\_ARGUMENT	Argument
+   * USES	Variable
+   * CALLS	Method
+   * METHOD\_OWNS\_ARGUMENT	Argument
 * Module	
- * MODULE\_OWNS\_CLASS	Class
+   * MODULE\_OWNS\_CLASS	Class
 * Variable	
- * IS\_OF\_TYPE	Class
+   * IS\_OF\_TYPE	Class
