@@ -75,9 +75,9 @@ class SourceFileIndexAnalysisController {
         self.stars = project.stars
         
         //self.sdk = "/Applications/Xcode101.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS12.1.sdk"
-        self.sdk = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS13.0.sdk"
+        self.sdk = "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk"
         //self.target = "arm64-apple-ios12.1"
-        self.target = "arm64-apple-ios13.0"
+        self.target = "arm64-apple-ios14.2"
         
         self.dependencyController = DependencyController(homeURL: dependencyURL)
         
