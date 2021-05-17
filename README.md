@@ -1,3 +1,7 @@
+Currently we are developing a new (and improved) version of this tool: https://github.com/kristiinara/GraphifyEvolution
+The new version is additionally capable of analysing the evolution of a project and currently has preliminary support for swift, java and c++.
+
+
 # GraphifySwiftCMD
 
 GraphifySwiftCMD is a command line tool that makes it possible to analyse a lot of iOS applications at once. 
