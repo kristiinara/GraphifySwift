@@ -1,6 +1,15 @@
-Currently we are developing a new (and improved) version of this tool: https://github.com/kristiinara/GraphifyEvolution
-The new version is additionally capable of analysing the evolution of a project and currently has preliminary support for swift, java and c++.
 
+
+----------------------------------------------------
+
+# Important
+
+__Currently we are developing a new (and improved) version of this tool: https://github.com/kristiinara/GraphifyEvolution
+The new version is additionally capable of analysing the evolution of a project and currently has preliminary support for swift, java and c++.__
+
+GraphifySwift is no longer updated, the same code smell analysis is also supported by GraphifyEvolution. 
+
+----------------------------------------------------
 
 # GraphifySwiftCMD
 
